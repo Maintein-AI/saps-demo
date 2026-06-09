@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  // No `output: "export"` — Vercel detects Next.js and handles the build
+  // natively (static pages stay static; SSR/ISR available if ever needed).
   images: {
     unoptimized: true,
   },

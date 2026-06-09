@@ -7,6 +7,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 
 const NO_APP_SHELL_PATHS = [
   "/",
+  "/login",
   "/uld-message-builder/sign-in",
   "/uld-message-builder/register",
   "/uld-message-builder/forgot-password",
