@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Server-side access gate.
+ * Server-side access gate (Next.js 16 "proxy" convention — formerly middleware).
  *
  * Runs on every request (except the login page, the auth API, and build assets)
  * BEFORE any page is rendered or sent to the browser. If the visitor does not
@@ -19,7 +19,7 @@ function expectedToken() {
   return process.env.GATE_SECRET || "saps-gate-default-secret-change-me";
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value;
 
   if (token && token === expectedToken()) {
