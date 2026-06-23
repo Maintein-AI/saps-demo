@@ -36,7 +36,7 @@ export default function HeroSection() {
         <div className="lg:w-[55%] flex flex-col gap-6">
           <div className="flex items-center gap-3 mb-1">
             <img 
-              src="https://storage.readdy-site.link/project_files/7dc78ca5-5248-4b2d-8589-6bb75925d7bd/cc3fcb98-8b2d-464a-b39e-cf7f7577fc4e_ChatGPT_Image_Jun_9__2026__02_46_34_AM-removebg-preview.png?v=1f20150c9684bbc711c43d8d8b346460"
+              src="/airvault-logo.png"
               alt="AirVault"
               className="h-10 lg:h-12 w-auto"
             />
@@ -83,7 +83,7 @@ export default function HeroSection() {
 
           <div className="relative w-full max-w-[520px] aspect-[4/3] rounded-[28px] overflow-hidden shadow-2xl" style={{ border: "1px solid rgba(180,210,240,0.4)", background: "linear-gradient(145deg, #F0F5FA, #E8F0F8)" }}>
             <img
-              src="https://readdy.ai/api/search-image?query=A%20premium%20elegant%20infographic%20style%20enterprise%20SaaS%20platform%20illustration%20for%20aviation%20cargo%20logistics%20showing%20a%20central%20glowing%20hub%20with%20interconnected%20orbiting%20node%20modules%20representing%20warehouse%20operations%20gate%20entry%20RFID%20tracking%20customs%20compliance%20finance%20planning%20each%20node%20connected%20by%20luminous%20pastel%20blue%20and%20teal%20curved%20pathway%20lines%20floating%20above%20a%20soft%20white%20background%20with%20subtle%20geometric%20mesh%20grid%20abstract%20isometric%20cargo%20containers%20and%20ULD%20shapes%20minimalist%20clean%20modern%20infographic%20design%20light%20pastel%20color%20palette%20no%20dark%20colors%20sophisticated%20data%20visualization%20aesthetic&width=1040&height=780&seq=hero-infographic-v8&orientation=landscape"
+              src="/hero-infographic.jpg"
               alt="AirVault Platform"
               className="w-full h-full object-cover object-top"
             />

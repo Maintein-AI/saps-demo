@@ -5,7 +5,7 @@ export default function LandingFooter() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <img 
-              src="https://storage.readdy-site.link/project_files/7dc78ca5-5248-4b2d-8589-6bb75925d7bd/cc3fcb98-8b2d-464a-b39e-cf7f7577fc4e_ChatGPT_Image_Jun_9__2026__02_46_34_AM-removebg-preview.png?v=1f20150c9684bbc711c43d8d8b346460"
+              src="/airvault-logo.png"
               alt="AirVault"
               className="h-6 w-auto"
             />

@@ -84,7 +84,7 @@ export default function SignInForm() {
 
       <div className="absolute inset-0 z-0">
         <img
-          src="https://readdy.ai/api/search-image?query=A%20dark%20moody%20atmospheric%20night%20scene%20of%20a%20futuristic%20airport%20cargo%20terminal%20with%20glowing%20blue%20and%20teal%20digital%20route%20lines%20neon%20accent%20lights%20on%20ULD%20containers%20subtle%20data%20stream%20overlays%20dark%20warehouse%20interior%20with%20soft%20blue%20ambient%20lighting%20sleek%20modern%20aviation%20logistics%20atmosphere%20cinematic%20low%20light%20dark%20navy%20background%20sophisticated%20tech%20noir%20aesthetic&width=1440&height=900&seq=signin-bg-dark-v1&orientation=landscape"
+          src="/signin-bg.jpg"
           alt=""
           className="w-full h-full object-cover"
           style={{ filter: "blur(4px) brightness(0.35) saturate(0.6)" }}
@@ -95,7 +95,7 @@ export default function SignInForm() {
       <div className="relative z-10 w-full max-w-[440px] mx-auto px-4 py-10">
         <div className="text-center mb-8">
           <img 
-            src="https://storage.readdy-site.link/project_files/7dc78ca5-5248-4b2d-8589-6bb75925d7bd/cc3fcb98-8b2d-464a-b39e-cf7f7577fc4e_ChatGPT_Image_Jun_9__2026__02_46_34_AM-removebg-preview.png?v=1f20150c9684bbc711c43d8d8b346460"
+            src="/airvault-logo.png"
             alt="AirVault"
             className="h-20 w-auto mx-auto mb-4 brightness-0 invert"
           />
