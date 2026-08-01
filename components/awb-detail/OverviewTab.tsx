@@ -1,5 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
-
 interface ReadOnlyFieldProps {
   label: string;
   value: string | React.ReactNode;
@@ -34,7 +32,6 @@ export default function OverviewTab() {
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
             AWB Overview
           </h3>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 

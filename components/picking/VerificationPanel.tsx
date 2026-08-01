@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle2, XCircle, Clock, Printer, RotateCcw, Forklift, CheckCircle, AlertTriangle } from "lucide-react";
 
 interface VerificationProps {
@@ -49,7 +47,6 @@ export default function VerificationPanel({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h2 className="text-[16px] font-semibold text-[#0F172A]">Picking Verification</h2>
-            <ScopeBadge type="inc" />
           </div>
           <span className="text-[12px] font-semibold text-[#64748B]">
             {checkedCount}/8

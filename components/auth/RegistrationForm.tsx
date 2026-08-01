@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, User, Mail, Phone, Building2, MapPin, Shield, Lock, CheckCircle, AlertCircle, ChevronLeft } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useAuth, UserRole } from "./AuthContext";
 
 const ROLES: UserRole[] = [
@@ -136,7 +135,6 @@ export default function RegistrationForm() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <h1 className="text-[18px] font-bold text-[#0F172A]">Registration</h1>
-              <ScopeBadge type="exc" />
             </div>
             <Link
               href="/uld-message-builder/sign-in"

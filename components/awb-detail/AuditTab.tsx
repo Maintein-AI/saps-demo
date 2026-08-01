@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { User, Clock, FileText, ArrowRight, Globe, Box, Scale, MapPin, CheckCircle } from "lucide-react";
 
 interface AuditEntry {
@@ -134,7 +133,6 @@ export default function AuditTab() {
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
             Audit Trail
           </h3>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#94A3B8] font-medium">{auditEntries.length} entries</span>
       </div>

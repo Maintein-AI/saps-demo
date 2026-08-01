@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 
 interface ValidationSummaryProps {
@@ -14,7 +13,6 @@ export default function ValidationSummary({ total, valid, invalid, duplicates, m
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-[15px] font-bold text-[#0F172A]">Validation Summary</h2>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="grid grid-cols-5 gap-4">

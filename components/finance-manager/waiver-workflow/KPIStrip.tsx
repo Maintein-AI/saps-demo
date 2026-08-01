@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { Clock, CheckCircle, XCircle, FileText, DollarSign } from "lucide-react";
 
 interface KPIStripProps {
@@ -40,7 +38,6 @@ export default function KPIStrip({ data }: KPIStripProps) {
               <span className="text-[12px] font-semibold text-[#64748B] uppercase tracking-wider">
                 {card.label}
               </span>
-              <ScopeBadge type="inc" />
             </div>
             <div className="flex items-center gap-2">
               <div

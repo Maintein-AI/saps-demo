@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Search,
   Check,
@@ -261,7 +260,6 @@ export default function SchedulePickupContent() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Pickup Eligibility</h2>
-            <ScopeBadge type="exc" />
           </div>
           {selected && (
             isEligible
@@ -287,7 +285,6 @@ export default function SchedulePickupContent() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Schedule Pickup</h2>
-            <ScopeBadge type="exc" />
           </div>
         </div>
 
@@ -608,7 +605,6 @@ export default function SchedulePickupContent() {
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Available Pickup Slots</h2>
-            <ScopeBadge type="exc" />
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[12px] text-[#64748B]">01 Jun 2026</span>
@@ -668,7 +664,6 @@ export default function SchedulePickupContent() {
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Scheduled Pickups</h2>
-            <ScopeBadge type="exc" />
           </div>
           <span className="text-[12px] text-[#64748B]">{pickups.length} pickups</span>
         </div>
@@ -743,7 +738,6 @@ export default function SchedulePickupContent() {
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Gate Requirements</h2>
-            <ScopeBadge type="exc" />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[12px] text-[#64748B]">{gateRequirements.filter((g) => g.checked).length}/{gateRequirements.length} ready</span>

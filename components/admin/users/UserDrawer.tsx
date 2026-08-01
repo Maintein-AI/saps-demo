@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Modal from "@/components/Modal";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface UserFormData {
   userId: string;

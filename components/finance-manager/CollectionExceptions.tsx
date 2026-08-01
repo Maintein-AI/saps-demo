@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import { Eye, Link, Wrench, MoreHorizontal } from "lucide-react";
 
@@ -37,7 +36,6 @@ export default function CollectionExceptions() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Collection Exceptions</h2>
-          <ScopeBadge type="inc" />
           <span className="text-[12px] text-[#64748B] ml-1">{exceptions.length} open</span>
         </div>
       </div>

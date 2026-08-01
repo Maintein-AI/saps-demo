@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle2, AlertTriangle, XCircle, Circle, Square, X } from "lucide-react";
 import type { RackData, RackStatus } from "@/app/warehouse-manager/storage-map/page";
 
@@ -38,7 +37,6 @@ export default function WarehouseMap({ racks, onRackClick, available, partial, f
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">AFU Warehouse Map</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-4 text-[12px] font-medium">
           <span className="text-[#64748B]">144 racks</span>

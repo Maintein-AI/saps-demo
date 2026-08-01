@@ -3,7 +3,6 @@
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
-import ScopeBadge from "@/components/ScopeBadge";
 import TaskCard from "./TaskCard";
 import TaskCardSkeleton from "./TaskCardSkeleton";
 
@@ -39,7 +38,6 @@ export default function TaskList({ tasks, loading, error, empty, onStartTask, on
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Task List</h3>
-        <ScopeBadge type="inc" />
         <span className="text-[12px] text-[#64748B] ml-auto">
           {tasks.length} tasks
         </span>

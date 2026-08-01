@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Bell, ArrowUpRight, Gavel, CheckCircle } from "lucide-react";
 
 const stages = [
@@ -58,7 +57,6 @@ export default function WorkflowStageCards() {
                   {stage.label}
                 </h3>
               </div>
-              <ScopeBadge type="inc" />
             </div>
             <p className="text-[12px] text-[#64748B] mb-2">{stage.description}</p>
             <div className="flex items-center gap-2">

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
@@ -106,7 +105,6 @@ export default function CustomsQueuePage() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               Customs Queue
             </h1>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-center gap-2">
             <button

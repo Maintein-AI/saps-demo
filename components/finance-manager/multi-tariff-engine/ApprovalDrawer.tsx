@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { MultiTariffSet } from "@/components/finance-manager/multi-tariff-engine/types";
 
 export default function ApprovalDrawer({
@@ -24,7 +22,6 @@ export default function ApprovalDrawer({
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-bold text-[#0F172A]">Multi-Tariff Approval</h2>
-              <ScopeBadge type="exc" />
             </div>
             <button
               onClick={onClose}

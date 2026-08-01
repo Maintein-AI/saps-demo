@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import LUCContent from "@/components/uld-message-builder/luc/LUCContent";
 
 export default function LUCPage() {
@@ -18,7 +17,6 @@ export default function LUCPage() {
 
       <div className="flex items-center gap-2">
         <h1 className="text-[22px] font-bold text-[#0F172A]">LUC Message Builder</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       <LUCContent />

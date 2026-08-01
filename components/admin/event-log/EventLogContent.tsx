@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import DataTable from "@/components/DataTable";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";

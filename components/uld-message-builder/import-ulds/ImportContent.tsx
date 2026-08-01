@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import ImportMethodSelector from "./ImportMethodSelector";
 import ImportPreviewTable from "./ImportPreviewTable";
 import ValidationSummary from "./ValidationSummary";
@@ -198,7 +197,6 @@ export default function ImportContent() {
               <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <h2 className="text-[15px] font-bold text-[#0F172A]">Paste ULD Rows</h2>
-                  <ScopeBadge type="exc" />
                 </div>
                 <p className="text-[12px] text-[#64748B] mb-3">Paste comma-separated, tab-separated, or pipe-separated ULD data. Format: Type, Nbr, Owner, Substation, Status, Condition, Destination, Content</p>
                 <textarea
@@ -252,7 +250,6 @@ export default function ImportContent() {
               <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <h2 className="text-[15px] font-bold text-[#0F172A]">Import from Existing Message</h2>
-                  <ScopeBadge type="exc" />
                 </div>
                 <p className="text-[12px] text-[#64748B] mb-3">Select an existing UCM, SCM, or LUC message to import ULDs from.</p>
                 <div className="flex items-center gap-3">

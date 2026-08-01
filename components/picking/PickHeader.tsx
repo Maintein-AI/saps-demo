@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle2, Clock, Truck, ClipboardList, DollarSign, UserCheck, Shield, AlertTriangle } from "lucide-react";
 
 interface PickHeaderProps {
@@ -28,7 +26,6 @@ export default function PickHeader({ scanned, total }: PickHeaderProps) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">Pick List Header</h2>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 

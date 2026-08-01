@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface AdminKPICardProps {
@@ -7,10 +6,9 @@ interface AdminKPICardProps {
   subtitle?: string;
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
-  scope: "inc" | "exc";
 }
 
-export default function AdminKPICard({ title, value, subtitle, trend, trendValue, scope }: AdminKPICardProps) {
+export default function AdminKPICard({ title, value, subtitle, trend, trendValue }: AdminKPICardProps) {
   const trendColor =
     trend === "up" ? "#16A34A" : trend === "down" ? "#DC2626" : "#64748B";
 
@@ -18,7 +16,6 @@ export default function AdminKPICard({ title, value, subtitle, trend, trendValue
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[13px] font-semibold text-[#64748B]">{title}</h3>
-        <ScopeBadge type={scope} />
       </div>
       <div className="flex items-baseline gap-2">
         <span className="text-[28px] font-bold text-[#0F172A]">{value}</span>

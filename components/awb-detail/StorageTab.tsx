@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Package, MapPin, Clock, ArrowRight } from "lucide-react";
 
 const storageAllocations = [
@@ -49,7 +48,6 @@ export default function StorageTab() {
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
             Storage Allocation
           </h3>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 
@@ -100,7 +98,6 @@ export default function StorageTab() {
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
             Rack History
           </h3>
-          <ScopeBadge type="inc" />
         </div>
         <div className="rounded-[12px] border border-[#E2E8F0] bg-white overflow-hidden">
           <div className="grid grid-cols-5 gap-4 px-4 py-3 border-b border-[#E2E8F0] text-[11px] font-bold uppercase tracking-wider text-[#64748B]">

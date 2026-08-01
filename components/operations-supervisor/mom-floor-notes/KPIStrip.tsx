@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import KPICard from "@/components/KPICard";
 
 export default function KPIStrip() {

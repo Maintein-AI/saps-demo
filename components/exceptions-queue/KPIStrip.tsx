@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import KPICard from "@/components/KPICard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 
@@ -12,7 +11,6 @@ export default function KPIStrip({ loading }: KPIStripProps) {
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Exception Summary</h2>
-          <ScopeBadge type="inc" />
         </div>
         <LoadingSkeleton rows={2} columns={6} />
       </div>
@@ -32,7 +30,6 @@ export default function KPIStrip({ loading }: KPIStripProps) {
     <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-[16px] font-bold text-[#0F172A]">Exception Summary</h2>
-        <ScopeBadge type="inc" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {cards.map((card) => (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { ArrowRight, MoreHorizontal, FileSearch, BarChart3, ArrowUpRight } from "lucide-react";
 
 const operators = [
@@ -36,7 +35,6 @@ export default function OperatorTable({ onViewDetail }: { onViewDetail: (operato
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Operator Performance</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[960px] text-left">

@@ -13,7 +13,6 @@ import {
   FileUp,
   AlertTriangle,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 interface GDFormData {
@@ -138,7 +137,6 @@ export default function GDForm({ onAwbSelect, onChannelChange }: GDFormProps) {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">GD Filing Details</h3>
-          <ScopeBadge type="exc" />
         </div>
         {errors.length > 0 && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#FEE2E2] text-[#DC2626]">

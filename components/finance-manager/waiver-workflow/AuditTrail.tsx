@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { WaiverRequest } from "@/app/finance-manager/waiver-workflow/page";
 import { Upload, ShieldCheck, Clock, FileText, CheckCircle2, Lock } from "lucide-react";
 
@@ -84,7 +82,6 @@ export default function AuditTrail({ waiver }: AuditTrailProps) {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Waiver Audit Trail</h2>
-          <ScopeBadge type="inc" />
           {waiver && (
             <span className="text-[12px] text-[#64748B]">{waiver.id}</span>
           )}

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { MoreHorizontal, ChevronDown, ChevronUp } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import type { AssetRow } from "./types";
 
 const assetRows: AssetRow[] = [
@@ -82,7 +81,6 @@ export default function AssetAssignmentCard({ filters }: AssetAssignmentCardProp
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <span className="text-[13px] font-bold text-[#0F172A]">Asset Assignment</span>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{sorted.length} assets</span>
       </div>

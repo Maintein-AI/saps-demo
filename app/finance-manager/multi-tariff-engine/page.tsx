@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
@@ -154,7 +153,6 @@ export default function MultiTariffEnginePage() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               CMTS-grade Multi-Tariff Engine
             </h1>
-            <ScopeBadge type="exc" />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -206,7 +204,6 @@ export default function MultiTariffEnginePage() {
           {!isLoading && (
             <div className="rounded-[16px] border border-[#FEF3C7] bg-[#FEF3C7]/30 p-4 shadow-sm flex items-start gap-3">
               <div className="flex-shrink-0 mt-0.5">
-                <ScopeBadge type="exc" />
               </div>
               <div>
                 <span className="text-[13px] font-semibold text-[#D97706] block mb-0.5">

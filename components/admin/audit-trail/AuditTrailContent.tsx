@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import DataTable from "@/components/DataTable";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
@@ -60,7 +59,6 @@ export default function AuditTrailContent() {
     { key: "oldValue", header: "Old Value" },
     { key: "newValue", header: "New Value" },
     { key: "ipDevice", header: "IP / Device" },
-    { key: "scope", header: "Scope" },
     { key: "view", header: "Evidence", width: "80px" },
   ];
 
@@ -91,7 +89,6 @@ export default function AuditTrailContent() {
     oldValue: <span className="text-[12px] text-[#94A3B8] max-w-[120px] truncate block">{row.oldValue}</span>,
     newValue: <span className="text-[12px] text-[#0F172A] max-w-[120px] truncate block">{row.newValue}</span>,
     ipDevice: <span className="text-[11px] text-[#94A3B8]">{row.ipDevice}</span>,
-    scope: <ScopeBadge type={row.scope as "inc" | "exc"} />,
     view: (
       <button
         onClick={() => setSelectedRow(row)}

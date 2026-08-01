@@ -29,7 +29,6 @@ export default function GatePassScan({ scanState, gatePass, onScan, onClear }: G
       <div className="flex items-center gap-3 mb-6">
         <ScanLine size={20} className="text-[#1B4F8B]" />
         <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">Gate Pass Scan</h2>
-        <span className="inline-flex items-center justify-center h-[22px] px-2.5 rounded-full text-[11px] font-bold tracking-[0.3px] lowercase select-none text-white bg-[#16A34A]">inc.</span>
       </div>
 
       <div className="max-w-xl mx-auto">

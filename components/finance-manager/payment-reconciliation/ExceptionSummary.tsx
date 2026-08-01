@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { ReconciliationException } from "@/components/finance-manager/payment-reconciliation/types";
 import { AlertTriangle, XCircle, Copy, MinusCircle, ArrowUpCircle, Ban } from "lucide-react";
 
@@ -27,7 +25,6 @@ export default function ExceptionSummary({ exceptions }: ExceptionSummaryProps) 
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Reconciliation Exceptions</h2>
-          <ScopeBadge type="inc" />
           <span className="text-[12px] text-[#64748B] ml-1">
             {exceptions.reduce((s, e) => s + e.count, 0)} exceptions
           </span>

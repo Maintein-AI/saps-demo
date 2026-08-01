@@ -1,5 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
-
 interface PieceDetailsProps {
   task: {
     awb: string;
@@ -37,7 +35,6 @@ export default function PieceDetails({ task }: PieceDetailsProps) {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Piece Details</h3>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">

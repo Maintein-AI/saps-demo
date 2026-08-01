@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Calculator, ChevronRight, CheckCircle2 } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface RuleStep {
   num: number;
@@ -40,7 +39,6 @@ export default function ChargesCalculator() {
           <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
             Charges Calculator
           </h1>
-          <ScopeBadge type="exc" />
         </div>
         <p className="text-[14px] text-[#64748B] max-w-3xl">
           The rule cascade that derives a single AWB&rsquo;s charge — exactly as CMTS&rsquo; CHARGECALCULATER computes it,

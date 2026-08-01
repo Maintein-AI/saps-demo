@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/cha/ooc-tracking/KPIStrip";
 import FilterBar from "@/components/cha/ooc-tracking/FilterBar";
 import OOCTrackingTable from "@/components/cha/ooc-tracking/OOCTrackingTable";
@@ -21,7 +20,6 @@ export default function OocTrackingPage() {
       {/* Page Title */}
       <div className="flex items-center gap-3">
         <h1 className="text-[24px] font-bold text-[#0F172A]">OOC Tracking</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       {/* KPI Strip */}

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { X, Hash, Truck, User, Calendar, Clock, Package, Save, Ban, FileDown } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 interface BookPickupDrawerProps {
@@ -73,7 +72,6 @@ export default function BookPickupDrawer({ isOpen, onClose, bay, hour }: BookPic
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Book Pickup Slot</h2>
-            <ScopeBadge type="exc" />
           </div>
           <button
             onClick={onClose}

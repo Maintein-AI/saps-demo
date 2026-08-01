@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { X, Camera, Check, Upload, ChevronDown } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface Driver {
   name?: string;
@@ -85,7 +84,6 @@ export default function DriverDrawer({ isOpen, onClose, mode, driver, onSave }: 
             <h2 className="text-[18px] font-bold text-[#0F172A]">
               {mode === "add" ? "Add Driver" : "Edit Driver"}
             </h2>
-            <ScopeBadge type="exc" />
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#F8FAFC] cursor-pointer transition-colors">
             <X size={18} className="text-[#64748B]" />

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { ScanLine, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
@@ -153,7 +152,6 @@ export default function PutawayPage() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               RFID Putaway
             </h1>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -262,7 +260,6 @@ export default function PutawayPage() {
             <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
               Recent Putaway Activity
             </h2>
-            <ScopeBadge type="inc" />
           </div>
         </div>
         {isLoading ? (

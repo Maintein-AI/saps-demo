@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Receipt,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface GateRequirementsPanelProps {
   pickupId?: string;
@@ -49,7 +48,6 @@ export default function GateRequirementsPanel({ pickupId, awb, do: doNum }: Gate
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Gate Requirements</h3>
-          <ScopeBadge type="exc" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-[#64748B]">{checkedCount}/{items.length} ready</span>

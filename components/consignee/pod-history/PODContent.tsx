@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Eye,
   Download,
@@ -337,7 +336,6 @@ export default function PODContent({ filters }: PODContentProps) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Proof of Delivery History</h2>
-            <ScopeBadge type="exc" />
           </div>
           <span className="text-[12px] text-[#64748B]">{filtered.length} records</span>
         </div>
@@ -457,7 +455,6 @@ export default function PODContent({ filters }: PODContentProps) {
                 <h2 className="text-[16px] font-bold text-[#0F172A]">
                   {drawerMode === "detail" ? "POD Detail" : "Raise Delivery Dispute"}
                 </h2>
-                <ScopeBadge type="exc" />
               </div>
               <button onClick={handleCloseDrawer} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F1F5F9] text-[#64748B] cursor-pointer transition-colors">
                 <X size={18} />
@@ -469,7 +466,6 @@ export default function PODContent({ filters }: PODContentProps) {
                 <div className="rounded-[16px] border border-[#E2E8F0] bg-[#F8FAFC] p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <h3 className="text-[13px] font-bold text-[#0F172A]">POD Detail</h3>
-                    <ScopeBadge type="exc" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -540,7 +536,6 @@ export default function PODContent({ filters }: PODContentProps) {
                 <div className="rounded-[16px] border border-[#E2E8F0] bg-[#F8FAFC] p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <h3 className="text-[13px] font-bold text-[#0F172A]">Evidence</h3>
-                    <ScopeBadge type="exc" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="flex items-center gap-3 p-3 rounded-xl border border-[#E2E8F0] bg-white">
@@ -652,7 +647,6 @@ export default function PODContent({ filters }: PODContentProps) {
                 <div className="rounded-[16px] border border-[#E2E8F0] bg-[#F8FAFC] p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <h3 className="text-[13px] font-bold text-[#0F172A]">Raise Delivery Dispute</h3>
-                    <ScopeBadge type="exc" />
                   </div>
 
                   <div className="grid grid-cols-1 gap-4">

@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Package, Bell, CreditCard, Truck, FileText, ArrowRight } from "lucide-react";
 
 interface MainCardProps {
@@ -16,7 +15,6 @@ function MainCard({ title, description, count, icon, onClick }: MainCardProps) {
         <div className="w-10 h-10 rounded-xl bg-[#F1F5F9] flex items-center justify-center group-hover:bg-[#EBF0F7] transition-colors">
           {icon}
         </div>
-        <ScopeBadge type="exc" />
       </div>
       <h3 className="text-[16px] font-bold text-[#0F172A] mb-2">{title}</h3>
       <p className="text-[13px] text-[#64748B] mb-4 leading-relaxed">{description}</p>

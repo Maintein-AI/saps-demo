@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { FileCheck, Pencil, Archive, Layers, TrendingUp } from "lucide-react";
 
 interface KPIStripProps {
@@ -32,7 +30,6 @@ export default function KPIStrip({ data }: KPIStripProps) {
               <span className="text-[12px] font-semibold text-[#64748B] uppercase tracking-wider">
                 {card.label}
               </span>
-              <ScopeBadge type="inc" />
             </div>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: card.color + "15" }}>

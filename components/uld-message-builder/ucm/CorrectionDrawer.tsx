@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import { X } from "lucide-react";
 
 interface CorrectionDrawerProps {
@@ -40,7 +39,6 @@ export default function CorrectionDrawer({ open, onClose, messageRef }: Correcti
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Create Correction</h2>
-            <ScopeBadge type="exc" />
           </div>
           <button
             onClick={onClose}

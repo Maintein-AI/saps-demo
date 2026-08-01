@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import { Calendar, User, FileText, Shield, Truck, DollarSign, Bot, Warehouse, Archive, CheckCircle, Clock, AlertTriangle, Eye, StickyNote, Pin } from "lucide-react";
 
@@ -91,7 +89,6 @@ export default function NotesList({ onSelectNote, selectedId, searchTerm }: Note
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Notes List</h3>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{sorted.length} notes</span>
       </div>

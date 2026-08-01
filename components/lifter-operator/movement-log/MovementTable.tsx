@@ -16,7 +16,6 @@ import {
   MapPin,
   Timer,
 } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import { useToast } from "../../ToastContext";
 import MovementDetailDrawer from "./MovementDetailDrawer";
 
@@ -315,7 +314,6 @@ export default function MovementTable() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Movement History</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-1.5 text-[12px] text-[#94A3B8] font-medium">
           <Package size={14} />

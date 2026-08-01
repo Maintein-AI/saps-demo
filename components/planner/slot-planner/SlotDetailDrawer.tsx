@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { Slot, SlotStatus } from "@/components/planner/slot-planner/types";
 
 const statusStyle: Record<SlotStatus, { color: string; bg: string; border: string }> = {
@@ -34,7 +33,6 @@ export default function SlotDetailDrawer({
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-bold text-[#0F172A]">Slot Detail</h2>
-              <ScopeBadge type="inc" />
             </div>
             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-[#64748B] hover:text-[#0F172A] cursor-pointer rounded-lg hover:bg-[#F8FAFC] transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

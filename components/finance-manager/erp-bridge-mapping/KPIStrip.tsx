@@ -16,7 +16,6 @@ export default function KPIStrip({ data }: { data: { erpMappings: number; succes
             <span className="text-[12px] font-medium text-[#64748B] block mb-1">{card.label}</span>
             <span className="text-[24px] font-bold text-[#0F172A]">{card.value}</span>
           </div>
-          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0] whitespace-nowrap">exc</span>
         </div>
       ))}
     </div>

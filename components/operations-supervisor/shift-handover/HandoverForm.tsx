@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import { Save, Send, FileText, Mail, X, ChevronDown, ChevronUp, Upload, AlertTriangle } from "lucide-react";
 
@@ -196,7 +195,6 @@ export default function HandoverForm() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className={sectionTitle}>{title}</h3>
-          <ScopeBadge type="inc" />
         </div>
         <button onClick={() => toggleSection(sectionKey)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] cursor-pointer transition-colors">
           {collapsed[sectionKey] ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
@@ -211,7 +209,6 @@ export default function HandoverForm() {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Shift Handover Form</h2>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 

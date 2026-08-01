@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import ScopeBadge from "./ScopeBadge";
 
 interface PortalTileProps {
   icon: React.ReactNode;
   name: string;
   roleText: string;
-  tag: "inc" | "exc";
   href?: string;
 }
 
@@ -14,14 +12,10 @@ export default function PortalTile({
   icon,
   name,
   roleText,
-  tag,
   href,
 }: PortalTileProps) {
   const tile = (
     <div className="relative w-full max-w-[220px] aspect-square rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center cursor-pointer">
-      <div className="absolute top-3 right-3">
-        <ScopeBadge type={tag} />
-      </div>
       <div className="w-14 h-14 flex items-center justify-center mt-2">
         {icon}
       </div>

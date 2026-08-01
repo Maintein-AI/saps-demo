@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Search, History, Receipt } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface RentPeriod {
   period: string;
@@ -52,7 +51,6 @@ export default function GodownRentHistory() {
           <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
             Godown Rent History
           </h1>
-          <ScopeBadge type="exc" />
         </div>
         <p className="text-[14px] text-[#64748B] max-w-3xl">
           Period-by-period rent history with every surcharge, waiver, voucher, and operator stamp.

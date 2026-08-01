@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { History, ArrowRight, CheckCircle2, AlertTriangle, XCircle, AlertCircle } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 
 interface ScanEntry {
   id: string;
@@ -114,7 +113,6 @@ export default function RecentScansTable() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Recent RFID Scans</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-1.5 text-[12px] text-[#94A3B8] font-medium">
           <History size={14} />

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Package, ScanLine, CheckCircle2 } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import StatusBadge from "../../StatusBadge";
 
 interface PieceDetailCardProps {
@@ -19,7 +18,6 @@ export default function PieceDetailCard({ scanState, scannedData }: PieceDetailC
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2.5">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Piece Details</h2>
-            <ScopeBadge type="inc" />
           </div>
         </div>
         <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -50,7 +48,6 @@ export default function PieceDetailCard({ scanState, scannedData }: PieceDetailC
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Piece Details</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={scannedData.currentState} />

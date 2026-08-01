@@ -1,7 +1,5 @@
 "use client";
 
-import ScopeBadge from "@/components/ScopeBadge";
-
 const codes = [
   { code: "ICG", label: "General", occupied: 420, total: 650, color: "#1B4F8B" },
   { code: "GCR", label: "General Cargo", occupied: 310, total: 450, color: "#14B8A6" },
@@ -22,7 +20,6 @@ export default function CapacityByHandlingCode() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-5">
         <h2 className="text-[16px] font-semibold text-[#0F172A]">Capacity by Handling Code</h2>
-        <ScopeBadge type="inc" />
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {codes.map((c) => {

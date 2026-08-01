@@ -5,7 +5,6 @@ import LoadingSkeleton from "../../LoadingSkeleton";
 import EmptyState from "../../EmptyState";
 import ErrorState from "../../ErrorState";
 import DataTable from "../../DataTable";
-import ScopeBadge from "../../ScopeBadge";
 import { Search, Calendar, Download, GitCompare, Eye } from "lucide-react";
 
 interface RbacRow {
@@ -198,7 +197,6 @@ export default function RbacSnapshotContent() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <h3 className="text-[16px] font-bold text-[#0F172A]">RBAC Detail</h3>
-                <ScopeBadge type="inc" />
               </div>
               <button onClick={() => setDetailOpen(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] cursor-pointer">
                 ✕

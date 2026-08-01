@@ -39,7 +39,6 @@ export default function LongDwellAlerts({ onAction }: LongDwellAlertsProps) {
           <AlertTriangle size={20} className="text-[#DC2626]" />
         </div>
         <h2 className="text-[18px] font-bold text-[#0F172A]">Long Dwell Alerts</h2>
-        <span className="inline-flex items-center justify-center h-[22px] px-2.5 rounded-full text-[11px] font-bold tracking-[0.3px] lowercase select-none text-white bg-[#16A34A]">inc.</span>
         <span className="ml-auto text-[28px] font-bold text-[#DC2626]">{alerts.length}</span>
       </div>
 

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { RefreshCw, AlertTriangle, X } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { useToast } from "@/components/ToastContext";
@@ -36,7 +35,6 @@ export default function SchedulePickupPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-[20px] font-bold text-[#0F172A]">Schedule Pickup</h1>
-            <ScopeBadge type="exc" />
           </div>
         </div>
         <ErrorState message="Unable to load pickup data. Please try again." onRetry={handleRefresh} />
@@ -51,7 +49,6 @@ export default function SchedulePickupPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-[20px] font-bold text-[#0F172A]">Schedule Pickup</h1>
-            <ScopeBadge type="exc" />
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -73,7 +70,6 @@ export default function SchedulePickupPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-[20px] font-bold text-[#0F172A]">Schedule Pickup</h1>
-          <ScopeBadge type="exc" />
         </div>
         <div className="flex items-center gap-2">
           <button

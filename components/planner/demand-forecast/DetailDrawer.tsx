@@ -1,5 +1,4 @@
 import { X, Plane, Package, Weight, Clock, Tag, MessageSquare, CheckCircle, FileText } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import type { FlightForecast } from "./types";
 
 interface DetailDrawerProps {
@@ -17,7 +16,6 @@ export default function DetailDrawer({ flight, onClose }: DetailDrawerProps) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
             <span className="text-[15px] font-bold text-[#0F172A]">Flight Forecast Detail</span>
-            <ScopeBadge type="inc" />
           </div>
           <button
             onClick={onClose}

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { CalendarRange, ChevronRight, BarChart3, UsersRound, TrendingUp } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface NavCard {
   title: string;
@@ -66,7 +65,6 @@ export default function PlannerDashboard() {
           <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
             Planner Dashboard
           </h1>
-          <ScopeBadge type="inc" />
         </div>
         <p className="text-[14px] text-[#64748B] max-w-3xl">
           Capacity, slot allocation and resourcing across the AFU. Forecast vs. actual at a glance.

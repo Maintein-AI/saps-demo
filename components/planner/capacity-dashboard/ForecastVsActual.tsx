@@ -1,7 +1,5 @@
 "use client";
 
-import ScopeBadge from "@/components/ScopeBadge";
-
 export default function ForecastVsActual() {
   const expected = 1250;
   const received = 940;
@@ -11,7 +9,6 @@ export default function ForecastVsActual() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-5">
         <h2 className="text-[16px] font-semibold text-[#0F172A]">Forecast vs Actual</h2>
-        <ScopeBadge type="inc" />
       </div>
       <div className="flex flex-col gap-5">
         <div className="flex items-center gap-6">

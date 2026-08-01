@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { ZoneCapacity } from "@/components/planner/capacity-dashboard/types";
 
 const riskMap: Record<string, { color: string; bg: string }> = {
@@ -33,7 +32,6 @@ export default function CapacityTable({
       <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <h2 className="text-[16px] font-semibold text-[#0F172A]">Zone Capacity Table</h2>
-          <ScopeBadge type="inc" />
           <span className="text-[12px] text-[#94A3B8] ml-2">{data.length} zones</span>
         </div>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import FinancialTraceContent from "@/components/auditor/financial-trace/FinancialTraceContent";
 
 export default function FinancialTracePage() {
@@ -10,7 +9,6 @@ export default function FinancialTracePage() {
       <Breadcrumb items={[{ label: "Auditor", href: "/auditor" }, { label: "Financial Trace" }]} />
       <div className="flex items-center gap-2">
         <h1 className="text-[22px] font-bold text-[#0F172A]">Financial Trace</h1>
-        <ScopeBadge type="inc" />
       </div>
       <FinancialTraceContent />
     </div>

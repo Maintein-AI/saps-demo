@@ -1,5 +1,4 @@
 import { ArrowRight, AlertTriangle } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface TaskRouteProps {
   task: {
@@ -34,7 +33,6 @@ export default function TaskRoute({ task, taskStatus, slaRemaining }: TaskRouteP
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Task Route</h3>
-        <ScopeBadge type="inc" />
       </div>
 
       {/* Route display */}

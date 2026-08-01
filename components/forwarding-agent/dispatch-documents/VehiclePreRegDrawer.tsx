@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { X, Truck, Send, Save } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import { useToast } from "../../ToastContext";
 
 interface VehiclePreRegDrawerProps {
@@ -61,7 +60,6 @@ export default function VehiclePreRegDrawer({
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Vehicle Entry Pre-registration</h2>
-            <ScopeBadge type="exc" />
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] cursor-pointer transition-colors">
             <X size={18} />

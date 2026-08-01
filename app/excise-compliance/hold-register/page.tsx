@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ToastContext";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import KPIStrip from "@/components/excise-compliance/hold-register/KPIStrip";
@@ -320,7 +319,6 @@ export default function HoldRegisterPage() {
         />
         <div className="flex items-center gap-2.5 mt-3">
           <h1 className="text-[24px] font-bold text-[#0F172A]">Hold Register</h1>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 

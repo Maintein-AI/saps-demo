@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { CargoData } from "./types";
 
 interface CargoSummaryCardProps {
@@ -30,7 +28,6 @@ export default function CargoSummaryCard({ cargo }: CargoSummaryCardProps) {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Selected Cargo Summary</h2>
-          <ScopeBadge type="inc" />
         </div>
       </div>
       <div className="p-5">

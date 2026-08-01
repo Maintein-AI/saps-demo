@@ -1,7 +1,6 @@
 "use client";
 
 import { CheckCircle2, Ban, Clock } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface Visit {
   date: string;

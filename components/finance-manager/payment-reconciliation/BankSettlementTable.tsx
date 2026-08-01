@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import { Payment } from "@/components/finance-manager/payment-reconciliation/types";
 import { Zap, Hand, AlertTriangle, Download, FileText, ArrowRight, Search } from "lucide-react";
@@ -38,7 +36,6 @@ export default function BankSettlementTable({
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Bank Settlement Queue</h2>
-          <ScopeBadge type="inc" />
           <span className="text-[12px] text-[#64748B] ml-1">{payments.length} payments</span>
         </div>
         <div className="flex items-center gap-2">

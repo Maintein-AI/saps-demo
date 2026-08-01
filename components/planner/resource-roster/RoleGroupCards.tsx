@@ -1,5 +1,4 @@
 import { Users, Truck, Shield, ClipboardCheck, DollarSign, UserCog } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import type { RoleGroup } from "./types";
 
 const roleGroups: RoleGroup[] = [
@@ -32,7 +31,6 @@ export default function RoleGroupCards() {
               </div>
               <span className="text-[13px] font-bold text-[#0F172A]">{group.role}</span>
             </div>
-            <ScopeBadge type="inc" />
           </div>
           <div className="text-[22px] font-bold text-[#0F172A] leading-tight mb-3">{group.count}</div>
           <div className="flex items-center gap-3">

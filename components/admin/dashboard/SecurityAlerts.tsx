@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { ShieldAlert, ShieldCheck, ShieldOff, ShieldQuestion } from "lucide-react";
 
@@ -45,7 +43,6 @@ export default function SecurityAlerts({ isLoading }: { isLoading: boolean }) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Security Alerts</h2>
-          <ScopeBadge type="inc" />
         </div>
       </div>
       {isLoading ? (

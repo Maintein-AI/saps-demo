@@ -1,5 +1,3 @@
-import ScopeBadge from "./ScopeBadge";
-
 const stats = [
   {
     title: "Cargo in-house",
@@ -51,7 +49,6 @@ export default function QuickStatsStrip() {
             <h3 className="text-[14px] font-bold text-[#0F172A]">
               {stat.title}
             </h3>
-            <ScopeBadge type={stat.badge} />
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {stat.values.map((v, i) => (

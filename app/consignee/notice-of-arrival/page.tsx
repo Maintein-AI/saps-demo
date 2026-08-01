@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/consignee/notice-of-arrival/KPIStrip";
 import FilterBar from "@/components/consignee/notice-of-arrival/FilterBar";
 import NOAInbox from "@/components/consignee/notice-of-arrival/NOAInbox";
@@ -54,7 +53,6 @@ export default function NoticeOfArrivalPage() {
           />
           <div className="flex items-center gap-3 mt-3">
             <h1 className="text-[24px] font-bold text-[#0F172A]">Notice of Arrival</h1>
-            <ScopeBadge type="exc" />
           </div>
         </div>
         <div className="flex items-center gap-2">

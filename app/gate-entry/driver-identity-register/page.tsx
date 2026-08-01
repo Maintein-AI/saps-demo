@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/components/ToastContext";
@@ -195,7 +194,6 @@ export default function DriverIdentityRegisterPage() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               Driver Identity Register
             </h1>
-            <ScopeBadge type="exc" />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -277,7 +275,6 @@ export default function DriverIdentityRegisterPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <h2 className="text-[18px] font-semibold text-[#0F172A]">Driver Registry</h2>
-                  <ScopeBadge type="exc" />
                 </div>
                 <button
                   onClick={handleAdd}
@@ -303,7 +300,6 @@ export default function DriverIdentityRegisterPage() {
               {/* Visit History */}
               <div className="flex items-center gap-3 mt-2">
                 <h2 className="text-[18px] font-semibold text-[#0F172A]">Driver Visit History</h2>
-                <ScopeBadge type="exc" />
               </div>
               <VisitHistoryTable visits={mockVisits} />
             </>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ScopeBadge from "./ScopeBadge";
 
 export default function HomeHero() {
   const [time, setTime] = useState("");

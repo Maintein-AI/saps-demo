@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { Eye, Download, CreditCard, Truck, FileText } from "lucide-react";
 
 const shipments = [
@@ -44,7 +43,6 @@ export default function RecentShipments({
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[16px] font-bold text-[#0F172A]">Recent Shipments</h3>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="overflow-x-auto">

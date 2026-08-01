@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { FileText, Save, Send, X, Printer } from "lucide-react";
 
 interface LineItem {
@@ -52,7 +50,6 @@ export default function LineItemsTable({
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Invoice Line Items</h2>
-          <ScopeBadge type="inc" />
           <span className="text-[12px] text-[#64748B] ml-1">{items.length} lines</span>
         </div>
       </div>

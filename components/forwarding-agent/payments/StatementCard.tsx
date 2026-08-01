@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Download, Mail, FileSpreadsheet, FileText } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 export default function StatementCard() {
@@ -27,7 +26,6 @@ export default function StatementCard() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Agent Statement</h3>
-          <ScopeBadge type="exc" />
         </div>
         <div className="flex items-center gap-2">
           <button

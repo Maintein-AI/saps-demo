@@ -11,7 +11,6 @@ import {
   Settings,
   CheckCircle2,
 } from "lucide-react";
-import ScopeBadge from "./ScopeBadge";
 
 const activities = [
   {
@@ -123,7 +122,6 @@ export default function ActivityFeed() {
         <h3 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
           Recent Activity
         </h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="flex flex-col gap-0">
         {activities.map((activity, index) => {
@@ -165,7 +163,6 @@ export default function ActivityFeed() {
                   <span className="text-[11px] text-[#64748B] font-medium">
                     {activity.portal}
                   </span>
-                  <ScopeBadge type={activity.scope} />
                 </div>
               </div>
             </div>

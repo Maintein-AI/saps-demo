@@ -12,7 +12,6 @@ import {
   RotateCcw,
   ArrowRight,
 } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import { useToast } from "../../ToastContext";
 
 interface QueueItem {
@@ -78,7 +77,6 @@ export default function DocumentQueueTable({
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Dispatch Document Queue</h3>
-          <ScopeBadge type="exc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{queueItems.length} documents</span>
       </div>

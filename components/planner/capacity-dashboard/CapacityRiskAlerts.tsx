@@ -1,7 +1,5 @@
 "use client";
 
-import ScopeBadge from "@/components/ScopeBadge";
-
 const alerts = [
   { id: "1", message: "AFU zone above 85%", severity: "high", zone: "AFU", utilization: 85 },
   { id: "2", message: "Cold room COL has limited capacity", severity: "high", zone: "Cold Room COL", utilization: 85 },
@@ -21,7 +19,6 @@ export default function CapacityRiskAlerts() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-5">
         <h2 className="text-[16px] font-semibold text-[#0F172A]">Capacity Risk Alerts</h2>
-        <ScopeBadge type="inc" />
       </div>
       <div className="flex flex-col gap-2">
         {alerts.map((a) => {

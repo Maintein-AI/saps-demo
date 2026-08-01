@@ -7,7 +7,6 @@ import {
   ShieldAlert,
   ArrowRight,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 interface ChannelSummaryProps {
@@ -49,7 +48,6 @@ export default function ChannelSummary({ onViewChannel }: ChannelSummaryProps) {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Channel Summary</h3>
-          <ScopeBadge type="exc" />
         </div>
       </div>
 

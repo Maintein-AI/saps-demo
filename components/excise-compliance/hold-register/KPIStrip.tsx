@@ -1,5 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
-
 interface KPIStripProps {
   active: number;
   customs: number;
@@ -37,7 +35,6 @@ export default function KPIStrip({
             <h3 className="text-[12px] font-semibold text-[#64748B]">
               {item.title}
             </h3>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-baseline gap-2">
             <span

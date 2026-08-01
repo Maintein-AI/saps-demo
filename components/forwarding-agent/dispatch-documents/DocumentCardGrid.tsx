@@ -17,7 +17,6 @@ import {
   Ban,
   RotateCcw,
 } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import { useToast } from "../../ToastContext";
 
 interface DocumentCard {
@@ -175,7 +174,6 @@ export default function DocumentCardGrid({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Document Cards</h3>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

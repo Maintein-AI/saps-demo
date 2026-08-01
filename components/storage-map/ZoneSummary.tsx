@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import KPICard from "@/components/KPICard";
 import type { RackData } from "@/app/warehouse-manager/storage-map/page";
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { MultiTariffSet } from "@/components/finance-manager/multi-tariff-engine/types";
 
 export default function TariffSetForm({
@@ -58,7 +57,6 @@ export default function TariffSetForm({
       <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-[16px] font-semibold text-[#0F172A]">Tariff Set Configuration</h2>
-          <ScopeBadge type="exc" />
         </div>
         <p className="text-[13px] text-[#64748B]">Select a tariff set from the matrix to edit, or click "Add Tariff Set" to create a new one.</p>
       </div>
@@ -71,7 +69,6 @@ export default function TariffSetForm({
         <h2 className="text-[16px] font-semibold text-[#0F172A]">
           {mode === "add" ? "Add Tariff Set" : "Edit Tariff Set"}
         </h2>
-        <ScopeBadge type="exc" />
       </div>
       <div className="flex flex-col gap-4">
         <div>

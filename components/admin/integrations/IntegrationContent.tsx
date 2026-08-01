@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { useToast } from "@/components/ToastContext";
@@ -188,7 +187,6 @@ export default function IntegrationContent() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="text-[14px] font-bold text-[#0F172A]">{card.name}</h3>
-                        <ScopeBadge type={card.scope} />
                       </div>
                       <p className="text-[11px] text-[#94A3B8]">{card.provider} · {card.environment}</p>
                     </div>
@@ -218,7 +216,6 @@ export default function IntegrationContent() {
                   <div className="mb-4 p-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Configuration</span>
-                      <ScopeBadge type="exc" />
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[12px]">
                       <div><span className="text-[#94A3B8]">Provider:</span> <span className="font-medium text-[#0F172A]">{pgConfig.provider}</span></div>
@@ -253,7 +250,6 @@ export default function IntegrationContent() {
             <div className="flex items-center justify-between px-6 h-[56px] border-b border-[#E2E8F0]">
               <div className="flex items-center gap-2">
                 <h3 className="text-[16px] font-bold text-[#0F172A]">Configure: {configCard.name}</h3>
-                <ScopeBadge type={configCard.scope} />
               </div>
               <button onClick={() => setConfigDrawerOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] cursor-pointer">×</button>
             </div>

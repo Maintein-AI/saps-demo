@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { FileText, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 const statuses = [
@@ -16,7 +15,6 @@ export default function AWBFilingStatus() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">AWB Filing Status</h3>
-          <ScopeBadge type="exc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{total} total</span>
       </div>

@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { Upload, ClipboardPaste, FileSearch, FileSpreadsheet } from "lucide-react";
 
 interface ImportMethodSelectorProps {
@@ -20,7 +18,6 @@ export default function ImportMethodSelector({ method, onMethodChange }: ImportM
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-[15px] font-bold text-[#0F172A]">Import Method</h2>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="flex items-center gap-1 bg-[#F1F5F9] rounded-xl p-1">

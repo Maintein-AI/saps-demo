@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { Layers, Square, ChevronRight, Thermometer, ArrowUpDown, Triangle, Car } from "lucide-react";
 
 interface MultiZoneToggleProps {
@@ -22,7 +20,6 @@ export default function MultiZoneToggle({ active, onChange }: MultiZoneTogglePro
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
         <h2 className="text-[16px] font-semibold text-[#0F172A]">Multi-Zone View</h2>
-        <ScopeBadge type="inc" />
       </div>
       <div className="flex flex-col gap-1.5">
         {zoneOptions.map((zone) => {

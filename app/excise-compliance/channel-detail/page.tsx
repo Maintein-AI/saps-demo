@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/components/ToastContext";
 import { usePathname } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
@@ -105,7 +104,6 @@ export default function ChannelDetailPage() {
           />
           <div className="flex items-center gap-2.5 mt-3">
             <h1 className="text-[24px] font-bold text-[#0F172A]">Channel Detail</h1>
-            <ScopeBadge type="inc" />
           </div>
         </div>
         <EmptyState
@@ -128,7 +126,6 @@ export default function ChannelDetailPage() {
         />
         <div className="flex items-center gap-2.5 mt-3">
           <h1 className="text-[24px] font-bold text-[#0F172A]">Channel Detail</h1>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 

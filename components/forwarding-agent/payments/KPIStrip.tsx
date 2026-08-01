@@ -1,5 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
-
 interface KPIProps {
   title: string;
   value: string;
@@ -11,7 +9,6 @@ function KPI({ title, value, subtitle }: KPIProps) {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-[13px] font-semibold text-[#64748B]">{title}</h3>
-        <ScopeBadge type="exc" />
       </div>
       <p className="text-[26px] font-bold text-[#0F172A]">{value}</p>
       {subtitle && <p className="text-[12px] text-[#64748B] mt-1">{subtitle}</p>}

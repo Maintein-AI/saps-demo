@@ -1,5 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
-
 export default function KPIStrip() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -13,7 +11,6 @@ export default function KPIStrip() {
         <div key={kpi.title} className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[12px] font-semibold text-[#64748B] uppercase tracking-wider">{kpi.title}</h3>
-            <ScopeBadge type="exc" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-[28px] font-bold text-[#0F172A]">{kpi.value}</span>

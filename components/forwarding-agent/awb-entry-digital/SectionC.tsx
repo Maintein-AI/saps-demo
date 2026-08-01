@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 
 interface PieceRow {
   id: number;
@@ -114,7 +113,6 @@ export default function SectionC({ data, onChange, errors }: SectionCProps) {
     <div className="space-y-5">
       <div className="flex items-center gap-2 mb-1">
         <h3 className="text-[14px] font-bold text-[#0F172A]">C. Cargo Description</h3>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle, XCircle, AlertTriangle, ScanLine, ArrowRight } from "lucide-react";
 
 interface ScanFormProps {
@@ -68,7 +67,6 @@ export default function ScanForm({
           <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
             Scan & Confirm Putaway
           </h2>
-          <ScopeBadge type="inc" />
         </div>
         {scanState === "waiting" && (
           <span className="text-[12px] text-[#94A3B8] font-medium">Ready to scan</span>

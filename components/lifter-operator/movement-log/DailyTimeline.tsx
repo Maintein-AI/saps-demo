@@ -11,7 +11,6 @@ import {
   MapPin,
   Battery,
 } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 
 interface TimelineEvent {
   id: string;
@@ -208,7 +207,6 @@ export default function DailyTimeline() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Daily Timeline</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-1.5 text-[12px] text-[#94A3B8] font-medium">
           <Clock size={14} />

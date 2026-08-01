@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { TrendingUp, Calendar, Filter, Download, Thermometer } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 const REGIME_OPTIONS = ["All Regimes", "ERT", "COL", "CRT", "FRO"];
 const SENSOR_OPTIONS = ["All Sensors", "S-ERT-01", "S-ERT-02", "S-COL-01", "S-COL-02", "S-COL-03", "S-CRT-01", "S-CRT-02", "S-FRO-01", "S-FRO-02"];
@@ -52,7 +51,6 @@ export default function TemperatureTrend({ selectedRegime, onExportLog }: Temper
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Temperature Trend</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-2">
           <button

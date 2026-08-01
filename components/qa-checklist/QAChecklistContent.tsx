@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "../ScopeBadge";
 import LoadingSkeleton from "../LoadingSkeleton";
 import EmptyState from "../EmptyState";
 import ErrorState from "../ErrorState";
@@ -60,7 +59,6 @@ const initialChecklist: ChecklistItem[] = [
   { id: 18, requirement: "Inter font used", portal: "All", screen: "Global", scopeTag: "inc", reviewStatus: "Pass", comment: "Font-family confirmed", reviewer: "QA Lead", date: "2026-06-08", owner: "Design Team", dueDate: "2026-06-10" },
   { id: 19, requirement: "WCAG AA contrast", portal: "All", screen: "Global", scopeTag: "inc", reviewStatus: "Needs Fix", comment: "Light gray text on some cards below 4.5:1 ratio", reviewer: "QA Analyst", date: "2026-06-08", owner: "Design Team", dueDate: "2026-06-09" },
   { id: 20, requirement: "Responsive at 1440, 768, 390", portal: "All", screen: "Global", scopeTag: "inc", reviewStatus: "Pass", comment: "Responsive breakpoints working correctly", reviewer: "QA Lead", date: "2026-06-08", owner: "Frontend Team", dueDate: "2026-06-10" },
-  { id: 21, requirement: "Scope badges remain visible on mobile", portal: "All", screen: "Global", scopeTag: "inc", reviewStatus: "Pass", comment: "Badges not truncated on mobile viewports", reviewer: "QA Lead", date: "2026-06-08", owner: "Frontend Team", dueDate: "2026-06-10" },
   { id: 22, requirement: "Pakistani cargo sample data used", portal: "All", screen: "All Screens", scopeTag: "inc", reviewStatus: "Pass", comment: "KHI/LHE/ISB references, PKR currency, Pakistani entities", reviewer: "QA Lead", date: "2026-06-08", owner: "Content Team", dueDate: "2026-06-10" },
   { id: 23, requirement: "PKR and IATA formats used correctly", portal: "Finance Manager", screen: "All Screens", scopeTag: "inc", reviewStatus: "Pass", comment: "PKR formatting correct, IATA AWB format validated", reviewer: "QA Analyst", date: "2026-06-08", owner: "Content Team", dueDate: "2026-06-10" },
   { id: 24, requirement: "Badge tooltip text is exact", portal: "All", screen: "Global", scopeTag: "inc", reviewStatus: "Pass", comment: "Tooltips match specification exactly", reviewer: "QA Lead", date: "2026-06-08", owner: "Frontend Team", dueDate: "2026-06-10" },
@@ -72,7 +70,6 @@ export default function QAChecklistContent() {
   const [checklist] = useState<ChecklistItem[]>(initialChecklist);
   const [portalFilter, setPortalFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [scopeFilter, setScopeFilter] = useState("All");
   const [reviewerFilter, setReviewerFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -84,7 +81,6 @@ export default function QAChecklistContent() {
   const filtered = checklist.filter((c) => {
     if (portalFilter !== "All" && c.portal !== portalFilter) return false;
     if (statusFilter !== "All" && c.reviewStatus !== statusFilter) return false;
-    if (scopeFilter !== "All" && c.scopeTag !== scopeFilter) return false;
     if (reviewerFilter !== "All" && c.reviewer !== reviewerFilter) return false;
     if (searchTerm && !c.requirement.toLowerCase().includes(searchTerm.toLowerCase()) && !c.screen.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
@@ -180,15 +176,6 @@ export default function QAChecklistContent() {
         </div>
 
         <div className="relative">
-          <select value={scopeFilter} onChange={(e) => setScopeFilter(e.target.value)} className="h-9 pl-3 pr-8 rounded-lg border border-[#E2E8F0] text-[13px] text-[#0F172A] bg-white appearance-none cursor-pointer">
-            <option value="All">Scope Tag</option>
-            <option value="inc">inc.</option>
-            <option value="exc">exc</option>
-          </select>
-          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
-        </div>
-
-        <div className="relative">
           <select value={reviewerFilter} onChange={(e) => setReviewerFilter(e.target.value)} className="h-9 pl-3 pr-8 rounded-lg border border-[#E2E8F0] text-[13px] text-[#0F172A] bg-white appearance-none cursor-pointer">
             {reviewers.map((r) => <option key={r} value={r}>{r === "All" ? "Reviewer" : r}</option>)}
           </select>
@@ -224,7 +211,6 @@ export default function QAChecklistContent() {
                 <th className="text-left text-[11px] font-bold uppercase tracking-wider px-4 py-3 text-white">Requirement</th>
                 <th className="text-left text-[11px] font-bold uppercase tracking-wider px-4 py-3 text-white">Portal</th>
                 <th className="text-left text-[11px] font-bold uppercase tracking-wider px-4 py-3 text-white">Screen</th>
-                <th className="text-left text-[11px] font-bold uppercase tracking-wider px-4 py-3 text-white">Scope</th>
                 <th className="text-left text-[11px] font-bold uppercase tracking-wider px-4 py-3 text-white">Status</th>
                 <th className="text-left text-[11px] font-bold uppercase tracking-wider px-4 py-3 text-white">Reviewer</th>
                 <th className="text-left text-[11px] font-bold uppercase tracking-wider px-4 py-3 text-white">Owner</th>
@@ -243,7 +229,6 @@ export default function QAChecklistContent() {
                   <td className="px-4 py-3 text-[13px] text-[#0F172A]">{item.requirement}</td>
                   <td className="px-4 py-3 text-[12px] text-[#64748B]">{item.portal}</td>
                   <td className="px-4 py-3 text-[12px] text-[#64748B]">{item.screen}</td>
-                  <td className="px-4 py-3"><ScopeBadge type={item.scopeTag} /></td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1 h-5 px-2 rounded-full text-[10px] font-bold ${
                       item.reviewStatus === "Pass" ? "bg-[#DCFCE7] text-[#16A34A]" :
@@ -284,7 +269,6 @@ export default function QAChecklistContent() {
             <div className="flex items-center justify-between px-6 h-[56px] border-b border-[#E2E8F0]">
               <div className="flex items-center gap-2">
                 <h3 className="text-[16px] font-bold text-[#0F172A]">Review Item #{selectedItem.id}</h3>
-                <ScopeBadge type={selectedItem.scopeTag} />
               </div>
               <button onClick={() => setSelectedItem(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] cursor-pointer">
                 <X size={18} />

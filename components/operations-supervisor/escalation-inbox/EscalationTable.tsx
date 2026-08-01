@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { MoreHorizontal, FileSearch, CheckCircle, XCircle, UserPlus, ArrowUpRight, StickyNote, Clock, AlertTriangle, Shield, Package, DollarSign, Bot, Truck, Warehouse, Radio, Archive, Ban } from "lucide-react";
 
 const escalations = [
@@ -67,7 +66,6 @@ export default function EscalationTable({ onViewDetail }: { onViewDetail: (id: s
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Escalation Inbox</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1100px] text-left">

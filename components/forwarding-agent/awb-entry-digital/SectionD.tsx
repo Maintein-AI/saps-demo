@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Upload, FileText, Check, X, AlertTriangle } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 
 interface UploadFile {
   id: string;
@@ -76,7 +75,6 @@ export default function SectionD({ data, onChange, errors }: SectionDProps) {
     <div className="space-y-5">
       <div className="flex items-center gap-2 mb-1">
         <h3 className="text-[14px] font-bold text-[#0F172A]">D. Document Uploads</h3>
-        <ScopeBadge type="exc" />
       </div>
 
       {errors.includes("documents") && (

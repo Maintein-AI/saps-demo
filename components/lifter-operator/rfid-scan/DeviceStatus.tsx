@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Smartphone, Battery, Wifi, Signal, Bluetooth, Clock, RefreshCw } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import { useToast } from "../../ToastContext";
 
 interface DeviceStatusProps {
@@ -39,7 +38,6 @@ export default function DeviceStatus({ isError, setIsError }: DeviceStatusProps)
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#DC2626]/20 bg-[#FEE2E2]/50">
           <div className="flex items-center gap-2.5">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Device Status</h2>
-            <ScopeBadge type="inc" />
           </div>
           <span className="text-[12px] font-bold text-[#DC2626]">DISCONNECTED</span>
         </div>
@@ -91,7 +89,6 @@ export default function DeviceStatus({ isError, setIsError }: DeviceStatusProps)
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Device Status</h2>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] font-bold text-[#16A34A]">ONLINE</span>
       </div>

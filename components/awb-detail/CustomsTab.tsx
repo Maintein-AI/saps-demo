@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle, AlertCircle, Clock, Shield, FileText } from "lucide-react";
 
 const customsData = {
@@ -50,7 +49,6 @@ export default function CustomsTab() {
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
             Customs Status
           </h3>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 

@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { MoreHorizontal, CheckCircle, Clock, AlertTriangle, ArrowRight, User } from "lucide-react";
 
 const followUps = [
@@ -32,7 +31,6 @@ export default function FollowUpTable() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Follow-up Actions</h3>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{followUps.length} items</span>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import ScopeBadge from "../../ScopeBadge";
 import type { CargoMixItem } from "./types";
 
 const cargoMixData: CargoMixItem[] = [
@@ -42,7 +41,6 @@ export default function CargoMixCard() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-[13px] font-bold text-[#0F172A]">Expected Cargo Mix</span>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{totalCount} AWBs</span>
       </div>

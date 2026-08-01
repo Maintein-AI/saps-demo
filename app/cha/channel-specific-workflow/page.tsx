@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import ChannelCaseSummary from "@/components/cha/channel-specific-workflow/ChannelCaseSummary";
 import ChannelTabs from "@/components/cha/channel-specific-workflow/ChannelTabs";
 import YellowChannelPanel from "@/components/cha/channel-specific-workflow/YellowChannelPanel";
@@ -48,7 +47,6 @@ export default function ChannelSpecificWorkflowPage() {
         </div>
         <div className="flex items-center gap-2 mb-4">
           <h1 className="text-[22px] font-bold text-[#0F172A]">Channel-Specific Workflow</h1>
-          <ScopeBadge type="exc" />
         </div>
         <LoadingSkeleton rows={5} columns={6} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -71,7 +69,6 @@ export default function ChannelSpecificWorkflowPage() {
         </div>
         <div className="flex items-center gap-2 mb-4">
           <h1 className="text-[22px] font-bold text-[#0F172A]">Channel-Specific Workflow</h1>
-          <ScopeBadge type="exc" />
         </div>
         <ErrorState
           title="Failed to load channel workflow data"
@@ -94,7 +91,6 @@ export default function ChannelSpecificWorkflowPage() {
 
       <div className="flex items-center gap-2 mb-2">
         <h1 className="text-[22px] font-bold text-[#0F172A]">Channel-Specific Workflow</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       <ChannelCaseSummary onSelectCase={handleSelectCase} />

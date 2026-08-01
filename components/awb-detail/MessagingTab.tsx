@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle, Clock, AlertCircle, FileText, Send, Mail, Package, Truck, Inbox, MessageSquare } from "lucide-react";
 
 interface Message {
@@ -46,7 +45,6 @@ export default function MessagingTab() {
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
             IATA Message Timeline
           </h3>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 

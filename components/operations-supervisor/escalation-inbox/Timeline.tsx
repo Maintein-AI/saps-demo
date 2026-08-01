@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle, XCircle, UserPlus, ArrowUpRight, StickyNote, Clock, User } from "lucide-react";
 
 const events = [
@@ -25,7 +24,6 @@ export default function Timeline() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Escalation Timeline</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="space-y-4">
         {events.map((e, i) => (

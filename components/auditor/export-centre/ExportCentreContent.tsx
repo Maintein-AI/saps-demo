@@ -5,7 +5,6 @@ import LoadingSkeleton from "../../LoadingSkeleton";
 import EmptyState from "../../EmptyState";
 import ErrorState from "../../ErrorState";
 import DataTable from "../../DataTable";
-import ScopeBadge from "../../ScopeBadge";
 import { useToast } from "../../ToastContext";
 import { Search, Download, FileText, Calendar, Clock, CheckCircle, FileSpreadsheet, Package } from "lucide-react";
 
@@ -72,7 +71,6 @@ export default function ExportCentreContent() {
           <div className="flex items-center gap-2 mb-4">
             <FileText size={16} className="text-[#0B2545]" />
             <h2 className="text-[15px] font-bold text-[#0F172A]">Generate Audit Pack</h2>
-            <ScopeBadge type="inc" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -187,7 +185,6 @@ export default function ExportCentreContent() {
           <div className="flex items-center gap-2 mb-4">
             <Package size={16} className="text-[#0B2545]" />
             <h2 className="text-[15px] font-bold text-[#0F172A]">Audit Pack Contents</h2>
-            <ScopeBadge type="inc" />
           </div>
           <div className="space-y-2">
             {auditPackContents.map((item) => {
@@ -209,7 +206,6 @@ export default function ExportCentreContent() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Generated Packs</h2>
-            <ScopeBadge type="inc" />
           </div>
           <span className="text-[12px] text-[#64748B] font-medium">{mockPacks.length} packs</span>
         </div>

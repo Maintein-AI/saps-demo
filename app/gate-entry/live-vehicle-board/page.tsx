@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/components/ToastContext";
@@ -61,7 +60,6 @@ export default function LiveVehicleBoardPage() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               Live Vehicle Board
             </h1>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-center gap-2">
             <button

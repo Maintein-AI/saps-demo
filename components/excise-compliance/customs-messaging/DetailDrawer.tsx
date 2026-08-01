@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { X, RefreshCw, Download, FileText, CheckCircle, AlertTriangle, Clock, ArrowRight } from "lucide-react";
 
 interface Message {
@@ -75,7 +74,6 @@ export default function DetailDrawer({ isOpen, onClose, message, onRetry, onDown
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Message Detail</h2>
-            <ScopeBadge type="inc" />
           </div>
           <button
             onClick={onClose}

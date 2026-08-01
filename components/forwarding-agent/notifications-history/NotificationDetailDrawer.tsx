@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { X, Bell, Hash, AlertTriangle, Clock, Check, Calendar, MessageSquare, User, FileText } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 interface Notification {
@@ -78,7 +77,6 @@ export default function NotificationDetailDrawer({ isOpen, onClose, notification
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Notification Detail</h2>
-            <ScopeBadge type="exc" />
           </div>
           <button
             onClick={onClose}

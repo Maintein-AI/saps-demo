@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Clock } from "lucide-react";
 
 const events = [
@@ -23,7 +22,6 @@ export default function EventStream() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Live Event Stream</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
@@ -58,7 +56,6 @@ export default function EventStream() {
                   </span>
                 </td>
                 <td className="py-3 px-3">
-                  <ScopeBadge type={e.scope} />
                 </td>
               </tr>
             ))}

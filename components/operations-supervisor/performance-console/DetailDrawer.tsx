@@ -1,7 +1,6 @@
 "use client";
 
 import { X, FileSearch, BarChart3, ArrowUpRight, StickyNote, Clock, CheckCircle, User, MapPin, Calendar, List, AlertTriangle, TrendingUp } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 const detailData: Record<string, {
   operator: string; role: string; shift: string; assignedZone: string;
@@ -31,7 +30,6 @@ export default function DetailDrawer({ isOpen, onClose, operator }: DetailDrawer
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Operator Performance Detail</h2>
-            <ScopeBadge type="inc" />
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] cursor-pointer transition-colors">
             <X size={18} />

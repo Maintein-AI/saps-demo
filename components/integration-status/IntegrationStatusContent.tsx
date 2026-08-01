@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "../ScopeBadge";
 import LoadingSkeleton from "../LoadingSkeleton";
 import EmptyState from "../EmptyState";
 import ErrorState from "../ErrorState";
@@ -169,7 +168,6 @@ export default function IntegrationStatusContent() {
                 >
                   <td className="px-4 py-3 text-[13px] font-semibold text-[#0F172A]">{int.name}</td>
                   <td className="px-4 py-3">
-                    <ScopeBadge type={int.scope as "inc" | "exc"} />
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center h-5 px-2 rounded-full text-[10px] font-bold ${

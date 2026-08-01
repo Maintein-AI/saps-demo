@@ -1,7 +1,6 @@
 "use client";
 
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import SettingsContent from "@/components/admin/settings/SettingsContent";
 
 export default function AdminSettingsPage() {
@@ -10,7 +9,6 @@ export default function AdminSettingsPage() {
       <Breadcrumb items={[{ label: "Admin", href: "/admin" }, { label: "System Settings" }]} />
       <div className="flex items-center gap-3">
         <h1 className="text-[24px] font-bold text-[#0F172A]">System Settings</h1>
-        <ScopeBadge type="inc" />
       </div>
       <SettingsContent />
     </div>

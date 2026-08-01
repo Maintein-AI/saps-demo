@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Eye, ChevronRight } from "lucide-react";
 
 const pickups = [
@@ -24,7 +23,6 @@ export default function UpcomingPickups({ onView, onSchedulePickup }: UpcomingPi
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[16px] font-bold text-[#0F172A]">Upcoming Pickups</h3>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="overflow-x-auto">

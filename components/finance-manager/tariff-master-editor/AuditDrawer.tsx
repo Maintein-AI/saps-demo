@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { AuditEntry } from "./types";
 import { X, User, Calendar, ArrowRight } from "lucide-react";
 
@@ -20,7 +18,6 @@ export default function AuditDrawer({ isOpen, onClose, entries }: AuditDrawerPro
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2.5">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Tariff Audit Trail</h2>
-            <ScopeBadge type="inc" />
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#0B2545] cursor-pointer transition-colors">
             <X size={18} />

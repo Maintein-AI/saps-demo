@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
@@ -133,7 +132,6 @@ export default function PickingPage() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               Gate Pass Picking
             </h1>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -189,7 +187,6 @@ export default function PickingPage() {
                 <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
                     <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">Pick List</h2>
-                    <ScopeBadge type="inc" />
                   </div>
                   <EmptyState
                     title="No active pick list selected"
@@ -244,7 +241,6 @@ export default function PickingPage() {
               <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
                 Scan Activity Timeline
               </h2>
-              <ScopeBadge type="inc" />
             </div>
             {isLoading ? (
               <LoadingSkeleton rows={5} columns={6} />

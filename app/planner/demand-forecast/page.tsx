@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { RefreshCw, FileSpreadsheet, Flag, CalendarDays } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
@@ -75,7 +74,6 @@ export default function DemandForecastPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-[24px] font-bold text-[#0F172A]">Demand Forecast</h1>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-2">
           <button

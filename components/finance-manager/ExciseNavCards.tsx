@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { ArrowUpRight, Lock } from "lucide-react";
 
 const excItems = [
@@ -39,7 +37,6 @@ export default function ExciseNavCards() {
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <ScopeBadge type={item.scope} />
                 </div>
                 <div className="w-6 h-6 flex items-center justify-center text-[#94A3B8]">
                   <Lock size={14} />

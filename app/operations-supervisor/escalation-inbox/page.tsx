@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/operations-supervisor/escalation-inbox/KPIStrip";
 import FilterBar from "@/components/operations-supervisor/escalation-inbox/FilterBar";
 import EscalationTable from "@/components/operations-supervisor/escalation-inbox/EscalationTable";
@@ -58,7 +57,6 @@ export default function EscalationInboxPage() {
           <Breadcrumb items={[{ label: "Operations Supervisor", href: "/operations-supervisor" }, { label: "Escalation Inbox" }]} />
           <div className="flex items-center gap-3 mt-3">
             <h1 className="text-[24px] font-bold text-[#0F172A]">Escalation Inbox</h1>
-            <ScopeBadge type="inc" />
           </div>
         </div>
         <div className="flex items-center gap-2">

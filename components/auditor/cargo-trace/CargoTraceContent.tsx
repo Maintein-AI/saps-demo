@@ -5,7 +5,6 @@ import LoadingSkeleton from "../../LoadingSkeleton";
 import EmptyState from "../../EmptyState";
 import ErrorState from "../../ErrorState";
 import DataTable from "../../DataTable";
-import ScopeBadge from "../../ScopeBadge";
 import { Search, ChevronDown, ExternalLink, Clock } from "lucide-react";
 
 interface TimelineEvent {
@@ -141,7 +140,6 @@ export default function CargoTraceContent() {
                 <h2 className="text-[16px] font-bold text-[#0F172A]">
                   End-to-End Timeline — AWB 117-23456123
                 </h2>
-                <ScopeBadge type="inc" />
               </div>
               <span className="text-[12px] text-[#64748B] font-medium">
                 23 events
@@ -200,7 +198,6 @@ export default function CargoTraceContent() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <h2 className="text-[16px] font-bold text-[#0F172A]">Piece Trace</h2>
-              <ScopeBadge type="inc" />
             </div>
             <DataTable
               columns={[

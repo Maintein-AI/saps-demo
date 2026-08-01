@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "../ScopeBadge";
 import LoadingSkeleton from "../LoadingSkeleton";
 import EmptyState from "../EmptyState";
 import ErrorState from "../ErrorState";
@@ -207,7 +206,6 @@ export default function NotificationsContent() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="text-[13px] font-bold text-[#0F172A]">{tpl.name}</h4>
-                        <ScopeBadge type="inc" />
                       </div>
                       <p className="text-[11px] text-[#64748B] mt-0.5">{tpl.type} — {tpl.channel}</p>
                     </div>
@@ -412,7 +410,6 @@ function IATAPanel() {
       <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
         <div className="flex items-center gap-2 mb-4">
           <h3 className="text-[13px] font-bold text-[#0F172A]">Supported IATA Message Types</h3>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex flex-wrap gap-2">
           {iataMessageTypes.map((t) => (
@@ -428,7 +425,6 @@ function IATAPanel() {
       <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
         <div className="flex items-center gap-2 mb-4">
           <h3 className="text-[13px] font-bold text-[#0F172A]">IATA Message Log</h3>
-          <ScopeBadge type="inc" />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">

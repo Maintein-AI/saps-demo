@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import { Calendar, Clock, MapPin, User, Beaker, Camera, CheckCircle, ArrowRight, FileText } from "lucide-react";
 
 interface RedPanelProps {
@@ -28,7 +27,6 @@ export default function RedPanel({ awb }: RedPanelProps) {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Red Channel Panel</h2>
-          <ScopeBadge type="inc" />
         </div>
         <span
           className="inline-flex items-center h-7 px-3 rounded-lg text-[12px] font-semibold"

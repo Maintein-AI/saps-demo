@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/consignee/pay-do/KPIStrip";
 import PayDOContent from "@/components/consignee/pay-do/PayDOContent";
 import ErrorState from "@/components/ErrorState";
@@ -45,7 +44,6 @@ export default function PayDOPage() {
           />
           <div className="flex items-center gap-3 mt-3">
             <h1 className="text-[24px] font-bold text-[#0F172A]">Pay & Download DO</h1>
-            <ScopeBadge type="exc" />
           </div>
         </div>
         <div className="flex items-center gap-2">

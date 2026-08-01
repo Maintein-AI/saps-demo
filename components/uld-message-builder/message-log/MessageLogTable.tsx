@@ -1,7 +1,6 @@
 "use client";
 
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Eye,
   FileText,

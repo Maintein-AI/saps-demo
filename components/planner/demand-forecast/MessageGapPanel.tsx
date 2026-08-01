@@ -1,5 +1,4 @@
 import { AlertTriangle, FileX, Clock, PackageOpen, Tag } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import type { MessageGap } from "./types";
 
 const messageGaps: MessageGap[] = [
@@ -38,7 +37,6 @@ export default function MessageGapPanel({ onFlagGap }: MessageGapPanelProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <span className="text-[13px] font-bold text-[#0F172A]">Message Gaps</span>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{messageGaps.length} alerts</span>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import { Save, Send, Plus, Trash2, Upload, FileText, CheckCircle, X, ChevronDown, User, Calendar, FileText as FileTextIcon, Eye, Shield, Users, Building } from "lucide-react";
 
@@ -127,7 +126,6 @@ export default function NoteEditor({ noteId }: NoteEditorProps) {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Note Editor</h3>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-[#64748B]">{data.id}</span>

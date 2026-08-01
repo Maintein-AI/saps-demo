@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Clock, AlertTriangle, FileWarning, CreditCard, PackageCheck, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 
 const notifications = [
@@ -34,7 +33,6 @@ export default function RecentNotifications() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Recent Notifications</h3>
-          <ScopeBadge type="exc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{notifications.length} new</span>
       </div>

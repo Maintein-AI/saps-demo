@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { useToast } from "@/components/ToastContext";
 import { Save, Building2, Palette, Globe, Hash, FileText, Clock, Coins, Languages } from "lucide-react";
@@ -88,7 +87,6 @@ export default function SettingsContent() {
               <p className="text-[12px] text-[#64748B]">Basic company details used across the system</p>
             </div>
           </div>
-          <ScopeBadge type="inc" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -132,7 +130,6 @@ export default function SettingsContent() {
               <p className="text-[12px] text-[#64748B]">Portal visual identity settings</p>
             </div>
           </div>
-          <ScopeBadge type="inc" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -170,7 +167,6 @@ export default function SettingsContent() {
               <p className="text-[12px] text-[#64748B]">Regional settings for Pakistan operations</p>
             </div>
           </div>
-          <ScopeBadge type="inc" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -227,7 +223,6 @@ export default function SettingsContent() {
               <p className="text-[12px] text-[#64748B]">Tax registration identifiers</p>
             </div>
           </div>
-          <ScopeBadge type="inc" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>

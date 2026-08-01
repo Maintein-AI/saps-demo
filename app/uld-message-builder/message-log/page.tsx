@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import MessageLogContent from "@/components/uld-message-builder/message-log/MessageLogContent";
@@ -18,7 +16,6 @@ export default function MessageLogPage() {
 
       <div className="flex items-center gap-2">
         <h1 className="text-[22px] font-bold text-[#0F172A]">Message Log</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       <MessageLogContent />

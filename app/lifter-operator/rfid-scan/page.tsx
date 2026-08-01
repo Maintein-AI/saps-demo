@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Home, ChevronRight, ScanLine } from "lucide-react";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import ScannerCard from "@/components/lifter-operator/rfid-scan/ScannerCard";
@@ -39,7 +38,6 @@ export default function RfidScanPage() {
             RFID Handheld Scan
           </h1>
         </div>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -155,7 +153,6 @@ export default function RfidScanPage() {
             <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden">
               <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[#E2E8F0]">
                 <h2 className="text-[16px] font-bold text-[#0F172A]">Quick Actions</h2>
-                <ScopeBadge type="inc" />
               </div>
               <div className="p-5 space-y-2">
                 <Link

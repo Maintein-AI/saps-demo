@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { GatewayTransaction } from "@/components/finance-manager/payment-gateway-reconciliation/types";
 
 const statusMap: Record<string, { color: string; bg: string; border: string }> = {
@@ -42,7 +40,6 @@ export default function DetailDrawer({
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-bold text-[#0F172A]">Gateway Transaction Detail</h2>
-              <ScopeBadge type="exc" />
             </div>
             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-[#64748B] hover:text-[#0F172A] cursor-pointer rounded-lg hover:bg-[#F8FAFC] transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>

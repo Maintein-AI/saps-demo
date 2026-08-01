@@ -1,7 +1,6 @@
 "use client";
 
 import { Battery, Clock, ArrowUp, ArrowDown } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface BatteryStatusProps {
   battery: number;
@@ -43,7 +42,6 @@ export default function BatteryStatus({ battery, runtime, threshold, status }: B
     <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
       <div className="flex items-center gap-2 mb-5">
         <h2 className="text-[16px] font-bold text-[#0F172A]">Battery Status</h2>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="flex items-center gap-4 mb-5">

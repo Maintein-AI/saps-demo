@@ -1,5 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
-
 const filters = [
   "All",
   "Putaway",
@@ -20,7 +18,6 @@ export default function TaskFilters({ activeFilter, onFilterChange }: TaskFilter
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <h3 className="text-[13px] font-semibold text-[#64748B]">Task Filters</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="flex flex-wrap gap-2">
         {filters.map((f) => {

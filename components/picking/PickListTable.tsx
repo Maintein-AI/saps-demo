@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle2, XCircle, AlertTriangle, Clock, ScanLine } from "lucide-react";
 
 interface PickItem {
@@ -76,7 +75,6 @@ export default function PickListTable({ pickList, onScan, onHold }: PickListTabl
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">Pick List</h2>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[12px] text-[#64748B]">

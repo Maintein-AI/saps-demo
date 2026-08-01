@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Truck, CheckCircle, Clock, AlertTriangle, ArrowRight } from "lucide-react";
 
 const pickups = [
@@ -21,7 +20,6 @@ export default function NextPickups() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Next Pickups</h3>
-          <ScopeBadge type="exc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{pickups.length} pickups</span>
       </div>

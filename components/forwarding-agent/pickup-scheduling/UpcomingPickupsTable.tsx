@@ -12,7 +12,6 @@ import {
   XCircle,
   FileDown,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 interface Pickup {
@@ -162,7 +161,6 @@ export default function UpcomingPickupsTable({ onEdit, onViewGate }: UpcomingPic
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Upcoming Pickups</h3>
-          <ScopeBadge type="exc" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-[#64748B]">{pickups.length} pickups</span>

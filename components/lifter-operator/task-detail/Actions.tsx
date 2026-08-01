@@ -11,7 +11,6 @@ import {
   ShieldAlert,
   X,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import Modal from "@/components/Modal";
 
 interface ActionsProps {
@@ -88,7 +87,6 @@ export default function Actions({
       <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Actions</h3>
-          <ScopeBadge type="inc" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -197,7 +195,6 @@ export default function Actions({
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="text-[14px] font-bold text-[#0F172A]">Obstacle Report</h4>
-            <ScopeBadge type="inc" />
           </div>
           <div>
             <label className="text-[12px] font-semibold text-[#64748B] uppercase tracking-wide mb-1.5 block">
@@ -287,7 +284,6 @@ export default function Actions({
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="text-[14px] font-bold text-[#0F172A]">Damage Report</h4>
-            <ScopeBadge type="inc" />
           </div>
           <div>
             <label className="text-[12px] font-semibold text-[#64748B] uppercase tracking-wide mb-1.5 block">
@@ -395,7 +391,6 @@ export default function Actions({
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="text-[14px] font-bold text-[#0F172A]">Cannot Complete</h4>
-            <ScopeBadge type="inc" />
           </div>
           <p className="text-[13px] text-[#64748B]">
             Mark this task as cannot complete. This will notify the supervisor and free the task for reassignment.

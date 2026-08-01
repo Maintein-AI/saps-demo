@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import { DollarSign, FileText, ArrowRight } from "lucide-react";
 import CmtRentDrawer from "@/components/cold-rent/CmtRentDrawer";
@@ -26,7 +25,6 @@ export default function ChargesTab() {
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
             Operational Billing Summary
           </h3>
-          <ScopeBadge type="inc" />
         </div>
       </div>
 
@@ -44,7 +42,6 @@ export default function ChargesTab() {
             style={{ backgroundColor: i % 2 === 1 ? "#F8FAFC" : "white" }}
           >
             <div className="flex items-center gap-2">
-              <ScopeBadge type={item.badge as "inc" | "exc"} />
               <span className="text-[13px] font-medium text-[#0F172A]">{item.label}</span>
             </div>
             <span className="text-[13px] text-[#64748B]">{item.rate}</span>
@@ -69,7 +66,6 @@ export default function ChargesTab() {
               <h4 className="text-[14px] font-bold text-[#0F172A]">
                 CMTS-grade Godown Rent Engine
               </h4>
-              <ScopeBadge type="exc" />
             </div>
             <p className="text-[13px] text-[#64748B] leading-relaxed mb-3">
               Advanced rent calculation engine with CMTS (Cargo Management Terminal System) integration. Supports slab-based pricing, demurrage, and multi-warehouse rate cards. This module is outside the current awarded scope.

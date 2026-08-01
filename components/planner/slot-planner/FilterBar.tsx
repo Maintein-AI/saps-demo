@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 export default function FilterBar({
   filters,
@@ -26,7 +25,6 @@ export default function FilterBar({
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
-          <ScopeBadge type="inc" />
           <span className="text-[12px] font-medium text-[#64748B]">Filters</span>
         </div>
         <button

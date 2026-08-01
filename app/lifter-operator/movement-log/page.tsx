@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Home, Move, Download, FileText } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import { useToast } from "@/components/ToastContext";
@@ -45,7 +44,6 @@ export default function MovementLogPage() {
               Movement Log
             </h1>
           </div>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-2">
           <button

@@ -1,7 +1,5 @@
 "use client";
 
-import ScopeBadge from "@/components/ScopeBadge";
-
 interface MessageHeaderCardProps {
   originator: string;
   station: string;
@@ -33,7 +31,6 @@ export default function MessageHeaderCard({
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-[15px] font-bold text-[#0F172A]">Message Header</h2>
-        <ScopeBadge type="exc" />
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div>

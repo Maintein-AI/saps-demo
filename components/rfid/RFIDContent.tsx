@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "../ScopeBadge";
 import LoadingSkeleton from "../LoadingSkeleton";
 import EmptyState from "../EmptyState";
 import ErrorState from "../ErrorState";
@@ -92,7 +91,6 @@ export default function RFIDContent() {
         <RFIDCard
           title="Fixed RFID Gates Inbound"
           description="Permanent dock-door RFID readers for inbound cargo"
-          scope="inc"
           icon={<ArrowRight size={18} />}
           active={activeTab === "fixed"}
           onClick={() => setActiveTab("fixed")}
@@ -100,7 +98,6 @@ export default function RFIDContent() {
         <RFIDCard
           title="Fixed RFID Gates Outbound"
           description="Permanent dock-door RFID readers for outbound cargo"
-          scope="inc"
           icon={<ArrowLeft size={18} />}
           active={activeTab === "fixed"}
           onClick={() => setActiveTab("fixed")}
@@ -108,7 +105,6 @@ export default function RFIDContent() {
         <RFIDCard
           title="Handheld Import Workflows"
           description="Mobile RFID scanning for import piece verification"
-          scope="inc"
           icon={<Radio size={18} />}
           active={activeTab === "handheld-import"}
           onClick={() => setActiveTab("handheld-import")}
@@ -116,7 +112,6 @@ export default function RFIDContent() {
         <RFIDCard
           title="Piece-level Tag Binding"
           description="Bind RFID EPC tags to individual cargo pieces"
-          scope="inc"
           icon={<Tag size={18} />}
           active={activeTab === "binding"}
           onClick={() => setActiveTab("binding")}
@@ -124,7 +119,6 @@ export default function RFIDContent() {
         <RFIDCard
           title="Live Read Stream"
           description="Real-time RFID read event stream from all readers"
-          scope="inc"
           icon={<Activity size={18} />}
           active={activeTab === "stream"}
           onClick={() => setActiveTab("stream")}
@@ -132,7 +126,6 @@ export default function RFIDContent() {
         <RFIDCard
           title="Handheld Export Workflows"
           description="Mobile RFID scanning for export piece verification"
-          scope="exc"
           icon={<Radio size={18} />}
           active={activeTab === "handheld-export"}
           onClick={() => setActiveTab("handheld-export")}
@@ -143,7 +136,6 @@ export default function RFIDContent() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <h3 className="text-[14px] font-bold text-[#0F172A]">Fixed Gate Configuration</h3>
-            <ScopeBadge type="inc" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {fixedGates.map((gate) => (
@@ -205,7 +197,6 @@ export default function RFIDContent() {
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-6">
           <div className="flex items-center gap-2 mb-4">
             <h3 className="text-[14px] font-bold text-[#0F172A]">Handheld RFID Import Workflows</h3>
-            <ScopeBadge type="inc" />
           </div>
           <div className="space-y-3">
             {[
@@ -238,7 +229,6 @@ export default function RFIDContent() {
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-6">
           <div className="flex items-center gap-2 mb-4">
             <h3 className="text-[14px] font-bold text-[#0F172A]">Handheld RFID Export Workflows</h3>
-            <ScopeBadge type="exc" />
           </div>
           <div className="space-y-3">
             {[
@@ -270,7 +260,6 @@ export default function RFIDContent() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <h3 className="text-[14px] font-bold text-[#0F172A]">Piece-Level Tag Binding</h3>
-            <ScopeBadge type="inc" />
           </div>
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -334,7 +323,6 @@ export default function RFIDContent() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h3 className="text-[14px] font-bold text-[#0F172A]">Live Read Stream</h3>
-              <ScopeBadge type="inc" />
               <span className={`inline-flex items-center gap-1 h-5 px-2 rounded-full text-[10px] font-bold ${streamPaused ? "bg-[#FEF3C7] text-[#D97706]" : "bg-[#DCFCE7] text-[#16A34A]"}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${streamPaused ? "bg-[#D97706]" : "bg-[#16A34A] animate-pulse"}`} />
                 {streamPaused ? "Paused" : "Live"}
@@ -472,14 +460,12 @@ export default function RFIDContent() {
 function RFIDCard({
   title,
   description,
-  scope,
   icon,
   active,
   onClick,
 }: {
   title: string;
   description: string;
-  scope: "inc" | "exc";
   icon: React.ReactNode;
   active: boolean;
   onClick: () => void;
@@ -497,7 +483,6 @@ function RFIDCard({
         <div className="w-8 h-8 rounded-lg bg-[#F1F5F9] flex items-center justify-center text-[#1B4F8B]">
           {icon}
         </div>
-        <ScopeBadge type={scope} />
       </div>
       <h4 className="text-[13px] font-bold text-[#0F172A] mb-1">{title}</h4>
       <p className="text-[11px] text-[#64748B]">{description}</p>

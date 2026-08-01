@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/cha/payments/KPIStrip";
 import FilterBar from "@/components/cha/payments/FilterBar";
 import InvoicesTable from "@/components/cha/payments/InvoicesTable";
@@ -21,7 +20,6 @@ export default function PaymentsPage() {
       {/* Page Title */}
       <div className="flex items-center gap-3">
         <h1 className="text-[24px] font-bold text-[#0F172A]">Payments</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       {/* KPI Strip */}

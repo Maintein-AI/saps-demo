@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle, Circle, AlertTriangle, Shield, Lock, FileText, Package, Check } from "lucide-react";
 
 interface AwbSummary {
@@ -100,7 +99,6 @@ export default function ValidationPanel({ awb }: ValidationPanelProps) {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Release Readiness</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-bold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-full">

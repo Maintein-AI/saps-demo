@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Calendar, Clock, User, ArrowDownRight, ArrowUpRight, AlertTriangle, Package, Truck } from "lucide-react";
 
 export default function SummaryCard() {
@@ -6,7 +5,6 @@ export default function SummaryCard() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Current Shift Summary</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-4">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import { FileCheck, Eye, Download, ArrowRight } from "lucide-react";
 
 interface RecentCollectionItem {
@@ -82,7 +81,6 @@ export default function RecentCollections() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Recent Collections</h3>
-          <ScopeBadge type="exc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{recentItems.length} records</span>
       </div>

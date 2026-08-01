@@ -9,7 +9,6 @@ import SecurityAlerts from "./SecurityAlerts";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 export default function AdminDashboardContent() {
@@ -47,12 +46,12 @@ export default function AdminDashboardContent() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <AdminKPICard title="Active Users" value="184" subtitle="Across 8 portals" trend="up" trendValue="+12" scope="inc" />
-          <AdminKPICard title="Locked Users" value="9" subtitle="Requires action" trend="down" trendValue="-3" scope="inc" />
-          <AdminKPICard title="Roles Configured" value="17" subtitle="6 system, 11 custom" scope="inc" />
-          <AdminKPICard title="Integration Health" value="87%" subtitle="13 of 15 online" trend="down" trendValue="-2" scope="inc" />
-          <AdminKPICard title="Failed Events" value="23" subtitle="Last 24 hours" trend="up" trendValue="+5" scope="inc" />
-          <AdminKPICard title="Audit Events Today" value="1,247" subtitle="28 critical" trend="up" trendValue="+12%" scope="inc" />
+          <AdminKPICard title="Active Users" value="184" subtitle="Across 8 portals" trend="up" trendValue="+12" />
+          <AdminKPICard title="Locked Users" value="9" subtitle="Requires action" trend="down" trendValue="-3" />
+          <AdminKPICard title="Roles Configured" value="17" subtitle="6 system, 11 custom" />
+          <AdminKPICard title="Integration Health" value="87%" subtitle="13 of 15 online" trend="down" trendValue="-2" />
+          <AdminKPICard title="Failed Events" value="23" subtitle="Last 24 hours" trend="up" trendValue="+5" />
+          <AdminKPICard title="Audit Events Today" value="1,247" subtitle="28 critical" trend="up" trendValue="+12%" />
         </div>
       )}
 

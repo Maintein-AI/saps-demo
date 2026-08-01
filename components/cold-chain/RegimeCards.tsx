@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Thermometer, Snowflake, AlertTriangle, CheckCircle, Clock, Package, QrCode } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface Regime {
   id: string;
@@ -88,7 +87,6 @@ export default function RegimeCards({ onSelectRegime, selectedRegime }: RegimeCa
     <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-[16px] font-bold text-[#0F172A]">Cold Chain Regimes</h2>
-        <ScopeBadge type="inc" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {regimes.map((regime) => {
@@ -122,7 +120,6 @@ export default function RegimeCards({ onSelectRegime, selectedRegime }: RegimeCa
                     </p>
                   </div>
                 </div>
-                <ScopeBadge type="inc" />
               </div>
 
               <p className="text-[14px] font-bold text-[#0F172A] mb-3">{regime.name}</p>

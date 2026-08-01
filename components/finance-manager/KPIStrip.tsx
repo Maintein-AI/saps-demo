@@ -1,7 +1,5 @@
 "use client";
 
-import ScopeBadge from "@/components/ScopeBadge";
-
 export default function KPIStrip() {
   const kpis = [
     { title: "Today billed PKR", value: "Rs. 2.47M", subtitle: "Including storage, handling, and customs", trend: "up" as const, trendValue: "+Rs. 340K today" },
@@ -26,7 +24,6 @@ export default function KPIStrip() {
               <h3 className="text-[12px] font-semibold text-[#64748B] leading-tight">
                 {kpi.title}
               </h3>
-              <ScopeBadge type="inc" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-[26px] font-bold text-[#0F172A]">{kpi.value}</span>

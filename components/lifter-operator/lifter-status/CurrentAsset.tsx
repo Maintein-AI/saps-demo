@@ -17,7 +17,6 @@ import {
   User,
   Wrench,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface CurrentAssetProps {
   asset: {
@@ -59,7 +58,6 @@ export default function CurrentAsset({ asset }: CurrentAssetProps) {
     <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
       <div className="flex items-center gap-2 mb-5">
         <h2 className="text-[16px] font-bold text-[#0F172A]">Current Lifter Asset</h2>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="flex items-center gap-4 mb-5">

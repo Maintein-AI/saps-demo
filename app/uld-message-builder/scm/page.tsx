@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import SCMContent from "@/components/uld-message-builder/scm/SCMContent";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +16,6 @@ export default function SCMPage() {
 
       <div className="flex items-center gap-2">
         <h1 className="text-[22px] font-bold text-[#0F172A]">Stock Check Message (SCM)</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       <SCMContent />

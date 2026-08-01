@@ -1,7 +1,6 @@
 "use client";
 
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/cha/re-export-long-stay/KPIStrip";
 import FilterBar from "@/components/cha/re-export-long-stay/FilterBar";
 import WorkflowStageCards from "@/components/cha/re-export-long-stay/WorkflowStageCards";
@@ -18,7 +17,6 @@ export default function ReexportLongStayPage() {
 
       <div className="flex items-center gap-3">
         <h1 className="text-[24px] font-bold text-[#0F172A]">Re-export / Long-Stay Console</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       <KPIStrip />

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface Message {
   id: string;
@@ -33,7 +32,6 @@ export default function MessageTypeSummary({ messages }: MessageTypeSummaryProps
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Message Type Summary</h2>
-          <ScopeBadge type="inc" />
         </div>
       </div>
       <div className="p-5">

@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { X, User, Clock, FileText, Image as ImageIcon, StickyNote, CheckCircle } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 const CDR_DATA: Record<string, {
   cdr: string;
@@ -132,7 +131,6 @@ export default function CdrDetailDrawer({ isOpen, onClose, cdrId }: CdrDetailDra
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0F172A]">CDR Detail</h2>
-            <ScopeBadge type="inc" />
           </div>
           <button
             onClick={onClose}

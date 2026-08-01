@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import ScopeBadge from "../../ScopeBadge";
 import type { HourlyForecast } from "./types";
 
 const hourlyData: HourlyForecast[] = [
@@ -34,7 +33,6 @@ export default function ForecastChart() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-[13px] font-bold text-[#0F172A]">Forecast by Hour</span>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">

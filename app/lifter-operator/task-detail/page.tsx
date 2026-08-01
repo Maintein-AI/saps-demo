@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import TaskRoute from "@/components/lifter-operator/task-detail/TaskRoute";
 import PieceDetails from "@/components/lifter-operator/task-detail/PieceDetails";
@@ -98,7 +97,6 @@ export default function TaskDetailPage() {
 
       <div className="flex items-center gap-3">
         <h1 className="text-[22px] font-bold text-[#0F172A]">Task Detail</h1>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">

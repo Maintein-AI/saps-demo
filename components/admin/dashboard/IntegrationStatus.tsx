@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { CheckCircle, AlertTriangle, XCircle, ExternalLink, RefreshCw } from "lucide-react";
 
@@ -42,7 +40,6 @@ export default function IntegrationStatus({ isLoading }: { isLoading: boolean })
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Integration Status</h2>
-          <ScopeBadge type="inc" />
         </div>
       </div>
       {isLoading ? (
@@ -60,7 +57,6 @@ export default function IntegrationStatus({ isLoading }: { isLoading: boolean })
                   <div className="flex items-center gap-2">
                     <p className="text-[13px] font-semibold text-[#0F172A]">{item.name}</p>
                     <span className="text-[11px] text-[#94A3B8]">{item.provider}</span>
-                    <ScopeBadge type={item.scope} />
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-[11px] text-[#64748B]">Last Sync: {item.lastSync}</span>

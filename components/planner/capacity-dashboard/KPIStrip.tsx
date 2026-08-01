@@ -16,7 +16,6 @@ export default function KPIStrip({ data }: { data: { totalStorageCapacity: strin
             <span className="text-[12px] font-medium text-[#64748B] block mb-1">{card.label}</span>
             <span className="text-[24px] font-bold text-[#0F172A]">{card.value}</span>
           </div>
-          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#D1FAE5] text-[#10B981] border border-[#D1FAE5] whitespace-nowrap">inc</span>
         </div>
       ))}
     </div>

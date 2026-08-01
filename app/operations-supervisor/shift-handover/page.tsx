@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import SummaryCard from "@/components/operations-supervisor/shift-handover/SummaryCard";
 import HandoverForm from "@/components/operations-supervisor/shift-handover/HandoverForm";
 import HistoryTable from "@/components/operations-supervisor/shift-handover/HistoryTable";
@@ -52,7 +51,6 @@ export default function ShiftHandoverPage() {
           ]} />
           <div className="flex items-center gap-3 mt-3">
             <h1 className="text-[24px] font-bold text-[#0F172A]">Shift Handover</h1>
-            <ScopeBadge type="inc" />
           </div>
         </div>
         <div className="flex items-center gap-2">

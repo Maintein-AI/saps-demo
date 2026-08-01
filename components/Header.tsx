@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, ChevronDown, Search, Info, X } from "lucide-react";
+import { Bell, ChevronDown, Search, X } from "lucide-react";
 import { useAuth } from "./auth/AuthContext";
 
 interface HeaderProps {
@@ -91,29 +91,6 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-2 lg:gap-3 ml-auto" data-dropdown>
-        <div className="hidden md:flex items-center gap-2 mr-2">
-          <button
-            onClick={() => onToggleDrawer("scope")}
-            className="flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-bold bg-[#16A34A]/20 text-[#16A34A] border border-[#16A34A]/30 cursor-pointer hover:bg-[#16A34A]/30 transition-colors"
-          >
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#16A34A] text-white text-[9px] font-bold">+</span>
-            inc.
-          </button>
-          <button
-            onClick={() => onToggleDrawer("scope")}
-            className="flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-bold bg-[#DC2626]/20 text-[#DC2626] border border-[#DC2626]/30 cursor-pointer hover:bg-[#DC2626]/30 transition-colors"
-          >
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#DC2626] text-white text-[9px] font-bold">-</span>
-            exc
-          </button>
-          <button
-            onClick={() => onToggleDrawer("scope")}
-            className="w-6 h-6 flex items-center justify-center text-white/60 hover:text-white/90 cursor-pointer transition-colors"
-          >
-            <Info size={14} />
-          </button>
-        </div>
-
         <div className="relative" data-dropdown>
           <button
             onClick={onToggleNotifications}

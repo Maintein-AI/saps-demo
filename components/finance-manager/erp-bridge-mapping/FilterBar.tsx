@@ -36,7 +36,6 @@ export default function FilterBar({
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0] whitespace-nowrap">exc</span>
           <span className="text-[12px] font-medium text-[#64748B]">Filters</span>
         </div>
         <button

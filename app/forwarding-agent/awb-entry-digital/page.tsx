@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import ErrorState from "@/components/ErrorState";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
@@ -202,7 +201,6 @@ export default function AWBEntryDigitalPage() {
         />
         <div className="flex items-center gap-2.5">
           <h1 className="text-[22px] font-bold text-[#0F172A]">AWB Entry — Digital</h1>
-          <ScopeBadge type="exc" />
         </div>
       </div>
 

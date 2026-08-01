@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { WaiverRequest } from "@/app/finance-manager/waiver-workflow/page";
 
 interface RequesterFormProps {
@@ -26,7 +24,6 @@ export default function RequesterForm({ waiver }: RequesterFormProps) {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Waiver Request</h2>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] font-semibold text-[#64748B]">
           {waiver.id}

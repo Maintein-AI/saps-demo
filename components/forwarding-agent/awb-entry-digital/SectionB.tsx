@@ -1,5 +1,3 @@
-import ScopeBadge from "../../ScopeBadge";
-
 interface SectionBProps {
   data: Record<string, any>;
   onChange: (field: string, value: any) => void;
@@ -53,7 +51,6 @@ export default function SectionB({ data, onChange, errors }: SectionBProps) {
     <div className="space-y-5">
       <div className="flex items-center gap-2 mb-1">
         <h3 className="text-[14px] font-bold text-[#0F172A]">B. Flight & Routing</h3>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

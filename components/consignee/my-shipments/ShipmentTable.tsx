@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Eye,
   Bell,
@@ -186,7 +185,6 @@ export default function ShipmentTable() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Shipment List</h2>
-          <ScopeBadge type="exc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{shipments.length} shipments</span>
       </div>
@@ -296,7 +294,6 @@ export default function ShipmentTable() {
               <div className="flex items-center gap-2">
                 <Eye size={16} className="text-[#1B4F8B]" />
                 <h3 className="text-[13px] font-bold text-[#0F172A]">Shipment Detail</h3>
-                <ScopeBadge type="exc" />
               </div>
               <button onClick={() => setSelectedId(null)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#E2E8F0] text-[#64748B] cursor-pointer transition-colors">
                 <X size={14} />
@@ -388,7 +385,6 @@ export default function ShipmentTable() {
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={14} className="text-[#1B4F8B]" />
                 <h4 className="text-[12px] font-bold text-[#0F172A] uppercase tracking-wider">Shipment Timeline</h4>
-                <ScopeBadge type="exc" />
               </div>
               <div className="flex items-start gap-0 overflow-x-auto pb-2">
                 {timelineStages.map((stage, i) => {

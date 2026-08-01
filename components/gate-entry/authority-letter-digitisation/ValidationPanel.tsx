@@ -1,5 +1,4 @@
 import { Check, X, AlertCircle } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface ValidationItem {
   id: string;
@@ -33,7 +32,6 @@ export default function ValidationPanel({ visible }: ValidationPanelProps) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-[14px] font-bold text-[#0F172A]">Validation Results</h3>
-          <ScopeBadge type="exc" />
         </div>
         <div className="flex items-center gap-2">
           <span className="h-5 px-2 rounded-full text-[10px] font-bold bg-[#DCFCE7] text-[#16A34A]">

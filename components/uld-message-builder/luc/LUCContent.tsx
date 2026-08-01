@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Eye,
   Search,
@@ -126,7 +125,6 @@ export default function LUCContent() {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h2 className="text-[17px] font-bold text-[#0F172A]">LUC Message Builder</h2>
-              <ScopeBadge type="exc" />
             </div>
             <p className="text-[13px] text-[#64748B] leading-relaxed mb-3">
               Message code: <span className="font-bold font-mono text-[#0F172A]">LUC</span>
@@ -151,7 +149,6 @@ export default function LUCContent() {
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Recent LUC Messages</h2>
-            <ScopeBadge type="exc" />
           </div>
           <span className="text-[12px] text-[#64748B]">{messages.length} messages</span>
         </div>

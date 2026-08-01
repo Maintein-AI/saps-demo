@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { Payment } from "@/components/finance-manager/payment-reconciliation/types";
 import { X, CheckCircle, Search } from "lucide-react";
 
@@ -43,7 +42,6 @@ export default function ManualMatchDrawer({
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2.5">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Manual Match</h2>
-            <ScopeBadge type="inc" />
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#0B2545] cursor-pointer transition-colors">
             <X size={18} />

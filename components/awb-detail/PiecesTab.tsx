@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import DataTable from "@/components/DataTable";
 import StatusBadge from "@/components/StatusBadge";
 import { MoreHorizontal } from "lucide-react";
@@ -279,7 +278,6 @@ export default function PiecesTab() {
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
             Pieces
           </h3>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#94A3B8] font-medium">24 pieces total</span>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { Pencil, Ban, Clock, History } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface Driver {
   name: string;

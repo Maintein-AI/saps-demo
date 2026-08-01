@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import MessageHeaderCard from "./MessageHeaderCard";
 import SCMGrid from "./SCMGrid";
 import IATASyntaxDrawer from "./IATASyntaxDrawer";
@@ -173,7 +172,6 @@ export default function SCMContent() {
             <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-[15px] font-bold text-[#0F172A]">Supplementary Information</h2>
-                <ScopeBadge type="exc" />
               </div>
               <textarea
                 value={supplementaryInfo}

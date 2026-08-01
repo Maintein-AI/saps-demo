@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import KPIStrip from "@/components/consignee/pod-history/KPIStrip";
@@ -23,7 +22,6 @@ export default function PODHistoryPage() {
 
       <div className="flex items-center gap-2">
         <h1 className="text-[22px] font-bold text-[#0F172A]">POD History</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       <KPIStrip />

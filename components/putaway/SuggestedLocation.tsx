@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { MapPin, CheckCircle, XCircle, Thermometer, Truck, Package } from "lucide-react";
 
 interface SuggestedLocationProps {
@@ -16,7 +14,6 @@ export default function SuggestedLocation({ scanState, scannedData }: SuggestedL
           <h2 className="text-[16px] font-semibold text-[#0F172A]">
             Suggested Location Details
           </h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="w-14 h-14 rounded-2xl bg-[#F1F5F9] flex items-center justify-center mb-3">
@@ -56,7 +53,6 @@ export default function SuggestedLocation({ scanState, scannedData }: SuggestedL
         <h2 className="text-[16px] font-semibold text-[#0F172A]">
           Suggested Location Details
         </h2>
-        <ScopeBadge type="inc" />
       </div>
 
       {/* Location Header */}

@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Circle, CheckCircle, Clock, FileText, Search, Shield, Truck, Check } from "lucide-react";
 
 interface TimelineEvent {
@@ -34,7 +33,6 @@ export default function TimelineCard({ status }: TimelineCardProps) {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[#E2E8F0]">
         <h2 className="text-[15px] font-bold text-[#0F172A]">Customs Timeline</h2>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="p-5">

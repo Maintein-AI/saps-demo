@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Forklift, Bot, MoveRight, DoorOpen, Radio, ScanLine, AlertTriangle, CheckCircle, WifiOff, Wrench } from "lucide-react";
 
 const assets = [
@@ -15,7 +14,6 @@ export default function AssetsPanel() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Assets</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
         {assets.map((a) => {
@@ -62,7 +60,6 @@ export default function AssetsPanel() {
             </div>
             <span className="text-[12px] font-semibold text-[#0F172A]">Dolley Status</span>
           </div>
-          <ScopeBadge type="exc" />
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">

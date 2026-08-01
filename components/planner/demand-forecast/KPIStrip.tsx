@@ -1,5 +1,4 @@
 import { Plane, Package, Weight, AlertTriangle, ClipboardCheck, MessageSquare } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 
 interface KPICardProps {
   label: string;
@@ -18,7 +17,6 @@ function KPICard({ label, value, icon, color }: KPICardProps) {
           </div>
           <span className="text-[12px] font-semibold text-[#0F172A]">{label}</span>
         </div>
-        <ScopeBadge type="inc" />
       </div>
       <div className="text-[22px] font-bold text-[#0F172A] leading-tight">{value}</div>
     </div>

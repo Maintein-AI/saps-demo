@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   CheckCircle,
   Clock,
@@ -280,7 +279,6 @@ export default function InvoicesTable() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <h2 className="text-[15px] font-bold text-[#0F172A]">CHA Invoices</h2>
-          <ScopeBadge type="exc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{items.length} invoices</span>
       </div>
@@ -444,7 +442,6 @@ export default function InvoicesTable() {
               <div className="flex items-center gap-2">
                 <FileUp size={16} className="text-[#1B4F8B]" />
                 <h3 className="text-[13px] font-bold text-[#0F172A]">Invoice Breakdown</h3>
-                <ScopeBadge type="exc" />
               </div>
               <button
                 onClick={() => setSelectedItem(null)}

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Upload, FileText, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
@@ -96,7 +95,6 @@ export default function AuthorityLetterDigitisationPage() {
             <h1 className="text-[22px] font-bold text-[#0F172A]">Authority Letter Digitisation</h1>
             <p className="text-[12px] text-[#64748B]">Digitise authority letters using OCR extraction</p>
           </div>
-          <ScopeBadge type="exc" />
         </div>
 
         {/* Error State */}
@@ -143,7 +141,6 @@ export default function AuthorityLetterDigitisationPage() {
         <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-[14px] font-bold text-[#0F172A]">Scan or Upload Authority Letter</h3>
-            <ScopeBadge type="exc" />
           </div>
           <p className="text-[13px] text-[#64748B] leading-relaxed">
             Upload or scan the authority letter. OCR will extract key fields for review before linking it to vehicle entry.
@@ -174,7 +171,6 @@ export default function AuthorityLetterDigitisationPage() {
           <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[14px] font-bold text-[#0F172A]">OCR Processing</h3>
-              <ScopeBadge type="exc" />
             </div>
             <LoadingSkeleton rows={4} columns={3} />
           </div>
@@ -218,7 +214,6 @@ export default function AuthorityLetterDigitisationPage() {
                 <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-[14px] font-bold text-[#0F172A]">Actions</h3>
-                    <ScopeBadge type="exc" />
                   </div>
                   <div className="space-y-2">
                     <button

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { MultiTariffSet } from "@/components/finance-manager/multi-tariff-engine/types";
 
 const statusMap: Record<string, { color: string; bg: string; border: string }> = {
@@ -34,7 +33,6 @@ export default function MultiTariffMatrixTable({
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
       <div className="p-4 border-b border-[#E2E8F0] flex items-center gap-2">
         <h2 className="text-[16px] font-semibold text-[#0F172A]">Multi-Tariff Matrix</h2>
-        <ScopeBadge type="exc" />
         <span className="text-[12px] text-[#94A3B8] ml-2">{sets.length} sets</span>
       </div>
       <div className="overflow-x-auto">

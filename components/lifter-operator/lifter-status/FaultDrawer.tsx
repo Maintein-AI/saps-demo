@@ -10,7 +10,6 @@ import {
   Hash,
   Truck,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface FaultDrawerProps {
   isOpen: boolean;
@@ -78,7 +77,6 @@ export default function FaultDrawer({ isOpen, onClose, assetId, assetType, locat
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Lifter Fault Report</h2>
-            <ScopeBadge type="inc" />
           </div>
           <button
             onClick={onClose}

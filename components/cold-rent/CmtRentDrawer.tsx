@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { X, AlertTriangle, Info, RefreshCw, Clock, User, ArrowRight, FileText, DollarSign, CheckCircle, ChevronRight, Calendar, FileCheck, Printer, Eye, Save, Send } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import DataTable from "@/components/DataTable";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
@@ -147,7 +146,6 @@ export default function CmtRentDrawer({ isOpen, onClose }: CmtRentDrawerProps) {
             <h2 className="text-[16px] font-bold text-[#0F172A]">
               CMTS-grade Godown Rent Engine
             </h2>
-            <ScopeBadge type="exc" />
           </div>
           <button
             onClick={onClose}
@@ -194,7 +192,6 @@ export default function CmtRentDrawer({ isOpen, onClose }: CmtRentDrawerProps) {
               <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 mb-5">
                 <div className="flex items-center gap-2 mb-3">
                   <h3 className="text-[14px] font-bold text-[#0F172A]">AWB Summary</h3>
-                  <ScopeBadge type="exc" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex items-center justify-between">
@@ -251,7 +248,6 @@ export default function CmtRentDrawer({ isOpen, onClose }: CmtRentDrawerProps) {
               <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 mb-5">
                 <div className="flex items-center gap-2 mb-3">
                   <h3 className="text-[14px] font-bold text-[#0F172A]">Free Period Configuration</h3>
-                  <ScopeBadge type="exc" />
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div>
@@ -331,7 +327,6 @@ export default function CmtRentDrawer({ isOpen, onClose }: CmtRentDrawerProps) {
               <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 mb-5">
                 <div className="flex items-center gap-2 mb-3">
                   <h3 className="text-[14px] font-bold text-[#0F172A]">Surcharge Configuration</h3>
-                  <ScopeBadge type="exc" />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {activeChips.map((chip) => (
@@ -358,7 +353,6 @@ export default function CmtRentDrawer({ isOpen, onClose }: CmtRentDrawerProps) {
               <div className="rounded-xl border border-[#E2E8F0] bg-white overflow-hidden mb-5">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-[#E2E8F0]">
                   <h3 className="text-[14px] font-bold text-[#0F172A]">Tariff Slabs</h3>
-                  <ScopeBadge type="exc" />
                 </div>
                 <div className="p-3">
                   {loading ? (
@@ -373,7 +367,6 @@ export default function CmtRentDrawer({ isOpen, onClose }: CmtRentDrawerProps) {
               <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 mb-5">
                 <div className="flex items-center gap-2 mb-3">
                   <h3 className="text-[14px] font-bold text-[#0F172A]">Calculation Breakdown</h3>
-                  <ScopeBadge type="exc" />
                 </div>
                 <div className="space-y-2">
                   {CALCULATION_BREAKDOWN.map((item, i) => (
@@ -421,7 +414,6 @@ export default function CmtRentDrawer({ isOpen, onClose }: CmtRentDrawerProps) {
               <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 mb-5">
                 <div className="flex items-center gap-2 mb-3">
                   <h3 className="text-[14px] font-bold text-[#0F172A]">Actions</h3>
-                  <ScopeBadge type="exc" />
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
@@ -473,7 +465,6 @@ export default function CmtRentDrawer({ isOpen, onClose }: CmtRentDrawerProps) {
                 <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 mb-5">
                   <div className="flex items-center gap-2 mb-3">
                     <h3 className="text-[14px] font-bold text-[#0F172A]">Calculation Audit</h3>
-                    <ScopeBadge type="exc" />
                   </div>
                   <div className="space-y-3">
                     {AUDIT_ENTRIES.map((entry, index) => (

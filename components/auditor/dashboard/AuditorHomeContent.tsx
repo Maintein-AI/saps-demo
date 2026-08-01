@@ -155,7 +155,6 @@ export default function AuditorHomeContent() {
             { key: "entity", header: "Entity", width: "150px" },
             { key: "action", header: "Action", width: "100px" },
             { key: "evidence", header: "Evidence", width: "160px" },
-            { key: "scope", header: "Scope", width: "80px" },
           ]}
           rows={events.map((e) => ({
             timestamp: <span className="text-[12px] text-[#0F172A] font-mono">{e.timestamp}</span>,
@@ -171,17 +170,6 @@ export default function AuditorHomeContent() {
               <button className="text-[12px] text-[#2E75B6] hover:underline cursor-pointer font-medium">
                 {e.evidence}
               </button>
-            ),
-            scope: (
-              <span
-                className="inline-flex items-center h-5 px-2 rounded-full text-[10px] font-bold"
-                style={{
-                  backgroundColor: e.scope === "inc." ? "#16A34A" : "#DC2626",
-                  color: "white",
-                }}
-              >
-                {e.scope}
-              </span>
             ),
           }))}
           headerStyle="navy"

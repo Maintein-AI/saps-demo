@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Plane } from "lucide-react";
 
 export default function WelcomeCard() {
@@ -11,7 +10,6 @@ export default function WelcomeCard() {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h2 className="text-[17px] font-bold text-[#0F172A]">Aviation ULD Management</h2>
-            <ScopeBadge type="exc" />
           </div>
           <p className="text-[13px] text-[#64748B] leading-relaxed">
             Create, review, submit, correct, search, and export operational ULD messages.

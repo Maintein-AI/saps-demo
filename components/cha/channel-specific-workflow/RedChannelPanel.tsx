@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Calendar,
   Clock,
@@ -223,7 +222,6 @@ export default function RedChannelPanel({ onViewDetail }: RedChannelPanelProps) 
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Red Channel Physical Exam</h2>
-          <ScopeBadge type="exc" />
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[12px] text-[#64748B]">{exams.length} exams</span>

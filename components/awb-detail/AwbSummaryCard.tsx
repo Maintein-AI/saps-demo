@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import StatusBadge from "@/components/StatusBadge";
 
 export default function AwbSummaryCard() {
@@ -20,7 +19,6 @@ export default function AwbSummaryCard() {
           <h2 className="text-[16px] font-semibold text-[#0F172A]">
             AWB Summary
           </h2>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#94A3B8] font-medium">Last updated: 14:32</span>
       </div>

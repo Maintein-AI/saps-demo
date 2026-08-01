@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { Search, RotateCcw } from "lucide-react";
 
 interface SearchFiltersProps {
@@ -75,7 +74,6 @@ export default function SearchFilters({ onSearch, loading }: SearchFiltersProps)
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Search Filters</h2>
-          <ScopeBadge type="exc" />
         </div>
         <button
           onClick={handleReset}

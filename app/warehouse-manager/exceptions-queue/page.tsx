@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Tag } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import Breadcrumb from "@/components/Breadcrumb";
 import { useToast } from "@/components/ToastContext";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
@@ -67,7 +66,6 @@ export default function ExceptionsQueuePage() {
 
       <div className="flex items-center gap-3 mb-6">
         <h1 className="text-[24px] font-bold text-[#0F172A]">Exceptions Queue</h1>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="mb-4">
@@ -96,7 +94,6 @@ export default function ExceptionsQueuePage() {
           <div className="rounded-xl border border-[#E2E8F0] bg-white">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-[#E2E8F0]">
               <h2 className="text-[16px] font-bold text-[#0F172A]">Open Exceptions</h2>
-              <ScopeBadge type="inc" />
             </div>
             <EmptyState
               title="No open exceptions"
@@ -110,7 +107,6 @@ export default function ExceptionsQueuePage() {
           <div className="rounded-xl border border-[#E2E8F0] bg-white">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-[#E2E8F0]">
               <h2 className="text-[16px] font-bold text-[#0F172A]">Open Exceptions</h2>
-              <ScopeBadge type="inc" />
             </div>
             <div className="p-5">
               <LoadingSkeleton rows={6} columns={8} />

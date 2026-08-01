@@ -1,5 +1,4 @@
 import Link from "next/link";
-import ScopeBadge from "@/components/ScopeBadge";
 import { FilePlus, ClipboardCheck, FileSearch, Upload, Search, ListFilter } from "lucide-react";
 
 interface ActionCard {
@@ -67,7 +66,6 @@ export default function QuickActionCards() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-[15px] font-bold text-[#0F172A]">Quick Actions</h2>
-        <ScopeBadge type="exc" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {actions.map((action) => {

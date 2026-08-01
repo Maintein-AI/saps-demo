@@ -5,7 +5,6 @@ import LoadingSkeleton from "../../LoadingSkeleton";
 import EmptyState from "../../EmptyState";
 import ErrorState from "../../ErrorState";
 import DataTable from "../../DataTable";
-import ScopeBadge from "../../ScopeBadge";
 import { Search, Clock, ExternalLink, CheckCircle, XCircle, FileText } from "lucide-react";
 
 interface FinancialTimelineEvent {
@@ -150,7 +149,6 @@ export default function FinancialTraceContent() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <h2 className="text-[16px] font-bold text-[#0F172A]">Financial Timeline — INV-2026-0042</h2>
-                  <ScopeBadge type="inc" />
                 </div>
                 <span className="text-[12px] text-[#64748B] font-medium">10 events</span>
               </div>
@@ -212,7 +210,6 @@ export default function FinancialTraceContent() {
                 <div className="flex items-center gap-2 mb-4">
                   <FileText size={16} className="text-[#0B2545]" />
                   <h2 className="text-[15px] font-bold text-[#0F172A]">Invoice Detail</h2>
-                  <ScopeBadge type="inc" />
                 </div>
                 <div className="space-y-2.5">
                   {Object.entries(mockInvoiceDetail).map(([key, value]) => (
@@ -238,7 +235,6 @@ export default function FinancialTraceContent() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <h2 className="text-[16px] font-bold text-[#0F172A]">Approval Evidence — Waiver WVR-2026-0031</h2>
-              <ScopeBadge type="inc" />
             </div>
             <DataTable
               columns={[

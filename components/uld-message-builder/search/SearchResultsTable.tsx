@@ -1,7 +1,6 @@
 "use client";
 
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Eye,
   Pencil,
@@ -73,7 +72,6 @@ export default function SearchResultsTable({ results, loading, error, onRetry, o
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Search Results</h2>
-          <ScopeBadge type="exc" />
         </div>
         {!loading && !error && (
           <span className="text-[12px] text-[#64748B]">{results.length} messages found</span>

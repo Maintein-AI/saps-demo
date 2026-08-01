@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Ship, ChevronRight, PackageCheck, ShieldCheck, Send, AlertCircle } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 
 const cards = [
   {
@@ -45,7 +44,6 @@ export default function ExportCargoDashboard() {
           <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
             Export Cargo
           </h1>
-          <ScopeBadge type="exc" />
         </div>
         <p className="text-[14px] text-[#64748B] max-w-3xl">
           Outbound cargo lifecycle — from booking through customs clearance to airline handover. Ramp / aircraft-side handling remains out of software scope (logged only).
@@ -81,7 +79,6 @@ export default function ExportCargoDashboard() {
         {cards.map((c) => (
           <Link key={c.title} href={c.href} className="no-underline">
             <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full flex flex-col relative">
-              <div className="absolute top-3 right-3"><ScopeBadge type="exc" /></div>
               <div className="w-10 h-10 rounded-lg bg-[#F1F5F9] flex items-center justify-center mb-3">{c.icon}</div>
               <h3 className="text-[16px] font-semibold text-[#0F172A] mb-1">{c.title}</h3>
               <p className="text-[12.5px] text-[#64748B] leading-relaxed flex-1 mb-3">{c.description}</p>

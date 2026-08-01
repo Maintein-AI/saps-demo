@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Search,
   ChevronDown,
@@ -214,7 +213,6 @@ export default function PayDOContent() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Select Shipment</h2>
-            <ScopeBadge type="exc" />
           </div>
         </div>
 
@@ -300,7 +298,6 @@ export default function PayDOContent() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <h2 className="text-[15px] font-bold text-[#0F172A]">Shipment Summary</h2>
-                <ScopeBadge type="exc" />
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -347,7 +344,6 @@ export default function PayDOContent() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <h2 className="text-[15px] font-bold text-[#0F172A]">Charges Breakdown</h2>
-                <ScopeBadge type="exc" />
               </div>
             </div>
 
@@ -496,7 +492,6 @@ export default function PayDOContent() {
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={16} className="text-[#1B4F8B]" />
                 <h2 className="text-[15px] font-bold text-[#0F172A]">Payment Process</h2>
-                <ScopeBadge type="exc" />
               </div>
 
               <div className="flex items-center gap-2 mb-6">
@@ -609,7 +604,6 @@ export default function PayDOContent() {
                       <div className="flex items-center gap-2 mb-3">
                         <FileText size={14} className="text-[#1B4F8B]" />
                         <h3 className="text-[13px] font-bold text-[#0F172A]">Delivery Order</h3>
-                        <ScopeBadge type="exc" />
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div>

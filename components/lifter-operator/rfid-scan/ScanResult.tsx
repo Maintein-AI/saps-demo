@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Scan, Check, AlertTriangle, AlertCircle, X, ArrowRight, RefreshCw, CheckCircle2, Clock, Battery, Wifi, Signal, Bluetooth, Smartphone } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import StatusBadge from "../../StatusBadge";
 import { useToast } from "../../ToastContext";
 

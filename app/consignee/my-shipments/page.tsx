@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/consignee/my-shipments/KPIStrip";
 import FilterBar from "@/components/consignee/my-shipments/FilterBar";
 import ShipmentTable from "@/components/consignee/my-shipments/ShipmentTable";
@@ -54,7 +53,6 @@ export default function MyShipmentsPage() {
           />
           <div className="flex items-center gap-3 mt-3">
             <h1 className="text-[24px] font-bold text-[#0F172A]">My Shipments</h1>
-            <ScopeBadge type="exc" />
           </div>
         </div>
         <div className="flex items-center gap-2">

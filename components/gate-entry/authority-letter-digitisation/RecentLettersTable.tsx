@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { FileText, Eye, Download, Link2, X, AlertTriangle, CheckCircle, Clock } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
@@ -127,7 +126,6 @@ export default function RecentLettersTable({ loading }: RecentLettersTableProps)
       <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[14px] font-bold text-[#0F172A]">Recent Authority Letters</h3>
-          <ScopeBadge type="exc" />
         </div>
         <LoadingSkeleton rows={5} columns={6} />
       </div>
@@ -139,7 +137,6 @@ export default function RecentLettersTable({ loading }: RecentLettersTableProps)
       <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[14px] font-bold text-[#0F172A]">Recent Authority Letters</h3>
-          <ScopeBadge type="exc" />
         </div>
         <EmptyState
           title="No authority letters"
@@ -153,7 +150,6 @@ export default function RecentLettersTable({ loading }: RecentLettersTableProps)
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[14px] font-bold text-[#0F172A]">Recent Authority Letters</h3>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="overflow-x-auto">

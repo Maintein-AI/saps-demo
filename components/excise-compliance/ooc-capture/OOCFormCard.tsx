@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import { FileText, Upload, Save, X, ArrowRight, Eye, Paperclip } from "lucide-react";
 
 interface AwbSummary {
@@ -70,7 +69,6 @@ export default function OOCFormCard({ awb, onRecordOOC, onSaveDraft }: OOCFormCa
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[#E2E8F0]">
         <h2 className="text-[15px] font-bold text-[#0F172A]">OOC Details</h2>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="p-5">

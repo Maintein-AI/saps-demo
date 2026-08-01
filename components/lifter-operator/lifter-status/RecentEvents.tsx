@@ -10,7 +10,6 @@ import {
   Wrench,
   Clock,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface EventItem {
   time: string;
@@ -122,7 +121,6 @@ export default function RecentEvents() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Recent Lifter Events</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-1.5 text-[12px] text-[#94A3B8] font-medium">
           <Clock size={14} />

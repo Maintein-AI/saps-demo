@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Calendar, CheckCircle2, AlertTriangle, Package, ArrowUp, ArrowDown, ArrowRight, Battery } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 
 const filters = [
   { label: "Today", icon: Calendar },
@@ -26,7 +25,6 @@ export default function QuickFilterChips({ activeFilter, onFilterChange }: Quick
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Quick Filters</h2>
-          <ScopeBadge type="inc" />
         </div>
       </div>
       <div className="p-5">

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ArrowRight, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface Task {
   id: string;

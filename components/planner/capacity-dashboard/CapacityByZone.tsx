@@ -1,7 +1,5 @@
 "use client";
 
-import ScopeBadge from "@/components/ScopeBadge";
-
 const zones = [
   { name: "Standard Pallet", used: 310, available: 126, blocked: 14, total: 450 },
   { name: "Wide-bay 2-level", used: 180, available: 95, blocked: 10, total: 285 },
@@ -18,7 +16,6 @@ export default function CapacityByZone() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-5">
         <h2 className="text-[16px] font-semibold text-[#0F172A]">Capacity by Zone</h2>
-        <ScopeBadge type="inc" />
       </div>
       <div className="flex flex-col gap-3">
         {zones.map((z) => {

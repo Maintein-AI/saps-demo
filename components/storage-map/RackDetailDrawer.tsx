@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import DataTable from "@/components/DataTable";
 import StatusBadge from "@/components/StatusBadge";
 import { X, MapPin, Thermometer, Clock, CheckCircle2 } from "lucide-react";
@@ -76,7 +75,6 @@ export default function RackDetailDrawer({ rack, onClose }: RackDetailDrawerProp
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ScopeBadge type="inc" />
             <button
               onClick={onClose}
               className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#64748B] cursor-pointer transition-colors"

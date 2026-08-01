@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Split, Plus, Merge, ChevronDown, ChevronRight } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface HouseAWB {
   hawb: string;
@@ -76,7 +75,6 @@ export default function AwbConsolidation() {
           <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
             AWB Consolidation & Split
           </h1>
-          <ScopeBadge type="exc" />
         </div>
         <p className="text-[14px] text-[#64748B] max-w-3xl">
           Master AWB ↔ House AWB break-bulk and split shipment management. Holds the full hierarchy CMTS keeps across AWBCONSOLE, AWBSplit, AWBTRANSFER and AWBARRIVALADVICE.

@@ -1,5 +1,3 @@
-import ScopeBadge from "./ScopeBadge";
-
 interface KPICardProps {
   title: string;
   value: string;
@@ -16,7 +14,6 @@ export default function KPICard({ title, value, subtitle, trend, trendValue }: K
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[13px] font-semibold text-[#64748B]">{title}</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="flex items-baseline gap-2">
         <span className="text-[28px] font-bold text-[#0F172A]">{value}</span>

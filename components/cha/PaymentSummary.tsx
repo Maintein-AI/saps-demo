@@ -10,7 +10,6 @@ import {
   Mail,
   ArrowRight,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 interface PaymentSummaryProps {
@@ -56,7 +55,6 @@ export default function PaymentSummary({ onPayInvoice }: PaymentSummaryProps) {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Payment Summary</h3>
-          <ScopeBadge type="exc" />
         </div>
       </div>
 

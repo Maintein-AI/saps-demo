@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { WaiverRequest } from "@/app/finance-manager/waiver-workflow/page";
 import { CheckCircle, XCircle, HelpCircle, FileText, Eye } from "lucide-react";
 
@@ -45,7 +43,6 @@ export default function ApproverPanel({
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Finance Head Approval</h2>
-          <ScopeBadge type="inc" />
         </div>
         <span
           className="inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-semibold"

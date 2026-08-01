@@ -2,7 +2,6 @@
 
 import { X, Clock, Shield, Ban, AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface Visit {
   visitDate: string;
@@ -75,7 +74,6 @@ export default function VisitHistoryDrawer({ isOpen, onClose, driver }: VisitHis
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Driver Visit History</h2>
-            <ScopeBadge type="exc" />
           </div>
           <button
             onClick={onClose}

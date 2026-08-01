@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import {
   Eye,
   Bell,
@@ -242,7 +241,6 @@ export default function NOAInbox() {
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Notice of Arrival Inbox</h2>
-            <ScopeBadge type="exc" />
           </div>
           <span className="text-[12px] text-[#64748B]">{notices.length} notices</span>
         </div>
@@ -358,7 +356,6 @@ export default function NOAInbox() {
                             <div className="flex items-center gap-2">
                               <Eye size={16} className="text-[#1B4F8B]" />
                               <h3 className="text-[13px] font-bold text-[#0F172A]">Notice of Arrival Detail</h3>
-                              <ScopeBadge type="exc" />
                             </div>
                             <button onClick={() => setSelectedId(null)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#E2E8F0] text-[#64748B] cursor-pointer transition-colors">
                               <X size={14} />
@@ -500,7 +497,6 @@ export default function NOAInbox() {
               <AlertTriangle size={14} className="text-[#D97706]" />
             </div>
             <h2 className="text-[15px] font-bold text-[#0F172A]">Free Period Alerts</h2>
-            <ScopeBadge type="exc" />
           </div>
           <span className="text-[12px] text-[#64748B]">{notices.filter((n) => getFreePeriodStatus(n.freePeriodExpiry).label !== "Active").length} alerts</span>
         </div>

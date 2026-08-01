@@ -1,7 +1,6 @@
 "use client";
 
 import { Scan, CheckCircle2, AlertTriangle, XCircle, HelpCircle } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface ScanConfirmationProps {
   scanInput: string;
@@ -61,7 +60,6 @@ export default function ScanConfirmation({ scanInput, setScanInput, scanStatus, 
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h3 className="text-[15px] font-bold text-[#0F172A]">Scan to Confirm</h3>
-        <ScopeBadge type="inc" />
       </div>
 
       {/* Scan input */}

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/cha/KPIStrip";
 import CustomsWorkQueue from "@/components/cha/CustomsWorkQueue";
 import DOsReadyTable from "@/components/cha/DOsReadyTable";
@@ -89,7 +88,6 @@ export default function CHADashboardPage() {
             <h1 className="text-[24px] font-bold text-[#0F172A]">
               CHA Dashboard
             </h1>
-            <ScopeBadge type="exc" />
           </div>
         </div>
         <div className="flex items-center gap-2">

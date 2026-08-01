@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
@@ -212,7 +211,6 @@ export default function StorageMapPage() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               Storage Map
             </h1>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -256,7 +254,6 @@ export default function StorageMapPage() {
                     <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
                       AFU Warehouse Map
                     </h2>
-                    <ScopeBadge type="inc" />
                   </div>
                   <EmptyState
                     title="No storage locations configured"
@@ -300,7 +297,6 @@ export default function StorageMapPage() {
               <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
                 Zone Utilisation Summary
               </h2>
-              <ScopeBadge type="inc" />
             </div>
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">

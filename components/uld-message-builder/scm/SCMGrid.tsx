@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import { Trash2, Plus, AlertTriangle } from "lucide-react";
 
 interface SCMRow {
@@ -201,7 +200,6 @@ export default function SCMGrid({
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <h2 className="text-[15px] font-bold text-[#0F172A]">ULD Stock Lines</h2>
-          <ScopeBadge type="exc" />
         </div>
         <div className="flex items-center gap-3">
           {totalErrors > 0 && (

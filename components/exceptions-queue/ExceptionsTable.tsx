@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import DataTable from "@/components/DataTable";
 import StatusBadge from "@/components/StatusBadge";
 import {
@@ -134,7 +132,6 @@ export default function ExceptionsTable({
     <div className="rounded-xl border border-[#E2E8F0] bg-white overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-4 border-b border-[#E2E8F0]">
         <h2 className="text-[16px] font-bold text-[#0F172A]">Open Exceptions</h2>
-        <ScopeBadge type="inc" />
         <span className="ml-auto text-[12px] text-[#64748B]">{rows.length} records</span>
       </div>
       <div className="p-4">

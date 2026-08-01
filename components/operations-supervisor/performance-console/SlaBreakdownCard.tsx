@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 
 const slaItems = [
@@ -27,7 +26,6 @@ export default function SlaBreakdownCard() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[15px] font-bold text-[#0F172A]">SLA Breakdown</h3>
-        <ScopeBadge type="inc" />
       </div>
       <div className="space-y-4">
         {slaItems.map((s) => {

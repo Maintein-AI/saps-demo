@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import UCMContent from "@/components/uld-message-builder/ucm/UCMContent";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +16,6 @@ export default function UCMPage() {
 
       <div className="flex items-center gap-2">
         <h1 className="text-[22px] font-bold text-[#0F172A]">ULD Control Message (UCM)</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       <UCMContent />

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useToast } from "@/components/ToastContext";
 import { X, FileText, Bell, ArrowUpRight, Gavel, CheckCircle, FileDown, Paperclip, Eye, Calendar, Clock, AlertTriangle } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface LongStayRow {
   id: string;
@@ -57,7 +56,6 @@ export default function DetailDrawer({ isOpen, onClose, row }: DetailDrawerProps
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Long-Stay Case Detail</h2>
-            <ScopeBadge type="inc" />
           </div>
           <button
             onClick={onClose}

@@ -27,7 +27,6 @@ interface TileSpec {
   name: string;
   roleText: string;
   icon: React.ReactNode;
-  tag: "inc" | "exc";
   href: string;
 }
 
@@ -42,41 +41,41 @@ const groups: TileGroup[] = [
   {
     label: "Operations",
     tiles: [
-      { name: "Warehouse Manager", roleText: "Putaway · picking · storage map", icon: <Warehouse {...ICON_PROPS} />, tag: "inc", href: "/warehouse-manager" },
-      { name: "Gate Entry", roleText: "Vehicle in/out · driver ID · authority letter", icon: <Truck {...ICON_PROPS} />, tag: "inc", href: "/gate-entry" },
-      { name: "Lifter Operator", roleText: "Task list · RFID handheld · movement log", icon: <Forklift {...ICON_PROPS} />, tag: "inc", href: "/lifter-operator" },
-      { name: "Planner", roleText: "Capacity · slots · roster · forecast", icon: <CalendarRange {...ICON_PROPS} />, tag: "inc", href: "/planner" },
-      { name: "Operations Supervisor", roleText: "Live ops · performance · escalations", icon: <Activity {...ICON_PROPS} />, tag: "inc", href: "/operations-supervisor" },
+      { name: "Warehouse Manager", roleText: "Putaway · picking · storage map", icon: <Warehouse {...ICON_PROPS} />, href: "/warehouse-manager" },
+      { name: "Gate Entry", roleText: "Vehicle in/out · driver ID · authority letter", icon: <Truck {...ICON_PROPS} />, href: "/gate-entry" },
+      { name: "Lifter Operator", roleText: "Task list · RFID handheld · movement log", icon: <Forklift {...ICON_PROPS} />, href: "/lifter-operator" },
+      { name: "Planner", roleText: "Capacity · slots · roster · forecast", icon: <CalendarRange {...ICON_PROPS} />, href: "/planner" },
+      { name: "Operations Supervisor", roleText: "Live ops · performance · escalations", icon: <Activity {...ICON_PROPS} />, href: "/operations-supervisor" },
     ],
   },
   {
     label: "Compliance & Finance",
     tiles: [
-      { name: "Excise / Compliance", roleText: "Customs queue · OOC · holds · Section 82", icon: <ShieldCheck {...ICON_PROPS} />, tag: "inc", href: "/excise-compliance" },
-      { name: "Finance Manager", roleText: "Invoicing · waivers · payments · tariffs", icon: <Wallet {...ICON_PROPS} />, tag: "inc", href: "/finance-manager" },
-      { name: "Auditor", roleText: "Cargo trace · financial trace · RBAC", icon: <FileSearch {...ICON_PROPS} />, tag: "inc", href: "/auditor" },
+      { name: "Excise / Compliance", roleText: "Customs queue · OOC · holds · Section 82", icon: <ShieldCheck {...ICON_PROPS} />, href: "/excise-compliance" },
+      { name: "Finance Manager", roleText: "Invoicing · waivers · payments · tariffs", icon: <Wallet {...ICON_PROPS} />, href: "/finance-manager" },
+      { name: "Auditor", roleText: "Cargo trace · financial trace · RBAC", icon: <FileSearch {...ICON_PROPS} />, href: "/auditor" },
     ],
   },
   {
     label: "External Stakeholders",
     tiles: [
-      { name: "Forwarding Agent", roleText: "AWB entry · dispatch docs · payments", icon: <Building2 {...ICON_PROPS} />, tag: "exc", href: "/forwarding-agent" },
-      { name: "CHA", roleText: "GD filing · channel workflow · DO", icon: <Briefcase {...ICON_PROPS} />, tag: "exc", href: "/cha" },
-      { name: "Consignee", roleText: "Shipments · NOA · pay & download DO", icon: <User {...ICON_PROPS} />, tag: "exc", href: "/consignee/dashboard" },
+      { name: "Forwarding Agent", roleText: "AWB entry · dispatch docs · payments", icon: <Building2 {...ICON_PROPS} />, href: "/forwarding-agent" },
+      { name: "CHA", roleText: "GD filing · channel workflow · DO", icon: <Briefcase {...ICON_PROPS} />, href: "/cha" },
+      { name: "Consignee", roleText: "Shipments · NOA · pay & download DO", icon: <User {...ICON_PROPS} />, href: "/consignee/dashboard" },
     ],
   },
   {
     label: "Cargo Modules",
     tiles: [
-      { name: "ULD Management", roleText: "UCM · SCM · LUC · message log", icon: <MessageSquare {...ICON_PROPS} />, tag: "exc", href: "/uld-message-builder" },
-      { name: "CMTS Absorption", roleText: "Manifest · AWB split · rent history · charges", icon: <Package {...ICON_PROPS} />, tag: "exc", href: "/cmts-absorption" },
-      { name: "Export Cargo", roleText: "Acceptance · customs · manifest · handover", icon: <Ship {...ICON_PROPS} />, tag: "exc", href: "/export-cargo" },
+      { name: "ULD Management", roleText: "UCM · SCM · LUC · message log", icon: <MessageSquare {...ICON_PROPS} />, href: "/uld-message-builder" },
+      { name: "CMTS Absorption", roleText: "Manifest · AWB split · rent history · charges", icon: <Package {...ICON_PROPS} />, href: "/cmts-absorption" },
+      { name: "Export Cargo", roleText: "Acceptance · customs · manifest · handover", icon: <Ship {...ICON_PROPS} />, href: "/export-cargo" },
     ],
   },
   {
     label: "System",
     tiles: [
-      { name: "Admin / Super Admin", roleText: "Users · roles · master data · integrations", icon: <Settings {...ICON_PROPS} />, tag: "inc", href: "/admin" },
+      { name: "Admin / Super Admin", roleText: "Users · roles · master data · integrations", icon: <Settings {...ICON_PROPS} />, href: "/admin" },
     ],
   },
 ];
@@ -115,7 +114,6 @@ export default function HomePage() {
                   name={tile.name}
                   roleText={tile.roleText}
                   icon={tile.icon}
-                  tag={tile.tag}
                   href={tile.href}
                 />
               ))}

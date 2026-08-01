@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { MoreHorizontal, ChevronDown, ChevronUp, Eye, Calendar } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 import type { FlightForecast } from "./types";
 
 const sampleFlights: FlightForecast[] = [
@@ -83,7 +82,6 @@ export default function InboundFlightsTable({ filters, onViewDetail }: InboundFl
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
           <span className="text-[13px] font-bold text-[#0F172A]">Inbound Flight Forecast</span>
-          <ScopeBadge type="inc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{sorted.length} flights</span>
       </div>

@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import DataTable from "@/components/DataTable";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { ArrowRight, UserCheck, UserX, Clock } from "lucide-react";
@@ -28,7 +26,6 @@ export default function RecentUserActivity({ isLoading }: { isLoading: boolean }
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Recent User Activity</h2>
-          <ScopeBadge type="inc" />
         </div>
         <Link href="/admin/audit-trail" className="flex items-center gap-1 text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">
           Audit Trail <ArrowRight size={14} />

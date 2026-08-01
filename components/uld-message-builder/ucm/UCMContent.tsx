@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import MessageHeaderCard from "./MessageHeaderCard";
 import ULDTable from "./ULDTable";
 import CorrectionDrawer from "./CorrectionDrawer";
@@ -376,7 +375,6 @@ export default function UCMContent() {
             <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <h2 className="text-[15px] font-bold text-[#0F172A]">UCM Options</h2>
-                <ScopeBadge type="exc" />
               </div>
               <div className="flex items-center gap-8">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -403,7 +401,6 @@ export default function UCMContent() {
             <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-[15px] font-bold text-[#0F172A]">SI Remarks</h2>
-                <ScopeBadge type="exc" />
               </div>
               <textarea
                 value={siRemarks}
@@ -422,7 +419,6 @@ export default function UCMContent() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
                 <div className="flex items-center gap-2">
                   <h2 className="text-[15px] font-bold text-[#0F172A]">IATA Syntax</h2>
-                  <ScopeBadge type="exc" />
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPICard from "@/components/KPICard";
 import DataTable from "@/components/DataTable";
 import RackHeatmap from "@/components/RackHeatmap";
@@ -145,7 +144,6 @@ export default function WarehouseManagerDashboard() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               Warehouse Manager Dashboard
             </h1>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -242,7 +240,6 @@ export default function WarehouseManagerDashboard() {
                 <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
                   Live AWB Queue
                 </h2>
-                <ScopeBadge type="inc" />
               </div>
               <Link
                 href="#"
@@ -270,7 +267,6 @@ export default function WarehouseManagerDashboard() {
                 <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
                   Rack Heatmap
                 </h2>
-                <ScopeBadge type="inc" />
               </div>
               <Link
                 href="#"
@@ -303,7 +299,6 @@ export default function WarehouseManagerDashboard() {
             <h2 className="text-[18px] font-semibold text-[#0F172A] leading-[28px]">
               Exception Summary
             </h2>
-            <ScopeBadge type="inc" />
           </div>
           <Link
             href="#"

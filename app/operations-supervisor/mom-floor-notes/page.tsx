@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import KPIStrip from "@/components/operations-supervisor/mom-floor-notes/KPIStrip";
 import FilterBar from "@/components/operations-supervisor/mom-floor-notes/FilterBar";
 import NotesList from "@/components/operations-supervisor/mom-floor-notes/NotesList";
@@ -56,7 +55,6 @@ export default function MomFloorNotesPage() {
           ]} />
           <div className="flex items-center gap-3 mt-3">
             <h1 className="text-[24px] font-bold text-[#0F172A]">MoM / Floor Notes</h1>
-            <ScopeBadge type="inc" />
           </div>
         </div>
         <div className="flex items-center gap-2">

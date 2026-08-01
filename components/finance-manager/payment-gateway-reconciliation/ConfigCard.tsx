@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { ConfigEntry } from "@/components/finance-manager/payment-gateway-reconciliation/types";
 
 export default function ConfigCard() {
@@ -23,7 +22,6 @@ export default function ConfigCard() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-5">
         <h2 className="text-[16px] font-semibold text-[#0F172A]">Gateway Configuration</h2>
-        <ScopeBadge type="exc" />
       </div>
       <div className="flex flex-col gap-4">
         <div>

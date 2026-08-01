@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { Clock, CheckCircle, FileEdit, XCircle } from "lucide-react";
 
 interface RecentMessage {
@@ -35,7 +34,6 @@ export default function LastFiveMessages() {
     <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-[15px] font-bold text-[#0F172A]">My Last 5 Messages</h2>
-        <ScopeBadge type="exc" />
       </div>
       <div className="flex flex-col gap-2">
         {lastFive.map((msg, idx) => {

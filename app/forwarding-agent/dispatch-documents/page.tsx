@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
@@ -74,7 +73,6 @@ export default function DispatchDocumentsPage() {
         />
         <div className="flex items-center gap-2.5">
           <h1 className="text-[22px] font-bold text-[#0F172A]">Dispatch Documents</h1>
-          <ScopeBadge type="exc" />
         </div>
       </div>
 

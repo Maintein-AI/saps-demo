@@ -1,7 +1,5 @@
 "use client";
 
-import ScopeBadge from "@/components/ScopeBadge";
-
 const buckets = [
   { label: "0–7 days", count: 18, amount: 1200000, color: "#16A34A", bg: "#DCFCE7" },
   { label: "8–14 days", count: 14, amount: 2100000, color: "#D97706", bg: "#FEF3C7" },
@@ -24,7 +22,6 @@ export default function OutstandingAging() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[15px] font-bold text-[#0F172A]">Outstanding Aging</h2>
-          <ScopeBadge type="inc" />
         </div>
       </div>
       <div className="p-5">

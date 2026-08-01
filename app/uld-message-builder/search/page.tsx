@@ -1,6 +1,4 @@
 "use client";
-
-import ScopeBadge from "@/components/ScopeBadge";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import SearchContent from "@/components/uld-message-builder/search/SearchContent";
@@ -18,7 +16,6 @@ export default function SearchPage() {
 
       <div className="flex items-center gap-2">
         <h1 className="text-[22px] font-bold text-[#0F172A]">Search ULD Messages</h1>
-        <ScopeBadge type="exc" />
       </div>
 
       <SearchContent />

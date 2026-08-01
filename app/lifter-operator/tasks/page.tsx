@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 import KPIStrip from "@/components/lifter-operator/KPIStrip";
 import TaskFilters from "@/components/lifter-operator/TaskFilters";
@@ -184,7 +183,6 @@ export default function LifterTasksPage() {
 
       <div className="flex items-center gap-3">
         <h1 className="text-[22px] font-bold text-[#0F172A]">My Tasks</h1>
-        <ScopeBadge type="inc" />
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">

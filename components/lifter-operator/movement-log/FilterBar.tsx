@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Calendar, Clock, Package, Hash, Tag, Search, Filter } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 
 export default function FilterBar() {
   const [date, setDate] = useState("2026-05-31");
@@ -18,7 +17,6 @@ export default function FilterBar() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[16px] font-bold text-[#0F172A]">Filter Movements</h2>
-          <ScopeBadge type="inc" />
         </div>
         <div className="flex items-center gap-1.5 text-[12px] text-[#94A3B8] font-medium">
           <Filter size={14} />

@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useToast } from "@/components/ToastContext";
-import ScopeBadge from "@/components/ScopeBadge";
 import MessageLogTable from "./MessageLogTable";
 import IATASyntaxDrawer from "../IATASyntaxDrawer";
 import CorrectionDrawer from "../ucm/CorrectionDrawer";
@@ -136,7 +135,6 @@ export default function MessageLogContent() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
             <div className="flex items-center gap-2">
               <h2 className="text-[15px] font-bold text-[#0F172A]">Message Log</h2>
-              <ScopeBadge type="exc" />
             </div>
             <span className="text-[12px] text-[#64748B]">{entries.length} messages</span>
           </div>

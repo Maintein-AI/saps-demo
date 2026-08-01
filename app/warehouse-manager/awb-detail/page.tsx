@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
@@ -130,7 +129,6 @@ export default function AwbDetailPage() {
             <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
               AWB Detail
             </h1>
-            <ScopeBadge type="inc" />
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -184,7 +182,6 @@ export default function AwbDetailPage() {
             <h2 className="text-[16px] font-semibold text-[#0F172A]">
               AWB Lifecycle
             </h2>
-            <ScopeBadge type="inc" />
           </div>
           {isLoading ? (
             <div className="h-16 bg-[#F1F5F9] rounded animate-pulse" />

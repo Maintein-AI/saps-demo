@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Plane, Send, CheckCircle2 } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface ManifestItem {
   flight: string;
@@ -40,7 +39,6 @@ export default function ManifestHandover() {
           <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-[32px] lg:leading-[40px]">
             Manifest & Handover
           </h1>
-          <ScopeBadge type="exc" />
         </div>
         <p className="text-[14px] text-[#64748B] max-w-3xl">
           Build-up planning, outbound FFM / FWB / FHL messaging and airline handover. Handover marks the software-side

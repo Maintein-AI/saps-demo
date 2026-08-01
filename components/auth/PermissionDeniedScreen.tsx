@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { ShieldAlert, User, Shield, FileText, Key, Send, LayoutDashboard } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useAuth } from "./AuthContext";
 
 export default function PermissionDeniedScreen() {
@@ -26,7 +25,6 @@ export default function PermissionDeniedScreen() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-[20px] font-bold text-[#0F172A]">Permission Denied</h1>
-                  <ScopeBadge type="exc" />
                 </div>
                 <p className="text-[14px] text-[#64748B] leading-relaxed">
                   You are signed in, but your role does not have permission to access this message builder.

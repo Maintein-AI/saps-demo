@@ -1,4 +1,3 @@
-import ScopeBadge from "@/components/ScopeBadge";
 import { CreditCard, Receipt, AlertTriangle, Clock, ArrowRight } from "lucide-react";
 
 const items = [
@@ -14,7 +13,6 @@ export default function PaymentSummary() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Payment Summary</h3>
-          <ScopeBadge type="exc" />
         </div>
         <button className="flex items-center gap-1 text-[12px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">
           View all <ArrowRight size={12} />

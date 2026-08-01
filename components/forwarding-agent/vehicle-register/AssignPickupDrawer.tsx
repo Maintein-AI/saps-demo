@@ -2,7 +2,6 @@
 
 import { X, Truck, Save, Ban, Hash, User, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
-import ScopeBadge from "@/components/ScopeBadge";
 import { useToast } from "@/components/ToastContext";
 
 interface Vehicle {
@@ -61,7 +60,6 @@ export default function AssignPickupDrawer({ isOpen, onClose, vehicle }: AssignP
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-[#E2E8F0] flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0F172A]">Assign Vehicle to Pickup</h2>
-            <ScopeBadge type="exc" />
           </div>
           <button
             onClick={onClose}

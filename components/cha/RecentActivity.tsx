@@ -12,7 +12,6 @@ import {
   Ban,
   ArrowRight,
 } from "lucide-react";
-import ScopeBadge from "@/components/ScopeBadge";
 
 interface ActivityEvent {
   id: string;
@@ -131,7 +130,6 @@ export default function RecentActivity() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-bold text-[#0F172A]">Recent CHA Activity</h3>
-          <ScopeBadge type="exc" />
         </div>
         <span className="text-[12px] text-[#64748B]">{events.length} events</span>
       </div>

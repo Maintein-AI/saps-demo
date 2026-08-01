@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Search, Plus, Tag, X } from "lucide-react";
-import ScopeBadge from "../../ScopeBadge";
 
 interface SectionAProps {
   data: Record<string, any>;
@@ -44,7 +43,6 @@ export default function SectionA({ data, onChange, errors }: SectionAProps) {
     <div className="space-y-5">
       <div className="flex items-center gap-2 mb-1">
         <h3 className="text-[14px] font-bold text-[#0F172A]">A. Identification</h3>
-        <ScopeBadge type="exc" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
