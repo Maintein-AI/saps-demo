@@ -151,8 +151,10 @@ const navItems: NavItem[] = [
     ],
   },
   // Phase 9 — export cargo, FC-11. P9-1 (revenue) and P9-6 (airmail) parked.
+  // Named distinctly from the legacy "Export Cargo" section further down —
+  // duplicate labels collide on the React key and on the FC-01 ordering below.
   {
-    label: "Export Cargo",
+    label: "Export (FC-11)",
     icon: PlaneTakeoff,
     href: "/export/acceptance",
     subItems: [
@@ -350,6 +352,61 @@ const navItems: NavItem[] = [
   { label: "QA Checklist", icon: ClipboardList, href: "/qa-checklist" },
 ];
 
+/**
+ * FC-01 — Master End-to-End Air Cargo Flow.
+ *
+ * Top-level navigation follows the flow's own sequence rather than the
+ * persona grouping the demo started with, so walking the sidebar top to
+ * bottom walks a consignment from airline handover to file closure.
+ *
+ * The §refs are FC-01's own step numbers (see FLOWS in lib/architecture.ts,
+ * extracted from the FigJam board):
+ *
+ *   §01–14  handover → pouch opening → doc verification → AWB summary →
+ *           manifest reconciliation → indexation → tagging → split &
+ *           segregation → acceptance, weighing & condition check
+ *   §15–16  storage allocation & data capture
+ *   §17–18  IATA messaging (ARR / RCF / NFD) → Notice of Arrival
+ *   §19     customs clearance tracking
+ *   §20–22  charges → invoice → godown rent voucher → Delivery Order
+ *   §23–27  gate pass → dispatch → POD / DLV → AWB closure & archive
+ *
+ * Two entries are branches that leave the main line rather than steps on it,
+ * and sit at the end of the flow group: Exceptions (the §08 "discrepancy?"
+ * decision, which hands off to FC-04) and Transhipment (FC-09, taken when
+ * cargo never enters local import at all).
+ *
+ * Anything NOT on this list is a persona portal, a utility screen or a
+ * separate flow (FC-11 export). Those keep their place below and are
+ * prefixed with "." so the distinction is visible at a glance.
+ */
+const FC01_FLOW_ORDER = [
+  "Import Documentation", //   §01–14  M01–M04
+  "Storage & Allocation", //   §10, §15–16  M05
+  "Messaging & Alerts", //     §17–18  M07–M08
+  "Customs Clearance", //      §19  M09
+  "Billing & Release", //      §20–22  M10–M12
+  "Dispatch & Closure", //     §23–27  M13–M14, M20
+  "Exceptions & CDR", //       branch — §08 discrepancy → FC-04
+  "Transhipment", //           branch — FC-09
+];
+
+/**
+ * Flow steps first, in FC-01 order; everything else after, marked with a
+ * leading dot. Derived rather than hand-maintained, so a nav item added
+ * later shows as off-flow until it is deliberately placed in the list above.
+ */
+const orderedNavItems: NavItem[] = (() => {
+  const byLabel = new Map(navItems.map((i) => [i.label, i]));
+  const onFlow = FC01_FLOW_ORDER.map((label) => byLabel.get(label)).filter(
+    (i): i is NavItem => i !== undefined,
+  );
+  const offFlow = navItems
+    .filter((i) => !FC01_FLOW_ORDER.includes(i.label))
+    .map((i) => ({ ...i, label: `. ${i.label}` }));
+  return [...onFlow, ...offFlow];
+})();
+
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
@@ -376,7 +433,7 @@ export default function Sidebar({ collapsed, onToggle, onMobileClose }: SidebarP
 
       <div className="flex-1 overflow-y-auto py-3">
         <nav className="flex flex-col gap-0.5 px-2">
-          {navItems.map((item) => {
+          {orderedNavItems.map((item) => {
             const Icon = item.icon;
 
             /**
