@@ -378,11 +378,24 @@ export default function Sidebar({ collapsed, onToggle, onMobileClose }: SidebarP
         <nav className="flex flex-col gap-0.5 px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
+
+            /**
+             * A section is "active" when the current route matches the section
+             * itself OR any of its sub-items.
+             *
+             * Matching only on `item.href` breaks every section whose href
+             * points at its first sub-item rather than a shared parent path
+             * (Import, Storage, Exceptions, Customs, Billing, Dispatch,
+             * Messaging, Transhipment, Export) — selecting a second sub-item
+             * collapsed the section, because e.g. "/billing/godown-rent" does
+             * not start with "/billing/calculator/".
+             */
+            const matches = (href: string) =>
+              href !== "#" && (pathname === href || pathname.startsWith(href + "/"));
+
             const isActive =
-              item.href !== "#" &&
-              (pathname === item.href || pathname.startsWith(item.href + "/"));
-            const isParentActive =
-              item.href !== "#" && (pathname === item.href || pathname.startsWith(item.href + "/"));
+              matches(item.href) || (item.subItems?.some((s) => matches(s.href)) ?? false);
+            const isParentActive = isActive;
             return (
               <div key={item.label}>
                 <Link
