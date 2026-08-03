@@ -56,15 +56,18 @@ const navItems: NavItem[] = [
     label: "Import Documentation",
     icon: FileScan,
     href: "/import/flights",
+    // Ordered by FC-02's own sequence, not alphabetically or by module
+    // number — the sidebar is how an operator walks the flow.
     subItems: [
-      { label: "Flight & Airline Data — M01", href: "/import/flights" },
-      { label: "Document Repository — M02", href: "/import/documents" },
-      { label: "OCR Intake Workbench", href: "/import/ocr-intake" },
-      { label: "AWB Indexing — M03", href: "/import/indexing" },
-      { label: "Manifest & IGM", href: "/import/manifest" },
-      { label: "Cargo Acceptance — M04", href: "/import/acceptance" },
-      { label: "Consolidation & Split", href: "/import/consolidation" },
-      { label: "Arrival Advice / NOA", href: "/import/arrival-advice" },
+      { label: "Flight & Airline Data — M01", href: "/import/flights" }, //     §01–05
+      { label: "Manifest & IGM", href: "/import/manifest" }, //                 §06
+      { label: "OCR Intake Workbench", href: "/import/ocr-intake" }, //         §06a–06d
+      { label: "AWB Summary Sheet", href: "/import/summary" }, //               §07–08
+      { label: "AWB Indexing — M03", href: "/import/indexing" }, //             §09
+      { label: "Cargo Acceptance — M04", href: "/import/acceptance" }, //       §11–13
+      { label: "Consolidation & Split", href: "/import/consolidation" }, //     §11–12
+      { label: "Arrival Advice / NOA", href: "/import/arrival-advice" }, //     §30
+      { label: "Document Repository — M02", href: "/import/documents" }, //     supporting
     ],
   },
   // Phase 2 — storage & warehouse allocation, M05 (FC-03).

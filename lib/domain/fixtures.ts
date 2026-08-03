@@ -22,6 +22,7 @@ import {
   formatDate,
   intBetween,
   ocr,
+  formEntry,
   pick,
   round2,
   seeded,
@@ -1952,11 +1953,30 @@ export const EXPORT_CONSIGNMENTS: ExportConsignment[] = EXPORT_SEED.map((seed, i
     stage,
     acceptance,
     lines,
+    // Keyed at the acceptance counter off the shipper's paper. Consignment
+    // i === 1 is the one whose invoice went in unverified — no supervisor
+    // countersign — which is what the completeness gate picks up.
     capturedDocs: [
-      { label: "Shipping bill", value: ocr(`SB-2026-${String(44100 + i)}`, 0.96), documentId: `DOC-EXP-${i}-01` },
-      { label: "Commercial invoice", value: ocr(`INV-EXP-${String(9900 + i)}`, i === 1 ? 0.74 : 0.95), documentId: `DOC-EXP-${i}-02` },
-      { label: "Packing list", value: ocr(`PL-${String(3300 + i)}`, 0.93), documentId: `DOC-EXP-${i}-03` },
-      { label: "Form-E", value: ocr(declaration.formERef ?? "", 0.98), documentId: `DOC-EXP-${i}-04` },
+      {
+        label: "Shipping bill",
+        value: formEntry(`SB-2026-${String(44100 + i)}`, "Shipper pack — shipping bill", "e.acceptance", daysAgo(2, 9, 15), "s.malik"),
+        documentId: `DOC-EXP-${i}-01`,
+      },
+      {
+        label: "Commercial invoice",
+        value: formEntry(`INV-EXP-${String(9900 + i)}`, "Shipper pack — commercial invoice", "e.acceptance", daysAgo(2, 9, 18), i === 1 ? undefined : "s.malik"),
+        documentId: `DOC-EXP-${i}-02`,
+      },
+      {
+        label: "Packing list",
+        value: formEntry(`PL-${String(3300 + i)}`, "Shipper pack — packing list", "e.acceptance", daysAgo(2, 9, 21), "s.malik"),
+        documentId: `DOC-EXP-${i}-03`,
+      },
+      {
+        label: "Form-E",
+        value: formEntry(declaration.formERef ?? "", "Bank Form-E / EFE advice", "e.acceptance", daysAgo(2, 9, 24), "s.malik"),
+        documentId: `DOC-EXP-${i}-04`,
+      },
     ],
     weighment,
     screening,
@@ -2434,11 +2454,19 @@ export const CUSTOMS_CLEARANCES: CustomsClearance[] = CUSTOMS_AWBS.map((a, i) =>
   const oocIssued = channelDone && duty?.paidAt != null;
   const sdRef = submissions[0].reference!;
 
-  // One OOC (index 7) is scanner-captured and disagrees with the SD on
-  // package count — the verify-vs-SD control doing its job.
-  const scanMismatch = oocIssued && i === 7;
+  // One OOC (index 7) came in with the PSW gateway down, so it was keyed
+  // off the OOC print — and the keyed package count disagrees with the SD.
+  // That is the verify-vs-SD control doing its job, and it is why the
+  // control has to be independent of how the value arrived.
+  const keyedMismatch = oocIssued && i === 7;
   const declaredPacks = String(a.TOTALPCS);
-  const scannedPacks = scanMismatch ? String(a.TOTALPCS - 2) : declaredPacks;
+  const keyedPacks = keyedMismatch ? String(a.TOTALPCS - 2) : declaredPacks;
+  const oocSource = keyedMismatch ? "OOC print — counter copy" : "PSW gateway fetch";
+  const oocKeyedAt = daysAgo(filedDaysAgo - 4, 11, 35);
+  const capture = (v: string) =>
+    keyedMismatch
+      ? formEntry(v, oocSource, "a.qureshi", oocKeyedAt)
+      : formEntry(v, oocSource, "psw.gateway", daysAgo(filedDaysAgo - 4, 11, 30), "n.hassan");
 
   const ooc: OutOfCharge | null = oocIssued
     ? {
@@ -2451,9 +2479,9 @@ export const CUSTOMS_CLEARANCES: CustomsClearance[] = CUSTOMS_AWBS.map((a, i) =>
           cargoClassId: a.CARGOCLASSID,
           continuesFromCmts: 9099,
         },
-        source: scanMismatch ? "scanner" : "psw-fetch",
-        fetchedAt: scanMismatch ? null : daysAgo(filedDaysAgo - 4, 11, 30),
-        scannedAt: scanMismatch ? daysAgo(filedDaysAgo - 4, 11, 35) : null,
+        source: keyedMismatch ? "keyed" : "psw-fetch",
+        fetchedAt: keyedMismatch ? null : daysAgo(filedDaysAgo - 4, 11, 30),
+        keyedAt: keyedMismatch ? oocKeyedAt : null,
         issuedAt: daysAgo(filedDaysAgo - 4, 11, 15),
         issuingOfficer: "Deputy Collector — Appraisement",
         documentId: `DOC-OOC-${a.AWBId}`,
@@ -2461,41 +2489,41 @@ export const CUSTOMS_CLEARANCES: CustomsClearance[] = CUSTOMS_AWBS.map((a, i) =>
           {
             field: "sdRef",
             label: "SD reference",
-            scanned: ocr(sdRef, scanMismatch ? 0.93 : 0.99),
+            captured: capture(sdRef),
             expected: sdRef,
             matches: true,
           },
           {
             field: "awbNo",
             label: "AWB number",
-            scanned: ocr(a.AWBNO, scanMismatch ? 0.88 : 0.99),
+            captured: capture(a.AWBNO),
             expected: a.AWBNO,
             matches: true,
           },
           {
             field: "channel",
             label: "Risk channel",
-            scanned: ocr(RISK_CHANNEL_LABEL[channel], scanMismatch ? 0.91 : 0.98),
+            captured: capture(RISK_CHANNEL_LABEL[channel]),
             expected: RISK_CHANNEL_LABEL[channel],
             matches: true,
           },
           {
             field: "packages",
             label: "Number of packages",
-            scanned: ocr(scannedPacks, scanMismatch ? 0.72 : 0.97),
+            captured: capture(keyedPacks),
             expected: declaredPacks,
-            matches: !scanMismatch,
+            matches: !keyedMismatch,
           },
           {
             field: "issuedAt",
             label: "Issue date",
-            scanned: ocr(formatDate(daysAgo(filedDaysAgo - 4, 11, 15)), scanMismatch ? 0.9 : 0.99),
+            captured: capture(formatDate(daysAgo(filedDaysAgo - 4, 11, 15))),
             expected: formatDate(daysAgo(filedDaysAgo - 4, 11, 15)),
             matches: true,
           },
         ],
-        verifiedAt: scanMismatch ? null : daysAgo(filedDaysAgo - 4, 11, 40),
-        verifiedBy: scanMismatch ? null : "n.hassan",
+        verifiedAt: keyedMismatch ? null : daysAgo(filedDaysAgo - 4, 11, 40),
+        verifiedBy: keyedMismatch ? null : "n.hassan",
       }
     : null;
 
@@ -2812,19 +2840,25 @@ export const DOCUMENTS: StoredDocument[] = (() => {
     n++;
   };
 
+  // "scanner" is reserved for the two OCR points — inbound MAWB/HAWB off
+  // the flight pouch, and the receiver's authority letter at collection.
+  // Everything else arrives by EDI, is keyed/uploaded at a counter, or is
+  // system-generated. See the SCOPE note in `common.ts`.
   for (const a of AWBS) {
     // Intake documents exist from document verification onward.
     if (hasReached(a.stage, "doc-verification")) {
       add(a, "MAWB", "scanner");
       add(a, "MANIFEST", "edi");
       if (a.IsHwb) add(a, "HAWB", "scanner");
-      if (a.CARGOCLASSID === 5) add(a, "DGR_DECLARATION", "scanner");
+      // Handed over with the pouch and filed at the counter, not scanned.
+      if (a.CARGOCLASSID === 5) add(a, "DGR_DECLARATION", "upload");
       if ([5, 6, 8].includes(a.CARGOCLASSID)) add(a, "NOTOC", "edi");
     }
     if (hasReached(a.stage, "notified")) add(a, "ARRIVAL_ADVICE", "generated");
     if (hasReached(a.stage, "customs")) {
       add(a, "GD_SD", "edi");
-      if (a.branch !== "re-export") add(a, "OOC", "scanner");
+      // Fetched from the PSW gateway; keyed from the print only when it is down.
+      if (a.branch !== "re-export") add(a, "OOC", "edi");
     }
     if (hasReached(a.stage, "charged")) {
       add(a, "GR_VOUCHER", "generated");

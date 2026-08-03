@@ -20,7 +20,7 @@
  * Both are parked pending SAPS flow confirmation and are not modelled here.
  */
 
-import type { Amount, DocNumberRef, DomainRecord, OcrValue, SiteCode } from "./common";
+import type { Amount, DocNumberRef, DomainRecord, FormValue, SiteCode } from "./common";
 
 /* ================================================================== *
  * FC-11 stages
@@ -301,8 +301,14 @@ export interface ExportConsignment extends DomainRecord {
 
   acceptance: CargoAcceptance;
   lines: AcceptanceLine[];
-  /** FC-11 amendment — export docs are OCR-captured like the import side. */
-  capturedDocs: Array<{ label: string; value: OcrValue<string>; documentId: string | null }>;
+  /**
+   * Export documents are **keyed at the acceptance counter**, not scanned.
+   * FC-11 drew this as OCR by analogy with the import side; the import
+   * scan point is inbound MAWB/HAWB off the flight pouch, which has no
+   * export equivalent — the shipper hands paper across a counter and the
+   * clerk types it. See the SCOPE note in `common.ts`.
+   */
+  capturedDocs: Array<{ label: string; value: FormValue<string>; documentId: string | null }>;
 
   weighment: Weighment | null;
   screening: ScreeningRecord[];

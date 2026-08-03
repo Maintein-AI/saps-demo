@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import EmptyState from "@/components/EmptyState";
-import { AuditStrip, OcrConfidenceField } from "@/components/primitives";
+import { AuditStrip, FormField, FormCompletenessGate } from "@/components/primitives";
 import { useSite } from "@/components/site/SiteContext";
 import {
   EXPORT_STAGE_LABEL,
@@ -227,18 +227,26 @@ export default function ExportAcceptancePage() {
                   <div className="rounded-[16px] border border-[#E2E8F0] bg-white overflow-hidden">
                     <div className="px-5 py-3.5 border-b border-[#E2E8F0]">
                       <h3 className="text-[14px] font-semibold text-[#0F172A]">
-                        Export documents — OCR-captured
+                        Export documents — keyed at the counter
                       </h3>
                       <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                        FC-11 amendment: export docs are captured the same way as the import side.
+                        The shipper hands paper across the counter and the clerk types it. No
+                        scanner in this loop — OCR is inbound MAWB/HAWB and receiver docs only.
                       </p>
                     </div>
-                    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {c.capturedDocs.map((d) => (
-                        <div key={d.label} className="rounded-xl border border-[#E2E8F0] px-4 py-3">
-                          <OcrConfidenceField label={d.label} value={d.value} />
-                        </div>
-                      ))}
+                    <div className="p-5 flex flex-col gap-4">
+                      <FormCompletenessGate
+                        total={c.capturedDocs.length}
+                        outstanding={c.capturedDocs.filter((d) => !d.value.verifiedBy).length}
+                        context="Every document is countersigned by the acceptance supervisor before the consignment moves to weighment."
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {c.capturedDocs.map((d) => (
+                          <div key={d.label} className="rounded-xl border border-[#E2E8F0] px-4 py-3">
+                            <FormField label={d.label} value={d.value} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </>

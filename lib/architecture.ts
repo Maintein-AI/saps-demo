@@ -79,8 +79,8 @@ export const MODULES: ModuleDef[] = [
     flows: ["FC-04", "FC-08", "FC-11"],
     screens: [
       { label: "Document repository", href: "/import/documents" },
-      { label: "OCR intake workbench", href: "/import/ocr-intake" },
-      { label: "Authority letter OCR", href: "/gate-entry/authority-letter-digitisation" },
+      { label: "OCR intake workbench (scan point 1)", href: "/import/ocr-intake" },
+      { label: "Authority letter OCR (scan point 2)", href: "/gate-entry/authority-letter-digitisation" },
     ],
     gap: "Repository, viewer and version history are live. No CMTS table — flagged as an AirVault addition for sign-off.",
   },
@@ -371,6 +371,16 @@ export interface FlowStep {
   href: string | null;
   module: string;
   note?: string;
+  /**
+   * The swimlane this step sits in, for flows drawn as swimlane diagrams
+   * (FC-02). Omitted on single-track flows, which render as a plain
+   * sequence. Steps must stay in flow order — the renderer groups
+   * consecutive runs, so a lane may legitimately appear more than once
+   * where the flow crosses back into it.
+   */
+  lane?: string;
+  /** True where the flow draws this node as a decision diamond. */
+  decision?: boolean;
 }
 
 export interface FlowDef {
@@ -395,25 +405,91 @@ export const FLOWS: FlowDef[] = [
     amendment:
       "Step 05 becomes OCR-assisted intake (05a–05f): scan → auto-extract line items with per-item confidence → operator accepts/corrects → capture declared (OCR) vs physical (received) → commit. The variance feeds reconciliation → CDR.",
     steps: [
-      { ref: "01–04", label: "Handover, pouch opening", href: null, module: "M01", note: "Flight board not yet built (P1-1)" },
-      { ref: "05", label: "Document verification", href: null, module: "M02", note: "OCR intake workbench is P1-3" },
-      { ref: "06", label: "AWB summary preparation", href: "/awb/1?tab=intake", module: "M03" },
-      { ref: "07–08", label: "Manifest reconciliation → discrepancy?", href: "/cmts-absorption/manifest-reconciliation", module: "M03" },
-      { ref: "09", label: "Indexation & classification", href: "/awb/1", module: "M03" },
-      { ref: "10", label: "Piece-level tagging (barcode / RFID)", href: "/lifter-operator/rfid-scan", module: "M05" },
-      { ref: "11–12", label: "Split identification, segregation", href: "/cmts-absorption/awb-consolidation", module: "M03" },
-      { ref: "13–14", label: "Acceptance, weighing & condition check", href: "/cmts-absorption/cargo-acceptance", module: "M04" },
-      { ref: "15–16", label: "Storage allocation, data capture", href: "/warehouse-manager/putaway", module: "M05" },
-      { ref: "17", label: "IATA messaging (ARR / RCF / NFD)", href: "/excise-compliance/customs-messaging", module: "M07" },
-      { ref: "18", label: "Notice of Arrival to consignee / CHA", href: "/consignee/notice-of-arrival", module: "M08" },
-      { ref: "19", label: "Customs clearance tracking", href: "/excise-compliance/customs-queue", module: "M09" },
-      { ref: "20–21", label: "Charges calculation, invoice", href: "/awb/1?tab=charges", module: "M10" },
-      { ref: "—", label: "Godown rent voucher", href: "/cmts-absorption/godown-rent-history", module: "M11" },
-      { ref: "22", label: "Delivery Order", href: "/cha/do-collection", module: "M12", note: "Issuance screen is P5-7" },
-      { ref: "23", label: "Gate pass", href: "/gate-entry/live-vehicle-board", module: "M13", note: "Generation screen is P6-1" },
-      { ref: "24", label: "Physical delivery / dispatch", href: "/gate-entry/vehicle-exit", module: "M13" },
-      { ref: "25–26", label: "POD capture, DLV message", href: "/consignee/pod-history", module: "M14", note: "Capture screen is P6-4" },
-      { ref: "27", label: "AWB closure / file archive", href: "/awb/6?tab=audit", module: "M20" },
+      { ref: "01–04", label: "Handover, pouch opening", href: "/import/flights", module: "M01" },
+      { ref: "05", label: "Document verification (OCR intake 05a–05f)", href: "/import/ocr-intake", module: "M02" },
+      { ref: "06", label: "AWB summary preparation", href: "/import/summary", module: "M03" },
+      { ref: "07–08", label: "Manifest reconciliation → discrepancy?", href: "/import/manifest", module: "M03", decision: true },
+      { ref: "09", label: "Indexation & classification", href: "/import/indexing", module: "M03" },
+      { ref: "10", label: "Piece-level tagging (barcode / RFID)", href: "/storage/rfid-binding", module: "M05" },
+      { ref: "11–12", label: "Split identification, segregation", href: "/import/consolidation", module: "M03" },
+      { ref: "13–14", label: "Acceptance, weighing & condition check", href: "/import/acceptance", module: "M04" },
+      { ref: "15–16", label: "Storage allocation, data capture", href: "/storage/allocation", module: "M05" },
+      { ref: "17", label: "IATA messaging (ARR / RCF / NFD)", href: "/messaging/iata", module: "M07" },
+      { ref: "18", label: "Notice of Arrival to consignee / CHA", href: "/import/arrival-advice", module: "M08" },
+      { ref: "19", label: "Customs clearance tracking", href: "/customs/channels", module: "M09" },
+      { ref: "20–21", label: "Charges calculation, invoice", href: "/billing/calculator", module: "M10" },
+      { ref: "—", label: "Godown rent voucher", href: "/billing/godown-rent", module: "M11" },
+      { ref: "22", label: "Delivery Order", href: "/billing/delivery-order", module: "M12" },
+      { ref: "23", label: "Gate pass", href: "/dispatch/gate-pass", module: "M13" },
+      { ref: "24", label: "Physical delivery / dispatch", href: "/dispatch/gate-out", module: "M13" },
+      { ref: "25–26", label: "POD capture, DLV message", href: "/dispatch/closure", module: "M14" },
+      { ref: "27", label: "AWB closure / file archive", href: "/dispatch/closure", module: "M20" },
+    ],
+  },
+  {
+    id: "FC-02",
+    title: "Import Cargo Detailed Flow",
+    subtitle:
+      "The import journey across six swimlanes — airline, terminal, documentation, customs, finance, consignee",
+    docNo: "SAPS-ACMS-FC-02-02",
+    rev: "Rev 2.0",
+    amendment:
+      "Documentation intake is OCR-assisted: scan MAWB / HAWB → per-item extract (item, category, qty, vol, wt) with confidence → operator accepts or corrects each item before the AWB summary sheet, MAWB/HAWB verification and indexation. Declared (OCR) vs physical count from the terminal lane raises a CDR (FC-04). Cargo classification (class / subclass) is set at Indexation, not later. OCR is limited to the two scan points — inbound MAWB/HAWB here, and the receiver's documents at collection; every other capture on this flow is a keyed form.",
+    // Ordered by the diagram's connectors, not lane by lane — FC-02 crosses
+    // lanes seven times and reading it lane-first misstates the sequence.
+    // The terminal's physical track (15–18) and the documentation track
+    // (11–14) both hang off "Manifest checked" and run concurrently; they
+    // rejoin where the warehoused location is captured against the AWB.
+    steps: [
+      { lane: "Airline / Carrier", ref: "01", label: "Flight arrival notification", href: "/import/flights", module: "M01" },
+      { lane: "Airline / Carrier", ref: "02", label: "FFM / FWB / FHL received", href: "/messaging/iata", module: "M07" },
+      { lane: "Airline / Carrier", ref: "03", label: "Cargo + flight pouch (concertina) handed over to terminal", href: "/import/flights", module: "M01" },
+
+      { lane: "Cargo Terminal / Warehouse", ref: "04", label: "Cargo received in import section", href: "/import/acceptance", module: "M04" },
+      { lane: "Cargo Terminal / Warehouse", ref: "05", label: "Pouch / concertina opened", href: "/import/flights", module: "M01" },
+      { lane: "Cargo Terminal / Warehouse", ref: "06", label: "Manifest checked", href: "/import/manifest", module: "M03" },
+
+      { lane: "Documentation / CMTS — OCR intake", ref: "06a", label: "OCR scan — MAWB / HAWB off the pouch", href: "/import/ocr-intake", module: "M02", note: "Scan point 1 of 2. Scanner source, not a file upload." },
+      { lane: "Documentation / CMTS — OCR intake", ref: "06b", label: "Auto-extract line items (item, category, qty, vol, wt) with confidence", href: "/import/ocr-intake", module: "M02" },
+      { lane: "Documentation / CMTS — OCR intake", ref: "06c", label: "All items accepted? (confidence ≥ threshold & operator-confirmed)", href: "/import/ocr-intake", module: "M02", decision: true },
+      { lane: "Documentation / CMTS — OCR intake", ref: "06d", label: "Operator corrects low-confidence items individually", href: "/import/ocr-intake", module: "M02", note: "Loops back to 06c until every item clears." },
+
+      { lane: "Documentation / CMTS", ref: "07", label: "AWB summary sheet prepared", href: "/import/summary", module: "M03" },
+      { lane: "Documentation / CMTS", ref: "08", label: "MAWB / HAWB verified", href: "/import/summary", module: "M03" },
+      { lane: "Documentation / CMTS", ref: "09", label: "Indexation completed", href: "/import/indexing", module: "M03", note: "Cargo class / subclass is set here — not later. FC-03 allocation depends on it." },
+      { lane: "Documentation / CMTS", ref: "10", label: "CMTS record created", href: "/awb/1", module: "M03" },
+
+      { lane: "Cargo Terminal / Warehouse", ref: "11", label: "Cargo physically counted & weighed", href: "/import/acceptance", module: "M04", note: "Physical count vs the OCR-declared count at 06b — variance raises a CDR (FC-04)." },
+      { lane: "Cargo Terminal / Warehouse", ref: "12", label: "Cargo inspected", href: "/import/acceptance", module: "M04" },
+      { lane: "Cargo Terminal / Warehouse", ref: "13", label: "Cargo sorted", href: "/import/acceptance", module: "M04" },
+      { lane: "Cargo Terminal / Warehouse", ref: "14", label: "Cargo warehoused in designated areas", href: "/storage/allocation", module: "M05", note: "System-suggested rack/bin by class + subclass (FC-03), confirmed by scan." },
+
+      { lane: "Documentation / CMTS", ref: "15", label: "Storage location captured", href: "/storage/allocation", module: "M05" },
+      { lane: "Documentation / CMTS", ref: "16", label: "Status updated", href: "/awb/1", module: "M03" },
+      { lane: "Documentation / CMTS", ref: "17", label: "Messages triggered", href: "/messaging/iata", module: "M07", note: "RCF / NFD out; NOA to the consignee is step 22." },
+
+      { lane: "Customs / Agencies", ref: "18", label: "GD filed in PSW / WeBOC", href: "/customs/filing", module: "M09", note: "SD replaces GD; PSW primary, WeBOC parallel-run." },
+      { lane: "Customs / Agencies", ref: "19", label: "Customs channel assigned", href: "/customs/channels", module: "M09" },
+      { lane: "Customs / Agencies", ref: "20", label: "Green / Normal?", href: "/customs/channels", module: "M09", decision: true, note: "BLK-03 — FC-02 and FC-06 both call the red edge “Normal”. Awaiting SAPS confirmation." },
+      { lane: "Customs / Agencies", ref: "21", label: "ANF / ASF clearance if required", href: "/customs/channels", module: "M09" },
+      { lane: "Customs / Agencies", ref: "22", label: "OOC issued", href: "/customs/channels", module: "M09", note: "Fetched from PSW, or keyed from the print when the gateway is down, then verified field-by-field against the SD." },
+
+      { lane: "Finance / Billing", ref: "23", label: "Storage clock starts", href: "/billing/godown-rent", module: "M11", note: "General & pharma only — triggers with date & time (optional), per the flow's own annotation." },
+      { lane: "Finance / Billing", ref: "24", label: "Free period calculated", href: "/billing/calculator", module: "M10" },
+      { lane: "Finance / Billing", ref: "25", label: "Chargeable weight calculated", href: "/billing/calculator", module: "M10" },
+      { lane: "Finance / Billing", ref: "26", label: "Tariff applied", href: "/billing/calculator", module: "M10", note: "P5-1 — the tariff master is not yet versioned; a rate change would silently restate historic invoices." },
+      { lane: "Finance / Billing", ref: "27", label: "Invoice generated", href: "/billing/invoice", module: "M10" },
+      { lane: "Finance / Billing", ref: "28", label: "Adjustment / waiver if required", href: "/billing/invoice", module: "M10", note: "Role & rights restricted, per the flow's own annotation." },
+      { lane: "Finance / Billing", ref: "29", label: "Payment received", href: "/billing/invoice", module: "M10" },
+
+      { lane: "Consignee / CHA", ref: "30", label: "NOA received", href: "/import/arrival-advice", module: "M08" },
+      { lane: "Consignee / CHA", ref: "31", label: "Documents submitted", href: "/gate-entry/authority-letter-digitisation", module: "M13", note: "Scan point 2 of 2 — the receiver's documents are scanned and OCR'd at collection." },
+      { lane: "Consignee / CHA", ref: "32", label: "Charges paid", href: "/billing/invoice", module: "M10" },
+      { lane: "Consignee / CHA", ref: "33", label: "DO collected", href: "/billing/delivery-order", module: "M12" },
+      { lane: "Consignee / CHA", ref: "34", label: "Cargo collected", href: "/dispatch/gate-out", module: "M13" },
+      { lane: "Consignee / CHA", ref: "35", label: "POD signed", href: "/dispatch/closure", module: "M14" },
+
+      { lane: "Cargo Terminal / Warehouse", ref: "36", label: "Cargo released after DO", href: "/dispatch/gate-out", module: "M13", note: "Gate-out matches the RFID tag to the gate pass + DO and auto-checks OOC, charges paid and no-hold." },
     ],
   },
   {
@@ -463,7 +539,7 @@ export const FLOWS: FlowDef[] = [
     docNo: "SAPS-ACMS-FC-06-02",
     rev: "Rev 2.0",
     amendment:
-      "PSW (Pakistan Single Window) is primary, WeBOC legacy/parallel-run — build behind a provider-abstracted customs gateway. Single Declaration (SD) replaces GD. SD status, risk channel and OOC are fetched electronically. OOC is captured by scanner (OCR) and verified against the SD.",
+      "PSW (Pakistan Single Window) is primary, WeBOC legacy/parallel-run — build behind a provider-abstracted customs gateway. Single Declaration (SD) replaces GD. SD status, risk channel and OOC are fetched electronically. OOC is fetched from PSW — or keyed from the print when the gateway is down — and verified field-by-field against the SD; the reconciliation is the control, not the capture.",
     steps: [
       { ref: "01", label: "NOA issued to consignee / CHA", href: "/import/arrival-advice", module: "M08" },
       { ref: "02", label: "CHA collects import documents", href: "/import/documents", module: "M02" },
@@ -476,7 +552,7 @@ export const FLOWS: FlowDef[] = [
       { ref: "05-R1", label: "Examination discrepancy → cargo detained", href: "/customs/detained", module: "M09", note: "Gap G1 — the sub-identity carries across 12 tables" },
       { ref: "06", label: "Duty / sales tax / FED / WHT assessed and paid", href: "/customs/channels", module: "M09" },
       { ref: "07", label: "ANF / ASF clearance", href: "/customs/channels", module: "M09" },
-      { ref: "08", label: "OOC issued, OCR-captured, verified vs SD", href: "/customs/channels", module: "M09" },
+      { ref: "08", label: "OOC issued, captured, verified vs SD", href: "/customs/channels", module: "M09" },
       { ref: "09", label: "Eligible for release → FC-07 charging", href: "/customs/channels", module: "M10" },
     ],
   },
@@ -533,13 +609,13 @@ export const FLOWS: FlowDef[] = [
     steps: [
       { ref: "01–02", label: "Received from flight, identified as transhipment", href: "/awb/24", module: "M15" },
       { ref: "03", label: "Indexed in AirVault", href: "/awb/24", module: "M03" },
-      { ref: "04", label: "Stored in bonded transhipment zone", href: null, module: "M15", note: "Module does not exist — P8-1" },
+      { ref: "04", label: "Stored in bonded transhipment zone", href: "/storage/bonded", module: "M15" },
       { ref: "05", label: "RCT message sent", href: "/awb/24?tab=messaging", module: "M07" },
-      { ref: "06–07", label: "Transhipment permit (PSW), bond supervision", href: null, module: "M15", note: "P8-1" },
-      { ref: "08–09", label: "Await connecting flight; storage charges on over-dwell", href: null, module: "M15", note: "P8-1" },
-      { ref: "10", label: "Re-tender to onward carrier", href: null, module: "M15", note: "P8-1" },
-      { ref: "—", label: "Onward leg to another SAPS site? → ownership handoff", href: null, module: "M15", note: "P8-2" },
-      { ref: "11–13", label: "TFD, DEP, file closed", href: null, module: "M15", note: "P8-1" },
+      { ref: "06–07", label: "Transhipment permit (PSW), bond supervision", href: "/transhipment/register", module: "M15", note: "A lapsed permit blocks re-tender — the permit clock is the control." },
+      { ref: "08–09", label: "Await connecting flight; storage charges on over-dwell", href: "/transhipment/register", module: "M15" },
+      { ref: "10", label: "Re-tender to onward carrier", href: "/transhipment/register", module: "M15" },
+      { ref: "—", label: "Onward leg to another SAPS site? → ownership handoff", href: "/transhipment/handoff", module: "M15", decision: true },
+      { ref: "11–13", label: "TFD, DEP, file closed", href: "/transhipment/register", module: "M15" },
     ],
   },
   {

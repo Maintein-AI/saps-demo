@@ -13,9 +13,15 @@
  * We render Red and keep the flow's own word visible rather than quietly
  * resolving the discrepancy — it needs SAPS confirmation.
  *
- * The OOC amendment is the other half: OOC is **captured by scanner (OCR)
- * and verified field-by-field against the SD**. The scan is not the
- * control; the reconciliation is. A mismatch blocks release.
+ * The OOC amendment is the other half: OOC is **fetched from PSW — or
+ * keyed from the print when the gateway is down — and verified
+ * field-by-field against the SD**. The capture is not the control; the
+ * reconciliation is. A mismatch blocks release.
+ *
+ * Drawn as an OCR step; converted once SAPS confirmed OCR runs only at
+ * the two scan points (inbound MAWB/HAWB, receiver docs at collection).
+ * The verification below is deliberately independent of how the value
+ * arrived, which is why the conversion left it untouched.
  */
 
 import { useMemo, useState } from "react";
@@ -25,14 +31,14 @@ import {
   CheckCircle2,
   FlaskConical,
   MessageSquareWarning,
-  ScanLine,
+  FileCheck2,
   ShieldCheck,
   XCircle,
 } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import EmptyState from "@/components/EmptyState";
 import AwbLink from "@/components/awb/AwbLink";
-import { AuditStrip, OcrConfidenceField } from "@/components/primitives";
+import { AuditStrip, FormField } from "@/components/primitives";
 import { useSite } from "@/components/site/SiteContext";
 import {
   RISK_CHANNEL_FLOW_LABEL,
@@ -510,13 +516,13 @@ export default function CustomsChannelsPage() {
               <div className="rounded-[16px] border border-[#E2E8F0] bg-white overflow-hidden">
                 <div className="px-5 py-3.5 border-b border-[#E2E8F0] flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <ScanLine size={15} className="text-[#64748B]" />
+                    <FileCheck2 size={15} className="text-[#64748B]" />
                     <div>
                       <h3 className="text-[14px] font-semibold text-[#0F172A]">
                         Out-of-charge — captured and verified vs SD
                       </h3>
                       <p className="text-[11px] text-[#94A3B8]">
-                        FC-06 amendment — the reconciliation is the control, not the scan
+                        FC-06 amendment — the reconciliation is the control, not the capture
                       </p>
                     </div>
                   </div>
@@ -549,9 +555,9 @@ export default function CustomsChannelsPage() {
                           [
                             "Captured",
                             c.ooc.fetchedAt
-                              ? `Fetched ${formatDateTime(c.ooc.fetchedAt)}`
-                              : c.ooc.scannedAt
-                                ? `Scanned ${formatDateTime(c.ooc.scannedAt)}`
+                              ? `PSW fetch ${formatDateTime(c.ooc.fetchedAt)}`
+                              : c.ooc.keyedAt
+                                ? `Keyed ${formatDateTime(c.ooc.keyedAt)}`
                                 : "—",
                           ],
                         ] as const
@@ -583,7 +589,7 @@ export default function CustomsChannelsPage() {
                           >
                             <div className="flex items-start justify-between gap-3 flex-wrap">
                               <div className="min-w-0 flex-1">
-                                <OcrConfidenceField label={chk.label} value={chk.scanned} />
+                                <FormField label={chk.label} value={chk.captured} />
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <div className="text-right">

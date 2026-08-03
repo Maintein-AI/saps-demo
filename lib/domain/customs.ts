@@ -13,8 +13,10 @@
  *     alongside so an operator reading a CMTS-era document can still follow.
  *   • SD status, risk channel and OOC are **fetched electronically**, not
  *     typed. `fetchedAt` on those records is what makes that visible.
- *   • **OOC is captured by scanner (OCR) and verified against the SD** —
- *     the verification is the control, not the scan.
+ *   • **OOC is fetched from PSW (or keyed from the print) and verified
+ *     against the SD** — the verification is the control, not the capture.
+ *     Drawn as an OCR step; converted once SAPS confirmed OCR is limited
+ *     to the two scan points. See the SCOPE note in `common.ts`.
  *
  * BLK-03: FC-06 labels the red-channel edge "Normal" (Green / Yellow /
  * Normal). We render Green / Yellow / Red and treat "Normal" as the red
@@ -22,7 +24,7 @@
  * the discrepancy stays on screen rather than being quietly resolved.
  */
 
-import type { Amount, DocNumberRef, DomainRecord, OcrValue, SiteCode } from "./common";
+import type { Amount, DocNumberRef, DomainRecord, FormValue, SiteCode } from "./common";
 
 /* ================================================================== *
  * Risk channel
@@ -255,9 +257,16 @@ export interface AgencyClearance {
 /* ================================================================== *
  * Out-of-charge
  *
- * The FC-06 amendment: OOC arrives as a scanned document, is OCR'd, and is
- * then **verified field-by-field against the SD**. A scan nobody reconciled
- * is not a control — the mismatch list below is the control.
+ * FC-06 originally drew OOC capture as an OCR step. SAPS has since
+ * confirmed OCR runs at two points only — MAWB/HAWB off the flight pouch,
+ * and the receiver's documents at collection — so OOC is captured either
+ * by **electronic fetch from PSW** or, when the gateway is down, **keyed
+ * from the OOC print**.
+ *
+ * The control that mattered is untouched and is the point of this block:
+ * however the value arrives, it is **verified field-by-field against the
+ * SD**. A document nobody reconciled is not a control — the mismatch list
+ * below is the control.
  * ================================================================== */
 
 export type OocVerifyField = "sdRef" | "awbNo" | "channel" | "packages" | "issuedAt";
@@ -265,8 +274,8 @@ export type OocVerifyField = "sdRef" | "awbNo" | "channel" | "packages" | "issue
 export interface OocFieldCheck {
   field: OocVerifyField;
   label: string;
-  /** What the scanner read off the OOC document. */
-  scanned: OcrValue<string>;
+  /** What the OOC document carries — fetched from PSW or keyed off the print. */
+  captured: FormValue<string>;
   /** What the SD says. */
   expected: string;
   matches: boolean;
@@ -275,10 +284,11 @@ export interface OocFieldCheck {
 export interface OutOfCharge {
   oocNo: string;
   docNumber: DocNumberRef;
-  /** Electronically fetched from PSW, or captured by scanner. */
-  source: "psw-fetch" | "scanner";
+  /** Electronically fetched from PSW, or keyed from the OOC print. */
+  source: "psw-fetch" | "keyed";
   fetchedAt: string | null;
-  scannedAt: string | null;
+  /** When the operator keyed it, where `source` is "keyed". */
+  keyedAt: string | null;
   issuedAt: string;
   issuingOfficer: string;
   documentId: string | null;

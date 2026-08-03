@@ -8,8 +8,13 @@
  *   "All items accepted? (confidence ≥ threshold & operator-confirmed)"
  *   "Operator reviews & corrects low-confidence items individually"
  *
- * Used by every OCR-assisted intake screen: FC-01/02 document intake,
- * FC-06 OOC capture, FC-08 CNIC scan, FC-11 export documents.
+ * SCOPE — only the two real scan points may use this control:
+ *   1. /import/ocr-intake                        MAWB / HAWB off the pouch
+ *   2. /gate-entry/authority-letter-digitisation receiver's docs at collection
+ *
+ * FC-06 OOC capture and FC-11 export document capture were drawn as OCR
+ * and have been converted to keyed forms — use `FormField` there. Reach
+ * for this control only where a scanner is genuinely in the loop.
  */
 
 import { AlertTriangle, Check, PencilLine } from "lucide-react";

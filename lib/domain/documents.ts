@@ -51,7 +51,14 @@ export const DOCUMENT_TYPE_LABEL: Record<DocumentType, string> = {
   ARRIVAL_ADVICE: "Arrival Advice",
 };
 
-/** Where the document came from — drives whether OCR applies. */
+/**
+ * Where the document came from — drives whether OCR applies.
+ *
+ * `scanner` is reserved for the two OCR points: inbound MAWB/HAWB off the
+ * flight pouch, and the receiver's documents at collection. A document
+ * marked `scanner` anywhere else is a bug, not a preference — see the
+ * SCOPE note in `common.ts`.
+ */
 export type DocumentSource = "scanner" | "upload" | "generated" | "edi";
 
 export const DOCUMENT_SOURCE_LABEL: Record<DocumentSource, string> = {

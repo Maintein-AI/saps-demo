@@ -75,13 +75,30 @@ export default async function FlowWalkthroughPage({
         </div>
       </div>
 
-      {/* Steps */}
+      {/* Steps.
+          Swimlane flows (FC-02) carry a `lane` per step. The flow crosses
+          lanes and crosses back, so we group *consecutive runs* rather
+          than collecting by lane name — collecting would reorder the
+          sequence, which is the one thing a flow walkthrough must not do. */}
       <ol className="flex flex-col">
         {f.steps.map((s, i) => {
           const last = i === f.steps.length - 1;
           const live = !!s.href;
+          const laneStarts = !!s.lane && s.lane !== f.steps[i - 1]?.lane;
           return (
-            <li key={`${s.ref}-${i}`} className="relative flex gap-4 pb-4 last:pb-0">
+            <li
+              key={`${s.ref}-${i}`}
+              className="relative flex gap-4 pb-4 last:pb-0"
+              style={laneStarts && i > 0 ? { marginTop: 18 } : undefined}
+            >
+              {laneStarts && (
+                <span className="absolute -top-[15px] left-0 right-0 flex items-center gap-2">
+                  <span className="h-[18px] px-2 rounded bg-[#0B2545] text-white text-[10px] font-bold inline-flex items-center uppercase tracking-wider">
+                    {s.lane}
+                  </span>
+                  <span className="flex-1 h-[1px] bg-[#E2E8F0]" />
+                </span>
+              )}
               {!last && (
                 <span
                   className="absolute left-[15px] top-8 bottom-0 w-[2px]"
@@ -89,13 +106,19 @@ export default async function FlowWalkthroughPage({
                 />
               )}
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 text-[10px] font-bold font-mono"
+                className="w-8 h-8 flex items-center justify-center flex-shrink-0 z-10 text-[10px] font-bold font-mono"
                 style={{
                   backgroundColor: live ? "#DCFCE7" : "#F1F5F9",
                   color: live ? "#16A34A" : "#94A3B8",
+                  // A decision node is drawn as a diamond in the flowchart,
+                  // so it is drawn as one here too.
+                  borderRadius: s.decision ? 6 : 9999,
+                  transform: s.decision ? "rotate(45deg)" : undefined,
                 }}
               >
-                {s.ref === "—" ? "•" : s.ref.split("–")[0]}
+                <span style={s.decision ? { transform: "rotate(-45deg)" } : undefined}>
+                  {s.ref === "—" ? "•" : s.ref.split("–")[0]}
+                </span>
               </div>
 
               <div

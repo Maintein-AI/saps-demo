@@ -195,9 +195,22 @@ export function round2(n: number): number {
 }
 
 /* ------------------------------------------------------------------ *
- * OCR confidence (FC-01 05b/05c, FC-02, FC-06, FC-11 amendments)
+ * OCR confidence (FC-01 05b/05c, FC-02 amendment)
  *
  * "Per-item confidence score + operator acceptance before commit."
+ *
+ * SCOPE — OCR runs at exactly TWO points in AirVault. Confirmed by SAPS,
+ * and it narrows the FC-02/FC-06/FC-11 amendments as originally drawn:
+ *
+ *   1. Inbound from the airline — MAWB / HAWB off the flight pouch are
+ *      scanned and extracted.                    → /import/ocr-intake
+ *   2. Outbound at collection — the receiver's documents are scanned
+ *      when they arrive to take delivery.        → /gate-entry/authority-letter-digitisation
+ *
+ * Nowhere else. Every other capture point is a keyed **form** — see
+ * `FormValue` below. Do not add a third `OcrValue` site without a flow
+ * change to match: OOC capture (FC-06) and export document capture
+ * (FC-11) were both drawn as OCR and have since been converted.
  * ------------------------------------------------------------------ */
 
 /** Below this, the operator must review the item individually (FC-01 05d). */
@@ -229,6 +242,44 @@ export function ocr<T>(extracted: T, confidence: number, corrected?: T): OcrValu
     confidence,
     state: ocrState(confidence, isCorrected),
     ...(isCorrected ? { correctedBy: "n.hassan" } : {}),
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Keyed form entry — the default capture mode
+ *
+ * The counterpart to `OcrValue`. Everywhere outside the two scan points
+ * above, a value is typed by a named operator against a named source
+ * document. There is no confidence score because nothing was inferred —
+ * but provenance still matters for audit, so it is carried explicitly
+ * rather than dropped.
+ * ------------------------------------------------------------------ */
+
+export interface FormValue<T> {
+  value: T;
+  /** Who keyed it. */
+  enteredBy: string;
+  /** The paper/PDF the operator read it off, e.g. "OOC print — PSW". */
+  source: string;
+  /** ISO timestamp of the keystroke that committed it. */
+  enteredAt: string;
+  /** Set where a supervisor countersigned — FC-06 OOC and FC-11 handover. */
+  verifiedBy?: string;
+}
+
+export function formEntry<T>(
+  value: T,
+  source: string,
+  enteredBy = "n.hassan",
+  enteredAt = "2026-05-25T09:40:00+05:00",
+  verifiedBy?: string,
+): FormValue<T> {
+  return {
+    value,
+    enteredBy,
+    source,
+    enteredAt,
+    ...(verifiedBy ? { verifiedBy } : {}),
   };
 }
 
