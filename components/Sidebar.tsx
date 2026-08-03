@@ -27,6 +27,11 @@ import {
   MessageSquare,
   Bell,
   Radio,
+  Network,
+  FileScan,
+  Boxes,
+  TriangleAlert,
+  Landmark,
 } from "lucide-react";
 
 interface NavItem {
@@ -38,13 +43,72 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Home", icon: LayoutDashboard, href: "/" },
+  // P0-5 — the FC-12 module view + flow walkthroughs, alongside the
+  // persona navigation below rather than replacing it.
+  { label: "Module Map", icon: Network, href: "/modules" },
+  // Phase 1 — the import spine, M01–M04 (FC-01 §01–14, FC-02).
+  {
+    label: "Import Documentation",
+    icon: FileScan,
+    href: "/import/flights",
+    subItems: [
+      { label: "Flight & Airline Data — M01", href: "/import/flights" },
+      { label: "Document Repository — M02", href: "/import/documents" },
+      { label: "OCR Intake Workbench", href: "/import/ocr-intake" },
+      { label: "AWB Indexing — M03", href: "/import/indexing" },
+      { label: "Manifest & IGM", href: "/import/manifest" },
+      { label: "Cargo Acceptance — M04", href: "/import/acceptance" },
+      { label: "Consolidation & Split", href: "/import/consolidation" },
+      { label: "Arrival Advice / NOA", href: "/import/arrival-advice" },
+    ],
+  },
+  // Phase 2 — storage & warehouse allocation, M05 (FC-03).
+  {
+    label: "Storage & Allocation",
+    icon: Boxes,
+    href: "/storage/master",
+    subItems: [
+      { label: "Cargo & Location Master", href: "/storage/master" },
+      { label: "Allocation Engine", href: "/storage/allocation" },
+      { label: "Logical vs Physical", href: "/storage/locations" },
+      { label: "Tag Binding (RFID)", href: "/storage/rfid-binding" },
+      { label: "Bonded Area", href: "/storage/bonded" },
+    ],
+  },
+  // Phase 3 — exceptions & CDR, M06 + M16–M18 (FC-04, FC-10 A/B/C).
+  {
+    label: "Exceptions & CDR",
+    icon: TriangleAlert,
+    href: "/exceptions/queue",
+    subItems: [
+      { label: "Aging Dashboard", href: "/exceptions/queue" },
+      { label: "CDR Workbench — M06", href: "/exceptions/cdr" },
+      { label: "Damage Register", href: "/exceptions/damage" },
+      { label: "Hold Register", href: "/exceptions/holds" },
+      { label: "Mishandled Cargo — M17", href: "/exceptions/mishandled" },
+      { label: "Re-export — M16", href: "/exceptions/re-export" },
+      { label: "Long-stay / S.82 — M18", href: "/exceptions/long-stay" },
+    ],
+  },
+  // Phase 4 — customs clearance & PSW gateway, M09 (FC-06).
+  {
+    label: "Customs Clearance",
+    icon: Landmark,
+    href: "/customs/gateway",
+    subItems: [
+      { label: "Gateway (PSW / WeBOC)", href: "/customs/gateway" },
+      { label: "SD / GD Filing — M09", href: "/customs/filing" },
+      { label: "Channels & OOC", href: "/customs/channels" },
+      { label: "Detained Cargo", href: "/customs/detained" },
+    ],
+  },
   {
     label: "Warehouse Manager",
     icon: Warehouse,
     href: "/warehouse-manager",
     subItems: [
       { label: "Dashboard", href: "/warehouse-manager" },
-      { label: "AWB Detail", href: "/warehouse-manager/awb-detail" },
+      { label: "AWB Register", href: "/warehouse-manager/awb-detail" },
       { label: "Putaway", href: "/warehouse-manager/putaway" },
       { label: "Picking", href: "/warehouse-manager/picking" },
       { label: "Storage Map", href: "/warehouse-manager/storage-map" },

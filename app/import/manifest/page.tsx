@@ -1,0 +1,379 @@
+"use client";
+
+/**
+ * P1-5 · Manifest & IGM intake + three-way reconciliation.
+ *
+ * FC-01 §07 "Manifest Reconciliation — Physical vs Manifest, AWB,
+ * FFM/FWB/FHL" feeding §08 "Discrepancy Found?".
+ *
+ * CMTS parity: `IMPORTMANIFIEST` (31) manifest header, `CUSTOMIGM` (17)
+ * customs IGM header. The demo modelled neither — "IGM" appeared three
+ * times in the entire corpus, against a key that sits on ~25 CMTS tables.
+ */
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { AlertTriangle, ArrowUpRight, Lock, Unlock } from "lucide-react";
+import Breadcrumb from "@/components/Breadcrumb";
+import AwbLink from "@/components/awb/AwbLink";
+import UldReconciliation from "@/components/import/UldReconciliation";
+import { useSite } from "@/components/site/SiteContext";
+import {
+  PRE_ARRIVAL_MESSAGES,
+  formatDate,
+  formatDateTime,
+  formatKg,
+  listAwbs,
+  listManifests,
+  round2,
+  variance,
+} from "@/lib/domain";
+
+export default function ManifestReconciliationPage() {
+  const { scope } = useSite();
+  const manifests = useMemo(() => listManifests(scope), [scope]);
+  const [selected, setSelected] = useState<number>(manifests[0]?.ManifiestId ?? 0);
+
+  const m = manifests.find((x) => x.ManifiestId === selected) ?? manifests[0];
+  const awbs = useMemo(
+    () => (m ? listAwbs({ scope }).filter((a) => a.ManifiestId === m.ManifiestId) : []),
+    [scope, m],
+  );
+
+  // Three-way reconciliation: manifest declared · FFM/FWB/FHL message · physically received.
+  const rows = awbs.map((a) => {
+    const v = a.intakeVariance;
+    const declaredPcs = a.TOTALPCS;
+    const messagePcs = declaredPcs; // FFM agrees with the manifest unless flagged
+    const physicalPcs = v ? v.pieces.physical : declaredPcs;
+    return {
+      awb: a,
+      declaredPcs,
+      messagePcs,
+      physicalPcs,
+      pcsVariance: variance(declaredPcs, physicalPcs),
+      declaredKg: a.TOTALWEIGHT,
+      physicalKg: v ? v.weightKg.physical : a.TOTALWEIGHT,
+      kgVariance: variance(a.TOTALWEIGHT, v ? v.weightKg.physical : a.TOTALWEIGHT),
+      reconciled: !v || (!v.pieces.overTolerance && !v.weightKg.overTolerance),
+    };
+  });
+
+  const unreconciled = rows.filter((r) => !r.reconciled);
+  const totalDeclared = rows.reduce((n, r) => n + r.declaredPcs, 0);
+  const totalPhysical = rows.reduce((n, r) => n + r.physicalPcs, 0);
+
+  if (!m) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Breadcrumb items={[{ label: "Import Documentation" }, { label: "Manifest & IGM" }]} />
+        <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-8 text-center">
+          <p className="text-[14px] font-semibold text-[#0F172A]">No manifests at {scope}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <Breadcrumb items={[{ label: "Import Documentation" }, { label: "Manifest & IGM" }]} />
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="h-[18px] px-1.5 rounded bg-[#EBF0F7] text-[#0B2545] text-[10px] font-bold inline-flex items-center font-mono">
+                M01 → M03
+              </span>
+              <span className="h-[18px] px-1.5 rounded bg-[#F1F5F9] text-[#64748B] text-[10px] font-bold inline-flex items-center font-mono">
+                FC-01 §07–08
+              </span>
+            </div>
+            <h1 className="text-[24px] lg:text-[32px] font-bold text-[#0F172A] leading-tight mt-1.5">
+              Manifest &amp; IGM Reconciliation
+            </h1>
+            <p className="text-[13px] text-[#64748B] mt-1">
+              Three-way check: manifest declared vs FFM/FWB/FHL vs physically received.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+              Manifest ({manifests.length})
+            </span>
+            <select
+              value={selected}
+              onChange={(e) => setSelected(Number(e.target.value))}
+              className="h-9 px-3 rounded-lg border border-[#E2E8F0] bg-white text-[13px] outline-none cursor-pointer font-mono"
+            >
+              {manifests.map((x) => (
+                <option key={x.ManifiestId} value={x.ManifiestId}>
+                  {x.IGMNO} — {x.FLIGHT}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* IMPORTMANIFIEST header — all 31 columns represented */}
+      <div className="rounded-[16px] border border-[#E2E8F0] bg-white overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-[#E2E8F0] flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="text-[14px] font-semibold text-[#0F172A]">Manifest header</h3>
+            <p className="text-[11px] text-[#94A3B8] mt-0.5">CMTS IMPORTMANIFIEST — 31 columns</p>
+          </div>
+          <span
+            className="h-7 px-3 rounded-full text-[12px] font-semibold inline-flex items-center gap-1.5"
+            style={{
+              backgroundColor: m.IsCloseIGM ? "#F1F5F9" : "#DBEAFE",
+              color: m.IsCloseIGM ? "#64748B" : "#1B4F8B",
+            }}
+          >
+            {m.IsCloseIGM ? <Lock size={13} /> : <Unlock size={13} />}
+            IGM {m.IsCloseIGM ? "closed" : "open"}
+          </span>
+        </div>
+        <div className="p-5 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-4">
+          {(
+            [
+              ["IGMNO", m.IGMNO],
+              ["REGNO", m.REGNO],
+              ["FLIGHT", m.FLIGHT],
+              ["AIRLINEID", m.AIRLINEID],
+              ["ABBREVATION", m.ABBREVATION],
+              ["ORIGIN", m.ORIGIN],
+              ["DESTINATION", m.DESTINATION],
+              ["CARGODATE", formatDate(m.CARGODATE)],
+              ["MANIFESTDATE", formatDate(m.MANIFESTDATE)],
+              ["POSTINGDATE", m.POSTINGDATE ? formatDate(m.POSTINGDATE) : "—"],
+              ["TOTALWEIGHT", formatKg(m.TOTALWEIGHT)],
+              ["MANIFESTSTATUS", m.MANIFESTSTATUS],
+              ["STATUS1", m.STATUS1],
+              ["STATUS2", m.STATUS2],
+              ["MANIFESTNIL", m.MANIFESTNIL ?? "—"],
+              ["USERID", m.USERID],
+              ["TRNO", m.TRNO ?? "—"],
+              ["TransferSerialCounter", m.TransferSerialCounter],
+            ] as const
+          ).map(([k, v]) => (
+            <div key={k} className="flex flex-col gap-1">
+              <span className="text-[9px] font-mono text-[#CBD5E1]">{k}</span>
+              <span className="text-[13px] font-medium text-[#0F172A] truncate">{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pre-arrival message state */}
+      <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5">
+        <h3 className="text-[14px] font-semibold text-[#0F172A] mb-3">
+          Pre-arrival messages — FC-05 group A
+        </h3>
+        <div className="flex items-center gap-3 flex-wrap">
+          {PRE_ARRIVAL_MESSAGES.map((t) => {
+            const r = m.messages[t];
+            return (
+              <div
+                key={t}
+                className="flex items-center gap-2 rounded-xl border px-3 py-2"
+                style={{
+                  borderColor: r.received ? "#BBF7D0" : "#FECACA",
+                  backgroundColor: r.received ? "#F0FDF4" : "#FEF2F2",
+                }}
+              >
+                <span className="font-mono text-[12px] font-bold text-[#0F172A]">{t}</span>
+                <span
+                  className="text-[11px]"
+                  style={{ color: r.received ? "#16A34A" : "#DC2626" }}
+                >
+                  {r.received ? formatDateTime(r.receivedAt!) : "Not received"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Three-way reconciliation */}
+      <div className="rounded-[16px] border border-[#E2E8F0] bg-white overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-[#E2E8F0] flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="text-[14px] font-semibold text-[#0F172A]">Three-way reconciliation</h3>
+            <p className="text-[11px] text-[#94A3B8] mt-0.5">
+              Manifest declared · FFM/FWB/FHL message · physically received
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-[12px]">
+            <span className="text-[#64748B]">
+              Declared <span className="font-mono font-semibold text-[#0F172A]">{totalDeclared}</span> pcs
+            </span>
+            <span className="text-[#64748B]">
+              Received <span className="font-mono font-semibold text-[#0F172A]">{totalPhysical}</span> pcs
+            </span>
+            <span
+              className="font-mono font-semibold"
+              style={{ color: totalPhysical === totalDeclared ? "#16A34A" : "#DC2626" }}
+            >
+              {totalPhysical - totalDeclared > 0 ? "+" : ""}
+              {totalPhysical - totalDeclared}
+            </span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                <th className="text-left px-4 py-2.5">AWB</th>
+                <th className="text-right px-4 py-2.5">Manifest pcs</th>
+                <th className="text-right px-4 py-2.5">Message pcs</th>
+                <th className="text-right px-4 py-2.5">Physical pcs</th>
+                <th className="text-right px-4 py-2.5">Δ pcs</th>
+                <th className="text-right px-4 py-2.5">Manifest kg</th>
+                <th className="text-right px-4 py-2.5">Physical kg</th>
+                <th className="text-right px-4 py-2.5">Δ kg</th>
+                <th className="text-left px-4 py-2.5">State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr
+                  key={r.awb.AWBId}
+                  className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors"
+                  style={{ backgroundColor: r.reconciled ? undefined : "#FEF2F2" }}
+                >
+                  <td className="px-4 py-2.5">
+                    <AwbLink awbNo={r.awb.AWBNO} awbId={r.awb.AWBId} />
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-mono">{r.declaredPcs}</td>
+                  <td className="px-4 py-2.5 text-right font-mono text-[#64748B]">{r.messagePcs}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{r.physicalPcs}</td>
+                  <td
+                    className="px-4 py-2.5 text-right font-mono font-semibold"
+                    style={{ color: r.pcsVariance.delta === 0 ? "#16A34A" : "#DC2626" }}
+                  >
+                    {r.pcsVariance.delta > 0 ? "+" : ""}
+                    {r.pcsVariance.delta}
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-mono">{round2(r.declaredKg)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">
+                    {round2(r.physicalKg)}
+                  </td>
+                  <td
+                    className="px-4 py-2.5 text-right font-mono"
+                    style={{ color: r.kgVariance.delta === 0 ? "#16A34A" : "#DC2626" }}
+                  >
+                    {r.kgVariance.delta > 0 ? "+" : ""}
+                    {r.kgVariance.delta}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {r.reconciled ? (
+                      <span className="h-[20px] px-2 rounded text-[10px] font-bold inline-flex items-center bg-[#DCFCE7] text-[#16A34A]">
+                        Reconciled
+                      </span>
+                    ) : (
+                      <Link
+                        href={`/awb/${r.awb.AWBId}?tab=exceptions`}
+                        className="h-[22px] px-2 rounded text-[10px] font-bold inline-flex items-center gap-1 bg-[#FEE2E2] text-[#DC2626] no-underline"
+                      >
+                        Discrepancy — raise CDR <ArrowUpRight size={10} />
+                      </Link>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* IGM close gate — FC-01 §08 decision */}
+      <div
+        className="rounded-[16px] border p-5"
+        style={{
+          borderColor: unreconciled.length ? "#FDE68A" : "#BBF7D0",
+          backgroundColor: unreconciled.length ? "#FFFBEB" : "#F0FDF4",
+        }}
+      >
+        <div className="flex items-start gap-3">
+          {unreconciled.length ? (
+            <AlertTriangle size={18} className="text-[#D97706] flex-shrink-0 mt-0.5" />
+          ) : (
+            <Lock size={18} className="text-[#16A34A] flex-shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1">
+            <p
+              className="text-[14px] font-semibold"
+              style={{ color: unreconciled.length ? "#D97706" : "#16A34A" }}
+            >
+              {unreconciled.length
+                ? `Cannot close IGM — ${unreconciled.length} AWB${unreconciled.length === 1 ? "" : "s"} unreconciled`
+                : "All AWBs reconciled — IGM can be closed"}
+            </p>
+            <p className="text-[12px] mt-1" style={{ color: unreconciled.length ? "#92400E" : "#15803D" }}>
+              Closing sets IsCloseIGM. Downstream modules treat a closed IGM as final, so the gate is
+              enforced rather than advisory.
+            </p>
+            {unreconciled.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {unreconciled.map((r) => (
+                  <AwbLink
+                    key={r.awb.AWBId}
+                    awbNo={r.awb.AWBNO}
+                    awbId={r.awb.AWBId}
+                    className="h-7 px-2.5 rounded-lg bg-white border border-[#FDE68A] text-[12px] font-mono font-semibold text-[#92400E] no-underline inline-flex items-center"
+                  />
+                ))}
+              </div>
+            )}
+            <button
+              disabled={unreconciled.length > 0}
+              className="mt-4 h-10 px-4 rounded-lg text-[13px] font-semibold transition-colors"
+              style={{
+                backgroundColor: unreconciled.length ? "#F1F5F9" : "#16A34A",
+                color: unreconciled.length ? "#94A3B8" : "white",
+                cursor: unreconciled.length ? "not-allowed" : "pointer",
+              }}
+            >
+              Close IGM
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ULD-level reconciliation, worked against the real OD 0131 manifest */}
+      <UldReconciliation />
+
+      {/* CUSTOMIGM — shared with Phase 4 */}
+      <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5">
+        <h3 className="text-[14px] font-semibold text-[#0F172A]">Customs IGM header</h3>
+        <p className="text-[11px] text-[#94A3B8] mt-0.5 mb-4">
+          CMTS CUSTOMIGM — 17 columns. Shared with the customs module (P4-2).
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-4">
+          {(
+            [
+              ["DOCUMENTNO", m.IGMNO],
+              ["PORT", m.DESTINATION],
+              ["FLIGHTNO", m.FLIGHT],
+              ["VOYAGE", "—"],
+              ["COUNTRY", "Pakistan"],
+              ["ORIGIN", m.ORIGIN],
+              ["CAPTAINNAME", "—"],
+              ["AIRPORTNAME", m.DESTINATION],
+              ["IGMYEAR", new Date(m.CARGODATE).getFullYear()],
+              ["TOTALCONSIGNMENTS", awbs.length],
+              ["ARRIVALDATE", formatDate(m.CARGODATE)],
+              ["FILINGDATE", m.POSTINGDATE ? formatDate(m.POSTINGDATE) : "—"],
+            ] as const
+          ).map(([k, v]) => (
+            <div key={k} className="flex flex-col gap-1">
+              <span className="text-[9px] font-mono text-[#CBD5E1]">{k}</span>
+              <span className="text-[13px] font-medium text-[#0F172A] truncate">{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

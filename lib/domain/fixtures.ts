@@ -1,0 +1,2102 @@
+/**
+ * AirVault domain — seeded fixture set.
+ *
+ * Everything here is deterministic. `Math.random()` would produce a
+ * different tree on the server than on the client and Next would flag a
+ * hydration mismatch (lib/rackData.ts has this bug today), and a demo
+ * whose numbers change on refresh is not walkthrough-able.
+ *
+ * Coverage targets from P0-1:
+ *   • 24 AWBs spanning every cargo class in FC-03's three groups
+ *   • all three sites
+ *   • at least one record in every exception state
+ *   • internally consistent — an AWB's pieces, charges, DO, gate pass
+ *     and POD all reference the same AWB
+ */
+
+import {
+  DEMO_NOW,
+  MS_PER_DAY,
+  buildWeightSet,
+  daysBetween,
+  formatDate,
+  intBetween,
+  ocr,
+  pick,
+  round2,
+  seeded,
+  variance,
+  type Dimensions,
+  type SiteCode,
+} from "./common";
+import {
+  AIRLINES,
+  CARGO_CLASSES,
+  PARTIES,
+  SECTION_82_DAYS,
+  STORAGE_LOCATIONS,
+  SITES,
+  cargoClass,
+  subClassesOf,
+} from "./masters";
+import type {
+  AWB,
+  AWBDetail,
+  AWBLocation,
+  ArrivalAdvice,
+  BranchState,
+  DetendDetail,
+  HouseAWB,
+  LifecycleStage,
+  Manifest,
+  Piece,
+} from "./cargo";
+import { LIFECYCLE_ORDER, hasReached, stageIndex } from "./cargo";
+import {
+  calculateCharges,
+  evaluateReleaseGate,
+  type DeliveryOrder,
+  type GodownRent,
+  type Invoice,
+  type WaiverRequest,
+} from "./finance";
+import type { GatePass, ProofOfDelivery } from "./dispatch";
+import {
+  EXCEPTION_THRESHOLD_DAYS,
+  type CDR,
+  type DamageDetail,
+  type ExceptionQueueRow,
+  type HoldRecord,
+  type LongStayCase,
+  type MishandledCase,
+  type ReExportCase,
+} from "./exceptions";
+import {
+  RISK_CHANNEL_LABEL,
+  dutyTotal,
+  type AgencyClearance,
+  type AwbInformation,
+  type CustomsClearance,
+  type CustomsIgm,
+  type CustomsQuery,
+  type DutyAssessment,
+  type ExaminationRecord,
+  type GatewaySubmission,
+  type OutOfCharge,
+  type RiskChannel,
+  type SdStatus,
+} from "./customs";
+import { TRIGGER_MAP, type IataMessage, type NotificationDispatch } from "./messaging";
+import type { DocumentSource, DocumentType, StoredDocument } from "./documents";
+import type { BondedHandover, TagBinding } from "./storage";
+
+/* ------------------------------------------------------------------ *
+ * Helpers
+ * ------------------------------------------------------------------ */
+
+const NOW_MS = Date.parse(DEMO_NOW);
+
+function daysAgo(n: number, hour = 9, minute = 15): string {
+  const d = new Date(NOW_MS - n * MS_PER_DAY);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
+function siteKeys(code: SiteCode) {
+  const s = SITES.find((x) => x.code === code)!;
+  return { CityId: s.CityId, Comp_Code: s.Comp_Code, Off_Code: s.Off_Code };
+}
+
+function audit(createdDaysAgo: number, by = "s.khan") {
+  return {
+    CreatedBy: by,
+    UpdatedBy: null,
+    CreatedDate: daysAgo(createdDaysAgo),
+    UpdatedDate: null,
+    IsActive: true,
+    IsDeleted: false,
+  };
+}
+
+const GOODS = [
+  "Pharmaceutical preparations",
+  "Cotton fabric rolls",
+  "Automotive spare parts",
+  "Consumer electronics",
+  "Medical diagnostic kits",
+  "Fresh cut flowers",
+  "Lithium-ion battery packs",
+  "Industrial valves",
+  "Precision instruments",
+  "Frozen seafood",
+  "Aircraft hydraulic pumps",
+  "Laboratory reagents",
+];
+
+const PACKS = ["Carton", "Wooden Crate", "Pallet", "Drum", "Bag"];
+
+/* ------------------------------------------------------------------ *
+ * AWB seed table
+ *
+ * Hand-authored so coverage is deliberate rather than accidental: every
+ * cargo class appears, all three sites appear, every lifecycle stage is
+ * occupied, and every exception branch has at least one AWB on it.
+ * ------------------------------------------------------------------ */
+
+interface Seed {
+  awbNo: string;
+  site: SiteCode;
+  airline: string;
+  origin: string;
+  classAbbr: string;
+  stage: LifecycleStage;
+  branch: BranchState;
+  arrivedDaysAgo: number;
+  pieces: number;
+  weightKg: number;
+  /** Force a declared-vs-physical variance (fraction of declared). */
+  varianceRatio?: number;
+  isHwb?: boolean;
+  isDetend?: boolean;
+  onHold?: boolean;
+}
+
+const SEEDS: Seed[] = [
+  // --- Group A: General / Normal ------------------------------------
+  { awbNo: "214-45678901", site: "KHI", airline: "EK", origin: "DXB", classAbbr: "AFU", stage: "stored", branch: null, arrivedDaysAgo: 6, pieces: 24, weightKg: 1240 },
+  { awbNo: "176-88213340", site: "KHI", airline: "QR", origin: "DOH", classAbbr: "GCR", stage: "delivered", branch: null, arrivedDaysAgo: 12, pieces: 48, weightKg: 2180 },
+  { awbNo: "607-11902288", site: "LHE", airline: "TK", origin: "IST", classAbbr: "GCR", stage: "charged", branch: null, arrivedDaysAgo: 9, pieces: 16, weightKg: 640 },
+  { awbNo: "157-33448821", site: "KHI", airline: "EY", origin: "AUH", classAbbr: "ICG", stage: "do-issued", branch: null, arrivedDaysAgo: 2, pieces: 6, weightKg: 185 },
+  { awbNo: "214-90055512", site: "PEW", airline: "EK", origin: "DXB", classAbbr: "UAB", stage: "customs", branch: null, arrivedDaysAgo: 4, pieces: 3, weightKg: 96 },
+  { awbNo: "306-77120943", site: "KHI", airline: "PK", origin: "LHR", classAbbr: "GCR", stage: "closed", branch: null, arrivedDaysAgo: 34, pieces: 30, weightKg: 1420 },
+
+  // --- Group B: Special Handling ------------------------------------
+  { awbNo: "020-55839014", site: "KHI", airline: "CV", origin: "FRA", classAbbr: "DGR", stage: "stored", branch: null, arrivedDaysAgo: 5, pieces: 12, weightKg: 780, onHold: true },
+  { awbNo: "176-44029183", site: "KHI", airline: "QR", origin: "DOH", classAbbr: "PER", stage: "gate-pass", branch: null, arrivedDaysAgo: 1, pieces: 40, weightKg: 920 },
+  { awbNo: "125-66710244", site: "LHE", airline: "SV", origin: "JED", classAbbr: "VAL", stage: "stored", branch: null, arrivedDaysAgo: 3, pieces: 2, weightKg: 48 },
+  { awbNo: "618-22910385", site: "KHI", airline: "EK", origin: "DXB", classAbbr: "AVI", stage: "notified", branch: null, arrivedDaysAgo: 1, pieces: 8, weightKg: 310 },
+  { awbNo: "214-30049917", site: "KHI", airline: "EK", origin: "DXB", classAbbr: "HUM", stage: "dispatched", branch: null, arrivedDaysAgo: 2, pieces: 1, weightKg: 165 },
+  { awbNo: "157-81002234", site: "KHI", airline: "EY", origin: "AUH", classAbbr: "AOG", stage: "do-issued", branch: null, arrivedDaysAgo: 1, pieces: 4, weightKg: 220 },
+  { awbNo: "020-99183377", site: "LHE", airline: "CV", origin: "FRA", classAbbr: "DIP", stage: "stored", branch: null, arrivedDaysAgo: 8, pieces: 5, weightKg: 130 },
+  { awbNo: "176-10293847", site: "KHI", airline: "QR", origin: "DOH", classAbbr: "VUN", stage: "acceptance", branch: null, arrivedDaysAgo: 0, pieces: 18, weightKg: 540 },
+  { awbNo: "125-40028811", site: "KHI", airline: "SV", origin: "JED", classAbbr: "PHR", stage: "charged", branch: null, arrivedDaysAgo: 7, pieces: 22, weightKg: 660 },
+
+  // --- Intake / early stages (exercise the OCR workbench) -----------
+  // One AWB parked on each early stage so the lifecycle bar and the flow
+  // walkthrough have a live example at every step of FC-01.
+  { awbNo: "214-10045566", site: "KHI", airline: "EK", origin: "DXB", classAbbr: "GCR", stage: "handover", branch: null, arrivedDaysAgo: 0, pieces: 41, weightKg: 1870 },
+  { awbNo: "176-20099887", site: "KHI", airline: "QR", origin: "DOH", classAbbr: "GCR", stage: "awb-summary", branch: null, arrivedDaysAgo: 0, pieces: 19, weightKg: 730 },
+  { awbNo: "125-30011223", site: "LHE", airline: "SV", origin: "JED", classAbbr: "GCR", stage: "tagging", branch: null, arrivedDaysAgo: 0, pieces: 23, weightKg: 890 },
+  { awbNo: "306-40077665", site: "PEW", airline: "PK", origin: "PVG", classAbbr: "AFU", stage: "segregation", branch: null, arrivedDaysAgo: 0, pieces: 11, weightKg: 1420 },
+  { awbNo: "607-55018822", site: "LHE", airline: "TK", origin: "IST", classAbbr: "GCR", stage: "doc-verification", branch: null, arrivedDaysAgo: 0, pieces: 35, weightKg: 1560 },
+  { awbNo: "214-77220198", site: "KHI", airline: "EK", origin: "DXB", classAbbr: "GCR", stage: "reconciliation", branch: null, arrivedDaysAgo: 0, pieces: 52, weightKg: 2340, varianceRatio: 0.06 },
+  { awbNo: "306-19827364", site: "PEW", airline: "PK", origin: "PVG", classAbbr: "GCR", stage: "indexation", branch: null, arrivedDaysAgo: 0, pieces: 27, weightKg: 1105 },
+
+  // --- Consolidation & split ----------------------------------------
+  { awbNo: "176-92018374", site: "KHI", airline: "QR", origin: "DOH", classAbbr: "GCR", stage: "stored", branch: null, arrivedDaysAgo: 10, pieces: 96, weightKg: 4120, isHwb: true },
+
+  // --- Group C: Controlled / Exception ------------------------------
+  // FC-04 — CDR raised from an intake variance
+  { awbNo: "020-11223344", site: "KHI", airline: "CV", origin: "FRA", classAbbr: "GCR", stage: "acceptance", branch: "cdr", arrivedDaysAgo: 4, pieces: 20, weightKg: 880, varianceRatio: 0.15 },
+  // FC-10-A — mishandled / misrouted
+  { awbNo: "607-88991122", site: "LHE", airline: "TK", origin: "IST", classAbbr: "GCR", stage: "acceptance", branch: "mishandled", arrivedDaysAgo: 7, pieces: 14, weightKg: 520 },
+  // FC-10-B — re-export
+  { awbNo: "125-77665544", site: "KHI", airline: "SV", origin: "JED", classAbbr: "GCR", stage: "customs", branch: "re-export", arrivedDaysAgo: 22, pieces: 9, weightKg: 410 },
+  // FC-10-C — long-stay / Section 82
+  { awbNo: "306-55443322", site: "KHI", airline: "PK", origin: "LHR", classAbbr: "GCR", stage: "customs", branch: "long-stay", arrivedDaysAgo: 47, pieces: 33, weightKg: 1780 },
+  // FC-09 — transhipment
+  { awbNo: "214-66778899", site: "KHI", airline: "EK", origin: "DXB", classAbbr: "TRF", stage: "stored", branch: "transhipment", arrivedDaysAgo: 5, pieces: 26, weightKg: 1340 },
+  // FC-06 — customs-detained portion (Detend)
+  { awbNo: "176-33221100", site: "KHI", airline: "QR", origin: "DOH", classAbbr: "GCR", stage: "customs", branch: null, arrivedDaysAgo: 14, pieces: 40, weightKg: 1650, isDetend: true },
+];
+
+/* ------------------------------------------------------------------ *
+ * Manifests
+ * ------------------------------------------------------------------ */
+
+function buildManifests(): Manifest[] {
+  const byFlight = new Map<string, Seed[]>();
+  for (const s of SEEDS) {
+    const key = `${s.site}|${s.airline}|${s.arrivedDaysAgo}`;
+    const list = byFlight.get(key) ?? [];
+    list.push(s);
+    byFlight.set(key, list);
+  }
+
+  let id = 1;
+  const out: Manifest[] = [];
+  for (const [key, seeds] of byFlight) {
+    const [siteCode, airlineCode, ago] = key.split("|");
+    const site = siteCode as SiteCode;
+    const rng = seeded(id * 977);
+    const al = AIRLINES.find((a) => a.AIRLINEID === airlineCode)!;
+    const days = Number(ago);
+    const year = new Date(NOW_MS - days * MS_PER_DAY).getFullYear();
+    // Pre-arrival messages: mostly complete; deliberately incomplete for a couple
+    // of flights so the flight board has something to flag (feeds AWD).
+    const missingFhl = id % 5 === 0;
+    const missingFfm = id % 7 === 0;
+
+    out.push({
+      ...audit(days, "import.docs"),
+      ...siteKeys(site),
+      ManifiestId: id,
+      IGMNO: `IGM-${site}-${year}-${String(4000 + id).padStart(5, "0")}`,
+      REGNO: `A6-E${intBetween(rng, 100, 999)}`,
+      CARGODATE: daysAgo(days, 6, 40),
+      MANIFESTDATE: daysAgo(days, 7, 10),
+      TOTALWEIGHT: round2(seeds.reduce((n, s) => n + s.weightKg, 0)),
+      AIRLINEID: al.AIRLINEID,
+      AIRLINENAME: al.DESCRIPTION,
+      ABBREVATION: al.ABBREVATION,
+      FLIGHT: `${al.AIRLINEID} ${intBetween(rng, 200, 899)}`,
+      ORIGIN: seeds[0].origin,
+      DESTINATION: site,
+      STATUS1: "A",
+      STATUS2: "R",
+      MANIFESTSTATUS: days > 2 ? "CLOSED" : "OPEN",
+      POSTINGDATE: days > 2 ? daysAgo(days - 1, 11, 0) : null,
+      MANIFESTNIL: null,
+      DFLAG: null,
+      USERID: "import.docs",
+      TRNO: null,
+      IsCloseIGM: days > 2,
+      TransferSerialCounter: 0,
+      site,
+      messages: {
+        FFM: { received: !missingFfm, receivedAt: missingFfm ? null : daysAgo(days, 4, 20) },
+        FWB: { received: true, receivedAt: daysAgo(days, 4, 25) },
+        FHL: { received: !missingFhl, receivedAt: missingFhl ? null : daysAgo(days, 4, 30) },
+        NOTOC: { received: seeds.some((s) => ["DGR", "AVI", "PER"].includes(s.classAbbr)), receivedAt: daysAgo(days, 4, 35) },
+      },
+    });
+    id++;
+  }
+  return out;
+}
+
+export const MANIFESTS: Manifest[] = buildManifests();
+
+function manifestFor(seed: Seed): Manifest {
+  return (
+    MANIFESTS.find(
+      (m) => m.site === seed.site && m.AIRLINEID === seed.airline && m.ORIGIN === seed.origin,
+    ) ?? MANIFESTS[0]
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * AWBs
+ * ------------------------------------------------------------------ */
+
+function buildAwbs(): AWB[] {
+  return SEEDS.map((seed, i) => {
+    const rng = seeded((i + 1) * 7919);
+    const cls = CARGO_CLASSES.find((c) => c.ABBREVATION === seed.classAbbr)!;
+    const subs = subClassesOf(cls.ID);
+    const sub = subs[i % subs.length];
+    const manifest = manifestFor(seed);
+    const al = AIRLINES.find((a) => a.AIRLINEID === seed.airline)!;
+
+    const consignees = PARTIES.filter((p) => p.role === "consignee");
+    const shippers = PARTIES.filter((p) => p.role === "shipper");
+    const agents = PARTIES.filter((p) => p.role === "agent");
+    const consignee = consignees[i % consignees.length];
+    const shipper = shippers[i % shippers.length];
+    const agent = agents[i % agents.length];
+
+    const dims: Dimensions = {
+      lengthCm: intBetween(rng, 80, 180),
+      widthCm: intBetween(rng, 60, 120),
+      heightCm: intBetween(rng, 60, 140),
+      unit: "cm",
+    };
+    const weights = buildWeightSet(seed.weightKg, {
+      ...dims,
+      // Scale the envelope by piece count so volumetric is plausible.
+      lengthCm: dims.lengthCm * Math.cbrt(seed.pieces),
+    });
+
+    const arrivedAt = daysAgo(seed.arrivedDaysAgo, 7, 45);
+    const reachedDo = hasReached(seed.stage, "do-issued");
+
+    // FC-01 05e — declared (OCR) vs physical (received).
+    const vr = seed.varianceRatio ?? 0;
+    const physicalPieces = Math.round(seed.pieces * (1 - vr));
+    const physicalWeight = round2(seed.weightKg * (1 - vr * 0.8));
+    const intakeVariance =
+      stageIndex(seed.stage) >= stageIndex("doc-verification")
+        ? {
+            pieces: variance(seed.pieces, physicalPieces),
+            weightKg: variance(seed.weightKg, physicalWeight),
+            volumeM3: variance(
+              round2((dims.lengthCm * dims.widthCm * dims.heightCm) / 1_000_000),
+              round2((dims.lengthCm * dims.widthCm * dims.heightCm) / 1_000_000),
+            ),
+          }
+        : null;
+
+    return {
+      ...audit(seed.arrivedDaysAgo, "index.officer"),
+      ...siteKeys(seed.site),
+      AWBId: i + 1,
+      ManifiestId: manifest.ManifiestId,
+      IGMNO: manifest.IGMNO,
+      AWBNO: seed.awbNo,
+      SEQUENCE: i + 1,
+      PAGENO: Math.floor(i / 10) + 1,
+
+      CARGODATE: daysAgo(seed.arrivedDaysAgo, 7, 45),
+      CARGOTIME: daysAgo(seed.arrivedDaysAgo, 7, 45),
+      REMARK: seed.branch ? `Routed to ${seed.branch} branch` : null,
+      ORIGIN: seed.origin,
+      DESTINATION: seed.site,
+      SHIPMENTTYPE: seed.isHwb ? "CONSOL" : "DIRECT",
+
+      AIRLINECODE: al.AIRLINEID,
+      AIRLINENAME: al.DESCRIPTION,
+      FLIGHT: manifest.FLIGHT,
+      ABBREVATION: al.ABBREVATION,
+      PHYSICALSTATUS: hasReached(seed.stage, "stored") ? "S" : "P",
+
+      SHIPPER1: shipper.NAME,
+      SHIPPER2: shipper.ADDRESS,
+      SHIPPER3: `${shipper.CITY}, ${shipper.COUNTRY}`,
+      SHIPPER4: shipper.PHONENO,
+      CONSIGNEE1: consignee.NAME,
+      CONSIGNEE2: consignee.ADDRESS,
+      CONSIGNEE3: `${consignee.CITY}, ${consignee.COUNTRY}`,
+      CONSIGNEE4: consignee.PHONENO,
+      AGENT1: agent.NAME,
+      AGENT2: agent.ADDRESS,
+      AGENT3: `${agent.CITY}, ${agent.COUNTRY}`,
+      AGENT4: agent.PHONENO,
+
+      NIC: reachedDo ? `42101-${intBetween(rng, 1000000, 9999999)}-${intBetween(rng, 1, 9)}` : null,
+      PASSPORT: i % 6 === 0 ? `AB${intBetween(rng, 1000000, 9999999)}` : null,
+      CHALLANNO: reachedDo ? `CH-${seed.site}-${String(9000 + i).padStart(5, "0")}` : null,
+
+      HOLDINGSTATUS: !!seed.onHold,
+
+      DONO: reachedDo ? `DO-${seed.site}-2026-${String(3100 + i).padStart(5, "0")}` : null,
+      DODATE: reachedDo ? daysAgo(Math.max(0, seed.arrivedDaysAgo - 3), 10, 30) : null,
+      DOAMOUNT: al.DOAMOUNT,
+      DOFREE: cls.ABBREVATION === "HUM" || cls.ABBREVATION === "DIP",
+
+      TOTALPCS: seed.pieces,
+      TOTALWEIGHT: weights.actualKg,
+      TOTALCHRGWEIGHT: weights.chargeableKg,
+
+      SHIFT: pick(rng, ["A", "B", "C"]),
+      DFLAG: false,
+      DELIVERED: hasReached(seed.stage, "delivered"),
+      CARGOCLASSID: cls.ID,
+
+      TRAIRLINEID: seed.branch === "transhipment" ? "TK" : null,
+      TRID: seed.branch === "transhipment" ? 1 : null,
+
+      ImportProcess: stageIndex(seed.stage),
+      Process: seed.stage,
+      Lock: seed.stage === "closed",
+      Status: seed.branch ? 2 : 1,
+
+      IsHwb: !!seed.isHwb,
+      IsDetend: !!seed.isDetend,
+      DetendUniqueIdentification: seed.isDetend ? `DTN-${seed.site}-2026-${String(700 + i)}` : null,
+
+      isSpecial: cls.group === "special",
+      isSpecialRemarks: cls.group === "special" ? `${cls.ABBREVATION} handling — ${sub.NAME}` : null,
+
+      site: seed.site,
+      cargoSubClassId: sub.SUBCLASSID,
+      stage: seed.stage,
+      branch: seed.branch,
+      locationId: hasReached(seed.stage, "stored")
+        ? (STORAGE_LOCATIONS.find((l) => l.site === seed.site && l.CLASSID === cls.ID)?.ID ?? null)
+        : null,
+      intakeVariance,
+      cdrRaised: seed.branch === "cdr" || (intakeVariance?.pieces.overTolerance ?? false),
+      arrivedAt,
+    } satisfies AWB;
+  });
+}
+
+export const AWBS: AWB[] = buildAwbs();
+
+export function awbById(id: number): AWB | undefined {
+  return AWBS.find((a) => a.AWBId === id);
+}
+
+export function awbByNo(no: string): AWB | undefined {
+  return AWBS.find((a) => a.AWBNO === no);
+}
+
+/* ------------------------------------------------------------------ *
+ * AWB detail lines
+ * ------------------------------------------------------------------ */
+
+export const AWB_DETAILS: AWBDetail[] = AWBS.flatMap((a, ai) => {
+  const rng = seeded((ai + 1) * 3571);
+  const lineCount = a.IsHwb ? 3 : intBetween(rng, 1, 2);
+  const v = a.intakeVariance;
+
+  return Array.from({ length: lineCount }, (_, li) => {
+    const share = 1 / lineCount;
+    const pcs = Math.round(a.TOTALPCS * share);
+    const wt = round2(a.TOTALWEIGHT * share);
+    const recvPcs = v ? Math.round(pcs * (v.pieces.physical / Math.max(1, v.pieces.declared))) : pcs;
+    const recvWt = v ? round2(wt * (v.weightKg.physical / Math.max(1, v.weightKg.declared))) : wt;
+    const short = Math.max(0, pcs - recvPcs);
+    const damaged = a.branch === "cdr" && li === 0 ? intBetween(rng, 1, 3) : 0;
+    const goods = GOODS[(ai + li) % GOODS.length];
+
+    return {
+      DetailId: ai * 10 + li + 1,
+      AWBId: a.AWBId,
+      IGMNO: a.IGMNO,
+      AWBNO: a.AWBNO,
+      SEQUENCE: li + 1,
+      GOODS: goods,
+
+      PCS: pcs,
+      WEIGTH: wt,
+      CHARGEWEIGTH: round2(a.TOTALCHRGWEIGHT * share),
+      RECEIVEDPCS: recvPcs,
+      RECEIVEDWT: recvWt,
+      CHARGEDRECEIVEDWT: round2(a.TOTALCHRGWEIGHT * share * (recvWt / Math.max(1, wt))),
+
+      TYPEOFPACK: pick(rng, PACKS),
+      TYPEOFDAM: damaged ? "Crushed" : null,
+      DEMAGEDETAIL: damaged ? "Outer carton crushed on one corner; contents inspected" : null,
+      DAMAGEPCS: damaged,
+      DAMAGEWEIGHT: damaged ? round2(wt * 0.04) : 0,
+
+      SHORTLANDED: short,
+      SHORTLANDEDREC: 0,
+      IsShortDetailed: short > 0,
+
+      Shipment: short > 0 ? "PART" : "FULL",
+      PartRemaining: short,
+      PartReceievd: recvPcs,
+
+      ClassId: a.CARGOCLASSID,
+      SplitClassId: null,
+      DetendUniqueIdentification: a.DetendUniqueIdentification,
+
+      DFLAG: false,
+      UniqueIdentification: `${a.AWBNO}-D${li + 1}`,
+      Remarks: null,
+      IsLock: a.Lock,
+      IsHold: a.HOLDINGSTATUS,
+      CityId: a.CityId,
+
+      dimensions: hasReached(a.stage, "acceptance")
+        ? { lengthCm: intBetween(rng, 80, 180), widthCm: intBetween(rng, 60, 120), heightCm: intBetween(rng, 60, 140), unit: "cm" }
+        : null,
+      ocr: hasReached(a.stage, "doc-verification")
+        ? {
+            goods: ocr(goods, li === 0 ? 0.97 : 0.82),
+            pcs: ocr(pcs, 0.99),
+            weightKg: ocr(wt, li === 0 ? 0.94 : 0.71, li === 0 ? undefined : round2(wt)),
+          }
+        : null,
+    } satisfies AWBDetail;
+  });
+});
+
+export function detailsFor(awbId: number): AWBDetail[] {
+  return AWB_DETAILS.filter((d) => d.AWBId === awbId);
+}
+
+/* ------------------------------------------------------------------ *
+ * Pieces — the RFID chain (FC-03 bind → FC-08 read)
+ * ------------------------------------------------------------------ */
+
+export const PIECES: Piece[] = AWBS.flatMap((a, ai) => {
+  const rng = seeded((ai + 1) * 6151);
+  // Cap generated pieces so fixtures stay a sensible size.
+  const n = Math.min(a.TOTALPCS, 12);
+  const stored = hasReached(a.stage, "stored");
+  const dispatched = hasReached(a.stage, "dispatched");
+
+  return Array.from({ length: n }, (_, pi) => {
+    const dims: Dimensions = {
+      lengthCm: intBetween(rng, 60, 200),
+      widthCm: intBetween(rng, 40, 120),
+      heightCm: intBetween(rng, 40, 140),
+      unit: "cm",
+    };
+    const kg = round2(a.TOTALWEIGHT / a.TOTALPCS);
+    // One deliberately unreadable tag so the exception path has a case.
+    const unreadable = ai === 3 && pi === 2;
+
+    return {
+      pieceId: `PC-${String(a.AWBId).padStart(2, "0")}${String(pi + 1).padStart(3, "0")}`,
+      awbId: a.AWBId,
+      AWBNO: a.AWBNO,
+      rfidEpc: unreadable ? null : `E2003415020010801890${(0x54b0 + ai * 16 + pi).toString(16).toUpperCase()}`,
+      barcode: `${a.AWBNO.replace(/-/g, "")}${String(pi + 1).padStart(3, "0")}`,
+      dimensions: dims,
+      weights: buildWeightSet(kg, dims),
+      cargoClassId: a.CARGOCLASSID,
+      cargoSubClassId: a.cargoSubClassId,
+      locationId: a.locationId,
+      scanState: unreadable
+        ? "unreadable"
+        : dispatched
+          ? "dispatched"
+          : hasReached(a.stage, "gate-pass")
+            ? "picked"
+            : stored
+              ? "bound"
+              : "unbound",
+      lastMovementAt: daysAgo(Math.max(0, a.stage === "closed" ? 30 : 1), 10, 40 + pi),
+      lastMovementBy: pick(rng, ["i.ali", "s.khan", "m.raza", "f.qureshi"]),
+    } satisfies Piece;
+  });
+});
+
+export function piecesFor(awbId: number): Piece[] {
+  return PIECES.filter((p) => p.awbId === awbId);
+}
+
+/* ------------------------------------------------------------------ *
+ * Location assignments — logical vs physical (BLK-08)
+ * ------------------------------------------------------------------ */
+
+export const AWB_LOCATIONS: AWBLocation[] = AWBS.filter((a) => a.locationId !== null).map((a, i) => {
+  const logical = a.locationId!;
+  // Two AWBs are deliberately diverged so the divergence queue is non-empty.
+  const diverge = i === 2 || i === 7;
+  const alt = STORAGE_LOCATIONS.find((l) => l.site === a.site && l.ID !== logical);
+  const physical = diverge && alt ? alt.ID : logical;
+
+  return {
+    Id: i + 1,
+    IGMNO: a.IGMNO,
+    AWBNO: a.AWBNO,
+    SEQUENCE: a.SEQUENCE,
+    PCS: a.TOTALPCS,
+    WEIGHT: a.TOTALWEIGHT,
+    LOGICALCARGOSUBCLASSID: a.cargoSubClassId,
+    LOGICALLOCATIONID: logical,
+    PHYSICALCARGOSUBCLASSID: a.cargoSubClassId,
+    PHYSICALLOCATIONID: physical,
+    HWBNO: null,
+    Cargoclassid: a.CARGOCLASSID,
+    ConsolId: a.IsHwb ? 1 : null,
+    DetendUniqueIdentification: a.DetendUniqueIdentification,
+    SplitClassId: null,
+    UniqueIdentification: `${a.AWBNO}-LOC`,
+    DFLAG: null,
+    CityId: a.CityId,
+    divergedAt: diverge ? daysAgo(1, 13, 20) : null,
+    divergenceReason: diverge ? "Moved to staging for customs examination" : null,
+  } satisfies AWBLocation;
+});
+
+/* ------------------------------------------------------------------ *
+ * Consolidation — house AWBs
+ * ------------------------------------------------------------------ */
+
+const CONSOL_AWB = AWBS.find((a) => a.IsHwb)!;
+
+export const HOUSE_AWBS: HouseAWB[] = Array.from({ length: 4 }, (_, i) => {
+  const rng = seeded((i + 1) * 8663);
+  const consignee = PARTIES.filter((p) => p.role === "consignee")[i % 6];
+  const shipper = PARTIES.filter((p) => p.role === "shipper")[i % 5];
+  const pcs = Math.round(CONSOL_AWB.TOTALPCS / 4);
+  const wt = round2(CONSOL_AWB.TOTALWEIGHT / 4);
+
+  return {
+    ...audit(10, "index.officer"),
+    ...siteKeys(CONSOL_AWB.site),
+    ConsolId: i + 1,
+    IGMNO: CONSOL_AWB.IGMNO,
+    AWBNO: CONSOL_AWB.AWBNO,
+    HWB: `HAWB-${7780 + i}`,
+    SUBINDEX: `${i + 1}`,
+    PCS: pcs,
+    WEIGHT: wt,
+    CHARGEDWEIGH: round2(wt * 1.02),
+    CARGOCLASSID: CONSOL_AWB.CARGOCLASSID,
+    CARGOSUBCLASSID: CONSOL_AWB.cargoSubClassId,
+    LOCATIONID: CONSOL_AWB.locationId!,
+    SHIPPER1: shipper.NAME,
+    SHIPPER2: shipper.CITY,
+    SHIPPER3: shipper.COUNTRY,
+    CONSIGNEE1: consignee.NAME,
+    CONSIGNEE2: consignee.CITY,
+    CONSIGNEE3: consignee.COUNTRY,
+    AGENT1: PARTIES.find((p) => p.role === "agent")!.NAME,
+    AGENT2: null,
+    AGENT3: null,
+    CONSIGNEEADD: consignee.ADDRESS,
+    SHIPPERADD: shipper.ADDRESS,
+    AGENTADD: PARTIES.find((p) => p.role === "agent")!.ADDRESS,
+    CONTENTS: GOODS[i % GOODS.length],
+    SUBDONO: i < 2 ? `SDO-${3200 + i}` : null,
+    DELIVERED: i === 0 ? 1 : 0,
+    PHYSICALSTATUS: "S",
+    HOLDINGSTATUS: false,
+    DFLAG: null,
+    IsLock: false,
+    UniqueIdentification: `${CONSOL_AWB.AWBNO}-H${i + 1}`,
+    DetendIdentification: null,
+  } satisfies HouseAWB;
+});
+
+/* ------------------------------------------------------------------ *
+ * Detend — customs-detained sub-identity
+ * ------------------------------------------------------------------ */
+
+const DETEND_AWB = AWBS.find((a) => a.IsDetend)!;
+
+export const DETENDS: DetendDetail[] = [
+  {
+    DetendId: 1,
+    AwbId: DETEND_AWB.AWBId,
+    UniqueIdentification: DETEND_AWB.DetendUniqueIdentification!,
+    TotalPieces: 12,
+    TotalWeight: round2(DETEND_AWB.TOTALWEIGHT * 0.3),
+    TotalChargeWeight: round2(DETEND_AWB.TOTALCHRGWEIGHT * 0.3),
+    GOODS: "Consumer electronics — pending valuation",
+    detainedAt: daysAgo(11, 15, 20),
+    detainedBy: "Customs Officer — A. Malik",
+    reason: "Valuation query raised on invoice under-declaration",
+    releasedAt: null,
+    locationId: STORAGE_LOCATIONS.find((l) => l.site === DETEND_AWB.site && l.CLASSID === 16)!.ID,
+  },
+];
+
+/* ------------------------------------------------------------------ *
+ * Arrival advice / NOA
+ * ------------------------------------------------------------------ */
+
+export const ARRIVAL_ADVICES: ArrivalAdvice[] = AWBS.filter((a) => hasReached(a.stage, "notified")).map(
+  (a, i) => ({
+    AdviceNumber: 5200 + i,
+    docNumber: {
+      series: "ARRIVAL_ADVICE",
+      value: `AA-${a.site}-2026-${String(5200 + i)}`,
+      sequence: 5200 + i,
+      year: 2026,
+      cargoClassId: a.CARGOCLASSID,
+      continuesFromCmts: 5187,
+    },
+    IGMNO: a.IGMNO,
+    AWBNO: a.AWBNO,
+    SEQUENCE: String(a.SEQUENCE),
+    ADVICEDATE: daysAgo(Math.max(0, daysBetween(a.arrivedAt, DEMO_NOW) - 1), 9, 0),
+    SAPSNO: `SAPS-${a.site}-${String(1200 + i)}`,
+    AIRLINENAME: a.AIRLINENAME,
+    FLIGHT: a.FLIGHT,
+    TOTALWEIGHT: a.TOTALWEIGHT,
+    TOTALPCS: a.TOTALPCS,
+    ConsigneeName: a.CONSIGNEE1,
+    ConsigneeAdd: a.CONSIGNEE2 ?? "",
+    Goods: GOODS[i % GOODS.length],
+    ArrivalDate: a.arrivedAt,
+    Cityid: a.CityId,
+    dispatchedTo: [
+      { partyId: 1, channel: "email", sentAt: daysAgo(1, 9, 5), deliveredAt: daysAgo(1, 9, 6), readAt: i % 3 === 0 ? daysAgo(1, 10, 12) : null },
+      { partyId: 40, channel: "whatsapp", sentAt: daysAgo(1, 9, 5), deliveredAt: daysAgo(1, 9, 5), readAt: daysAgo(1, 9, 22) },
+    ],
+  }),
+);
+
+/* ------------------------------------------------------------------ *
+ * Charges, godown rent, DO, invoices
+ * ------------------------------------------------------------------ */
+
+export const CHARGE_CALCULATIONS = AWBS.filter((a) => hasReached(a.stage, "charged")).map((a) => {
+  const totalDays = daysBetween(a.arrivedAt, DEMO_NOW);
+  const dims = { lengthCm: 120, widthCm: 80, heightCm: 90, unit: "cm" };
+  return calculateCharges({
+    awbId: a.AWBId,
+    arrivalAt: a.arrivedAt,
+    totalDays,
+    cargoClassId: a.CARGOCLASSID,
+    cargoSubClassId: a.cargoSubClassId,
+    actualKg: a.TOTALWEIGHT,
+    volumetricKg: round2((dims.lengthCm * dims.widthCm * dims.heightCm) / 6000),
+    calculatedAt: DEMO_NOW,
+  });
+});
+
+export function chargesFor(awbId: number) {
+  return CHARGE_CALCULATIONS.find((c) => c.awbId === awbId);
+}
+
+export const GODOWN_RENTS: GodownRent[] = AWBS.filter((a) => hasReached(a.stage, "charged")).map(
+  (a, i) => {
+    const calc = chargesFor(a.AWBId)!;
+    const paid = hasReached(a.stage, "do-issued");
+    const totalDays = daysBetween(a.arrivedAt, DEMO_NOW);
+    const cls = cargoClass(a.CARGOCLASSID);
+    const consigneeParty = PARTIES.find((p) => p.NAME === a.CONSIGNEE1);
+
+    return {
+      ...audit(Math.max(0, totalDays - 2), "finance.officer"),
+      ...siteKeys(a.site),
+      GodownId: i + 1,
+      VOUCHERNO: `GR-2026-${String(4420 + i).padStart(5, "0")}`,
+      docNumber: {
+        series: "GR_VOUCHER",
+        value: `GR-2026-${String(4420 + i).padStart(5, "0")}`,
+        sequence: 4420 + i,
+        year: 2026,
+        cargoClassId: a.CARGOCLASSID,
+        continuesFromCmts: 4419,
+      },
+      GRDATE: daysAgo(Math.max(0, totalDays - 2), 11, 30),
+      CHALLANNO: a.CHALLANNO,
+      IGMNO: a.IGMNO,
+      AWBNO: a.AWBNO,
+      SUBAWBNO: null,
+      INDEXNO: String(a.SEQUENCE),
+      SUBINDEXNO: null,
+      TOTALWEIGHT: a.TOTALWEIGHT,
+      CHARGEABLEWEIGHT: a.TOTALCHRGWEIGHT,
+      DONO: a.DONO,
+      ARRIVALDATE: a.arrivedAt,
+      DAYS: totalDays,
+      FREE: cls.ABBREVATION === "HUM",
+      BILLTYPE: "NORMAL",
+      FROMDATE: a.arrivedAt,
+      TODATE: DEMO_NOW,
+      DELIVERYDATE: hasReached(a.stage, "delivered") ? daysAgo(1, 15, 0) : null,
+      SUPPLIMENTDAYS: 0,
+      GRREFERENCE: null,
+      TOTALPIECES: a.TOTALPCS,
+
+      HANDLING: calc.handlingAmount,
+      DEMURRAGE: calc.storageAmount,
+      DOCUMENTATION: calc.documentationCharges,
+      DECONSOLIDATION: calc.deconsolidationCharges,
+      MISCELLANEOUS: calc.miscellaneousCharges,
+      SPECIALHANDLING: calc.specialHandlingCharges,
+      TOTALAMOUNT: calc.total,
+      NETPAYABLE: calc.total,
+
+      sumTotalAmountWithoutTax: calc.subTotal,
+      sumLocationChargesAmount: calc.locationChargesAmount,
+      sumHandlingCharges: calc.handlingAmount,
+      sumStorgeUnitCharges: calc.storageAmount,
+      sumAFUAmount: cls.ABBREVATION === "AFU" ? calc.specialHandlingCharges : 0,
+      sumMinimumCharges: calc.minimumCharges,
+      sumTax: calc.taxAmount,
+
+      WAIVEOFF: i === 1,
+      WAIVEOFFPERCENT: i === 1 ? 20 : 0,
+      WAIVEOFFAMOUNT: i === 1 ? round2(calc.total * 0.2) : 0,
+      WAIVEOFFREASON: i === 1 ? "Customs hold — clearance delayed beyond consignee control" : null,
+      WaivOfStorageOrAmount: i === 1 ? "STORAGE" : null,
+
+      PAID: paid,
+      CASH: paid && i % 3 === 0,
+      CASHAMOUNT: paid && i % 3 === 0 ? calc.total : 0,
+      PAYORDERNO: paid && i % 3 === 1 ? `PO-${String(88200 + i)}` : null,
+      PAYORDERDATE: paid && i % 3 === 1 ? daysAgo(1, 12, 0) : null,
+      PAYORDERAMOUNT: paid && i % 3 === 1 ? calc.total : 0,
+      PayOrder: paid && i % 3 === 1,
+      Paymode: paid ? (i % 3 === 0 ? "CASH" : i % 3 === 1 ? "PAYORDER" : "GATEWAY") : null,
+      CREDITCARD: null,
+      MASTERCARD: null,
+      ACCTITLE: paid && i % 3 === 1 ? "Sky Bridge Clearing Agency" : null,
+      ACCNO: paid && i % 3 === 1 ? "PK36SCBL0000001123456702" : null,
+      BANKNAME: paid && i % 3 === 1 ? "Bank Alfalah" : null,
+      BANKBRANCHNAME: paid && i % 3 === 1 ? "Airport Branch, Karachi" : null,
+      CHEQUENO: null,
+      CHEQUEDATE: null,
+      RECIEVEDBY: paid ? "finance.counter" : null,
+      PAYDATE: paid ? daysAgo(1, 12, 5) : null,
+      OverPaidAmount: 0,
+
+      DUPLICATECOUNT: i === 0 ? 1 : 0,
+      NTN: consigneeParty?.NTN ?? null,
+      STN: consigneeParty?.STN ?? null,
+      GdUniqueIdentification: `${a.AWBNO}-GR`,
+      DetendUniqueIdentification: a.DetendUniqueIdentification,
+      clearingAgent: a.AGENT1,
+      GDNum: null,
+      site: a.site,
+    } satisfies GodownRent;
+  },
+);
+
+export const DELIVERY_ORDERS: DeliveryOrder[] = AWBS.filter((a) => hasReached(a.stage, "do-issued")).map(
+  (a, i) => ({
+    ...audit(2, "do.desk"),
+    ...siteKeys(a.site),
+    DoId: i + 1,
+    IGMNO: a.IGMNO,
+    AWBNO: a.AWBNO,
+    HWBNO: null,
+    DONO: a.DONO!,
+    docNumber: {
+      series: "DELIVERY_ORDER",
+      value: a.DONO!,
+      sequence: 3100 + i,
+      year: 2026,
+      cargoClassId: a.CARGOCLASSID,
+      continuesFromCmts: 3099,
+    },
+    DODATE: a.DODATE!,
+    DOTYPE: "NORMAL",
+    DOCARGOCLASSID: a.CARGOCLASSID,
+    AMOUNT: a.DOAMOUNT,
+    Tax: 15,
+    REMARKS: null,
+    SHIFT: a.SHIFT,
+    CHALLANNO: a.CHALLANNO,
+    RECIEVEDBY: a.AGENT1 ?? a.CONSIGNEE1,
+    NIC: a.NIC,
+    PASSPORT: a.PASSPORT,
+    AuthAgentName: "Imran Ali",
+    AuthAgentCNIC: "42201-7788990-1",
+    AuthAgentPhone: "+92 300 2244660",
+    AuthAgentEmail: "imran@skybridge.pk",
+    AuthLetterNo: `AL-2026-${String(1440 + i)}`,
+    AuthAgentPic: `/mock/auth-agent-${(i % 3) + 1}.jpg`,
+    NTN: PARTIES.find((p) => p.NAME === a.CONSIGNEE1)?.NTN ?? null,
+    STN: PARTIES.find((p) => p.NAME === a.CONSIGNEE1)?.STN ?? null,
+    FREE: a.DOFREE,
+    FREECAUSE: a.DOFREE ? "Welfare / diplomatic — no DO charge" : null,
+    IsDuplicate: false,
+    DuplicateReason: null,
+    Reason: null,
+    FIRdate: null,
+    IsLock: a.Lock,
+    DetendIdentification: a.DetendUniqueIdentification,
+    site: a.site,
+  }),
+);
+
+export const INVOICES: Invoice[] = GODOWN_RENTS.map((g, i) => ({
+  id: i + 1,
+  invoiceNo: `INV-2026-${String(7710 + i).padStart(5, "0")}`,
+  docNumber: {
+    series: "INVOICE",
+    value: `INV-2026-${String(7710 + i).padStart(5, "0")}`,
+    sequence: 7710 + i,
+    year: 2026,
+    cargoClassId: null,
+    continuesFromCmts: 7709,
+  },
+  awbId: awbByNo(g.AWBNO)!.AWBId,
+  IGMNO: g.IGMNO,
+  AWBNO: g.AWBNO,
+  issuedAt: g.GRDATE,
+  dueAt: daysAgo(-7, 17, 0),
+  subTotal: g.sumTotalAmountWithoutTax,
+  taxAmount: g.sumTax,
+  total: g.NETPAYABLE,
+  paid: g.PAID ? g.NETPAYABLE : 0,
+  outstanding: g.PAID ? 0 : g.NETPAYABLE,
+  status: g.PAID ? "paid" : "issued",
+  payerPartyId: PARTIES.find((p) => p.NAME === awbByNo(g.AWBNO)!.CONSIGNEE1)?.ID ?? 1,
+  site: g.site,
+}));
+
+export const WAIVER_REQUESTS: WaiverRequest[] = GODOWN_RENTS.filter((g) => g.WAIVEOFF).map((g, i) => ({
+  id: i + 1,
+  voucherNo: g.VOUCHERNO,
+  awbId: awbByNo(g.AWBNO)!.AWBId,
+  requestedBy: "cha.skybridge",
+  requestedAt: daysAgo(3, 10, 0),
+  reason: "customs-hold",
+  note: "Consignment held by customs for 9 days pending valuation query; delay outside consignee control.",
+  mode: "percent",
+  percent: g.WAIVEOFFPERCENT,
+  amount: g.WAIVEOFFAMOUNT,
+  scope: "STORAGE",
+  originalTotal: g.TOTALAMOUNT,
+  revisedTotal: round2(g.TOTALAMOUNT - g.WAIVEOFFAMOUNT),
+  levels: [
+    { level: 1, role: "Finance Officer", approver: "f.qureshi", decision: "approved", comment: "Hold confirmed against customs register.", decidedAt: daysAgo(2, 14, 10) },
+    { level: 2, role: "Finance Manager", approver: "a.shaikh", decision: "approved", comment: "Approved at 20% on storage component only.", decidedAt: daysAgo(2, 16, 40) },
+  ],
+  status: "approved",
+  creditNoteNo: `CN-2026-${String(220 + i)}`,
+  site: g.site,
+}));
+
+/* ------------------------------------------------------------------ *
+ * Release gates — evaluated live from the other fixtures
+ * ------------------------------------------------------------------ */
+
+export function releaseGateFor(awbId: number) {
+  const a = awbById(awbId);
+  if (!a) return null;
+  const inv = INVOICES.find((x) => x.awbId === awbId);
+  const hold = HOLDS.find((h) => h.AWBNo === a.AWBNO && !h.Release);
+  return evaluateReleaseGate(awbId, {
+    oocIssued: hasReached(a.stage, "customs") && a.branch !== "re-export",
+    oocRef: hasReached(a.stage, "customs") ? `OOC-2026-${String(9100 + awbId)}` : null,
+    authorityLetterNo: hasReached(a.stage, "do-issued") ? `AL-2026-${String(1440 + awbId)}` : null,
+    chargesPaid: inv?.status === "paid",
+    outstanding: inv?.outstanding ?? 0,
+    onHold: !!hold,
+    holdReason: hold?.REMARKS ?? null,
+    cargoClassId: a.CARGOCLASSID,
+    specialClearanceDone: hasReached(a.stage, "do-issued"),
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * Dispatch — gate pass & POD
+ * ------------------------------------------------------------------ */
+
+export const GATE_PASSES: GatePass[] = AWBS.filter((a) => hasReached(a.stage, "gate-pass")).map(
+  (a, i) => {
+    const gr = GODOWN_RENTS.find((g) => g.AWBNO === a.AWBNO);
+    return {
+      ...audit(1, "gate.officer"),
+      ...siteKeys(a.site),
+      GATEPASSNO: 66100 + i,
+      docNumber: {
+        series: "GATE_PASS",
+        value: `GP-${a.site}-2026-${String(66100 + i)}`,
+        sequence: 66100 + i,
+        year: 2026,
+        cargoClassId: a.CARGOCLASSID,
+        continuesFromCmts: 66099,
+      },
+      GATEPASSDATE: daysAgo(1, 13, 40),
+      IGMNO: a.IGMNO,
+      IGMNODate: a.CARGODATE,
+      AWBNO: a.AWBNO,
+      AWBNODate: a.CARGODATE,
+      HWBNO: null,
+      HWBNODate: null,
+      DONo: a.DONO ?? "",
+      DoDate: a.DODATE ?? "",
+      GRNo: gr?.VOUCHERNO ?? "",
+      GRDate: gr?.GRDATE ?? "",
+      BDNo: null,
+      BDDate: null,
+      CASHNO: gr?.CASH ? `CN-${String(4400 + i)}` : null,
+      CASHNODate: gr?.CASH ? gr.PAYDATE : null,
+      ChallanNo: a.CHALLANNO,
+      ARRIVALDATE: a.arrivedAt,
+      INDEXNO: a.SEQUENCE,
+      PIECES: a.TOTALPCS,
+      WEIGHT: a.TOTALWEIGHT,
+      CARGOCLASSID: a.CARGOCLASSID,
+      CONSIGNEE: a.CONSIGNEE1,
+      Agent: a.AGENT1,
+      RecivingPerson: "Imran Ali",
+      NICNO: "42201-7788990-1",
+      CPNO: `CP-${String(3300 + i)}`,
+      RcvngPersonPic: `/mock/receiver-${(i % 3) + 1}.jpg`,
+      VehicleNo: `KHI-${2000 + i * 7}`,
+      ClearingTime: "13:40",
+      MarksNumber: `M/${a.AWBNO.slice(-4)}`,
+      DeliveryDate: hasReached(a.stage, "delivered") ? daysAgo(1, 15, 0) : null,
+      NAMEOFCUSTODIANSHED: `SAPS ${a.site} Import Shed`,
+      SerialNo: 66100 + i,
+      SerialNoWithYear: `${66100 + i}/2026`,
+      DetendIdentification: a.DetendUniqueIdentification,
+      site: a.site,
+      scanCode: `GP${66100 + i}`,
+      status: hasReached(a.stage, "delivered") ? "exited" : hasReached(a.stage, "dispatched") ? "loaded" : "issued",
+    } satisfies GatePass;
+  },
+);
+
+export const PODS: ProofOfDelivery[] = AWBS.filter((a) => hasReached(a.stage, "delivered")).map(
+  (a, i) => {
+    const gp = GATE_PASSES.find((g) => g.AWBNO === a.AWBNO)!;
+    return {
+      id: i + 1,
+      awbId: a.AWBId,
+      AWBNO: a.AWBNO,
+      gatePassNo: gp.GATEPASSNO,
+      capturedAt: daysAgo(1, 15, 12),
+      capturedBy: "dispatch.officer",
+      receiverSignature: "/mock/signature-1.png",
+      receiverName: "Imran Ali",
+      receiverCnic: "42201-7788990-1",
+      cnicMatchesDo: true,
+      piecesDelivered: a.TOTALPCS,
+      piecesOnDo: a.TOTALPCS,
+      photos: ["/mock/pod-1.jpg", "/mock/pod-2.jpg"],
+      timestamp: daysAgo(1, 15, 12),
+      geo: { lat: 24.9065, lng: 67.1608, accuracyM: 8 },
+      complete: true,
+      partial: false,
+      dlvSentAt: daysAgo(1, 15, 14),
+      site: a.site,
+    } satisfies ProofOfDelivery;
+  },
+);
+
+/* ------------------------------------------------------------------ *
+ * Exceptions
+ * ------------------------------------------------------------------ */
+
+export const HOLDS: HoldRecord[] = AWBS.filter((a) => a.HOLDINGSTATUS).map((a, i) => ({
+  ...audit(3, "customs.liaison"),
+  ...siteKeys(a.site),
+  SEQUENCE: i + 1,
+  AWBNo: a.AWBNO,
+  IGMNO: a.IGMNO,
+  HWBNo: null,
+  CARGOCLASSID: a.CARGOCLASSID,
+  STATUS: "HELD",
+  type: "customs",
+  HeldBy: "Pakistan Customs",
+  NameOfPerson: "A. Malik",
+  NIC: "61101-2233445-9",
+  HoldingCompany: "Model Customs Collectorate",
+  Designation: "Appraising Officer",
+  Date: daysAgo(3, 11, 0),
+  REMARKS: "DGR documentation query — NOTOC and shipper declaration under review",
+  Release: false,
+  ReleasePersonName: null,
+  ReleaseCompany: null,
+  ReleaseBy: null,
+  ReleasePersonDesignation: null,
+  ReleasePersonNic: null,
+  ReleaseRemarks: null,
+  ReleaseDateTime: null,
+  site: a.site,
+}));
+
+// One released hold so the register shows both sides of the workflow.
+HOLDS.push({
+  ...audit(20, "customs.liaison"),
+  ...siteKeys("KHI"),
+  SEQUENCE: 99,
+  AWBNo: AWBS[1].AWBNO,
+  IGMNO: AWBS[1].IGMNO,
+  HWBNo: null,
+  CARGOCLASSID: AWBS[1].CARGOCLASSID,
+  STATUS: "RELEASED",
+  type: "discrepancy",
+  HeldBy: "SAPS Operations",
+  NameOfPerson: "S. Khan",
+  NIC: "42101-1122334-5",
+  HoldingCompany: "Shaheen Airport Services",
+  Designation: "Duty Manager",
+  Date: daysAgo(20, 9, 30),
+  REMARKS: "Piece count variance pending reconciliation",
+  Release: true,
+  ReleasePersonName: "F. Qureshi",
+  ReleaseCompany: "Shaheen Airport Services",
+  ReleaseBy: "f.qureshi",
+  ReleasePersonDesignation: "Operations Supervisor",
+  ReleasePersonNic: "42101-9988776-3",
+  ReleaseRemarks: "Count reconciled against FFM; variance resolved without CDR.",
+  ReleaseDateTime: daysAgo(18, 14, 15),
+  site: "KHI",
+});
+
+const CDR_AWB = AWBS.find((a) => a.branch === "cdr")!;
+
+export const CDRS: CDR[] = [
+  {
+    ...audit(4, "warehouse.supervisor"),
+    ...siteKeys(CDR_AWB.site),
+    id: 1,
+    cdrRef: "CDR-KHI-2026-00318",
+    docNumber: {
+      series: "CDR",
+      value: "CDR-KHI-2026-00318",
+      sequence: 318,
+      year: 2026,
+      cargoClassId: CDR_AWB.CARGOCLASSID,
+      continuesFromCmts: 317,
+    },
+    awbId: CDR_AWB.AWBId,
+    IGMNO: CDR_AWB.IGMNO,
+    AWBNO: CDR_AWB.AWBNO,
+    HWBNO: null,
+    type: "shortage",
+    autoRaised: true,
+    variance: CDR_AWB.intakeVariance!.pieces,
+    raisedAt: daysAgo(4, 10, 22),
+    raisedBy: "system (variance ≥ tolerance)",
+    status: "awaiting-instruction",
+    evidence: [
+      { id: 1, kind: "photo", value: "Outer carton damage, 3 angles", documentId: "DOC-CDR-318-01", linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: "E200341502001080189054C1", capturedAt: daysAgo(4, 10, 30), capturedBy: "i.ali" },
+      { id: 2, kind: "piece-count", value: "17 received against 20 declared", documentId: null, linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 32), capturedBy: "i.ali" },
+      { id: 3, kind: "weight", value: "748.0 kg received against 880.0 kg declared", documentId: null, linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 34), capturedBy: "i.ali" },
+      { id: 4, kind: "seal-condition", value: "ULD seal intact on arrival", documentId: "DOC-CDR-318-02", linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 36), capturedBy: "i.ali" },
+      { id: 5, kind: "package-condition", value: "3 cartons crushed, contents intact", documentId: null, linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 38), capturedBy: "i.ali" },
+      { id: 6, kind: "remarks", value: "Shortage consistent with FFM count; airline notified same shift.", documentId: null, linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 40), capturedBy: "s.khan" },
+    ],
+    airlineNotifiedAt: daysAgo(4, 11, 5),
+    customsNotifiedAt: null,
+    disMessageSentAt: daysAgo(4, 11, 6),
+    holdLocationId: STORAGE_LOCATIONS.find((l) => l.site === CDR_AWB.site && l.CLASSID === 17)!.ID,
+    escalationCount: 1,
+    instructionReceivedAt: null,
+    instructionText: null,
+    finalAction: null,
+    closedAt: null,
+    site: CDR_AWB.site,
+  },
+];
+
+/* ------------------------------------------------------------------ *
+ * Damage register — CMTS `DamageDetail` (8 cols)
+ *
+ * Two sources, deliberately:
+ *   • rows derived from AWB_DETAILS where the intake recorded DAMAGEPCS,
+ *     so the register and the AWB detail line can never disagree;
+ *   • three hand-authored cases so the register exercises damage types
+ *     that the CDR branch alone would never produce (wet, leakage,
+ *     temperature excursion) and spans more than one site.
+ * ------------------------------------------------------------------ */
+
+export const DAMAGE_DETAILS: DamageDetail[] = (() => {
+  const out: DamageDetail[] = [];
+  let id = 1;
+
+  // (a) derived — keeps DamageDetail consistent with AWBDetail
+  for (const d of AWB_DETAILS) {
+    if (d.DAMAGEPCS <= 0) continue;
+    out.push({
+      DamageId: id++,
+      AWBId: d.AWBId,
+      HWBId: null,
+      TypeofPack: d.TYPEOFPACK ?? "Carton",
+      TypeofDamage: d.TYPEOFDAM ?? "Crushed",
+      DamagedPcs: d.DAMAGEPCS,
+      DamageWeight: d.DAMAGEWEIGHT,
+      Remarks: d.DEMAGEDETAIL,
+      cdrRef: CDRS.find((c) => c.awbId === d.AWBId)?.cdrRef ?? null,
+      photos: ["DOC-CDR-318-01"],
+    });
+  }
+
+  // (b) hand-authored — damage types the CDR branch alone never yields
+  const extras: Array<[LifecycleStage[], string, string, number, string, string[]]> = [
+    [
+      ["stored", "customs", "charged"],
+      "Drum",
+      "Leaking",
+      2,
+      "Two drums seeping at the seam; contents contained in absorbent tray, area cordoned.",
+      ["DOC-DMG-0442-01", "DOC-DMG-0442-02"],
+    ],
+    [
+      ["stored", "customs"],
+      "Carton",
+      "Wet",
+      4,
+      "Water staining on lower tier, consistent with ramp exposure before acceptance.",
+      ["DOC-DMG-0451-01"],
+    ],
+    [
+      ["stored", "charged", "do-issued"],
+      "Pallet",
+      "Temperature excursion",
+      1,
+      "Reefer logger shows 62 minutes above +8 °C in transit; pharma integrity referred to shipper.",
+      ["DOC-DMG-0463-01"],
+    ],
+  ];
+
+  for (const [stages, pack, dmgType, pcs, remarks, photos] of extras) {
+    const candidate = AWBS.find(
+      (a) =>
+        stages.includes(a.stage) &&
+        a.branch === null &&
+        !out.some((o) => o.AWBId === a.AWBId),
+    );
+    if (!candidate) continue;
+    out.push({
+      DamageId: id++,
+      AWBId: candidate.AWBId,
+      HWBId: null,
+      TypeofPack: pack,
+      TypeofDamage: dmgType,
+      DamagedPcs: pcs,
+      DamageWeight: round2(
+        (candidate.TOTALWEIGHT / Math.max(1, candidate.TOTALPCS)) * pcs,
+      ),
+      Remarks: remarks,
+      // Not every damage finding becomes a CDR — FC-04 §01 only escalates
+      // when the discrepancy is material. These sit unescalated on purpose.
+      cdrRef: null,
+      photos,
+    });
+  }
+
+  return out;
+})();
+
+export function damageFor(awbId: number): DamageDetail[] {
+  return DAMAGE_DETAILS.filter((d) => d.AWBId === awbId);
+}
+
+const MIS_AWB = AWBS.find((a) => a.branch === "mishandled")!;
+
+export const MISHANDLED_CASES: MishandledCase[] = [
+  {
+    ...audit(7, "ops.supervisor"),
+    ...siteKeys(MIS_AWB.site),
+    id: 1,
+    awbId: MIS_AWB.AWBId,
+    AWBNO: MIS_AWB.AWBNO,
+    IGMNO: MIS_AWB.IGMNO,
+    stage: "A5-instruction-received",
+    cdrRef: "CDR-LHE-2026-00121",
+    identifiedAt: daysAgo(7, 8, 50),
+    holdLocationId: STORAGE_LOCATIONS.find((l) => l.site === MIS_AWB.site && l.CLASSID === 18)!.ID,
+    airlineNotifiedAt: daysAgo(7, 9, 30),
+    instructionRef: "TK-RCV-2026-0442",
+    instructionAt: daysAgo(5, 16, 10),
+    instructionText: "Forward to KHI under original AWB; no corrective AWB required.",
+    recoveryAction: null,
+    correctiveAwbNo: null,
+    endorsementRef: null,
+    onwardRouting: null,
+    reTenderedAt: null,
+    reTenderCarrier: null,
+    closedAt: null,
+    ageDays: 7,
+    site: MIS_AWB.site,
+  },
+];
+
+const REX_AWB = AWBS.find((a) => a.branch === "re-export")!;
+
+export const REEXPORT_CASES: ReExportCase[] = [
+  {
+    ...audit(22, "cha.skybridge"),
+    ...siteKeys(REX_AWB.site),
+    id: 1,
+    awbId: REX_AWB.AWBId,
+    AWBNO: REX_AWB.AWBNO,
+    IGMNO: REX_AWB.IGMNO,
+    stage: "B6-charges-settled",
+    cause: "customs-rejected",
+    raisedAt: daysAgo(18, 10, 0),
+    holdLocationId: STORAGE_LOCATIONS.find((l) => l.site === REX_AWB.site && l.CLASSID === 19)!.ID,
+    sdRef: "PSW-SD-2026-8841207",
+    sdLodgedAt: daysAgo(12, 11, 20),
+    permissionRef: "MCC-REX-2026-0338",
+    permissionGrantedAt: daysAgo(6, 15, 45),
+    outstandingCharges: 0,
+    chargesSettledAt: daysAgo(2, 12, 30),
+    reTenderedAt: null,
+    exportAwbNo: null,
+    closedAt: null,
+    ageDays: 22,
+    site: REX_AWB.site,
+  },
+];
+
+const LS_AWB = AWBS.find((a) => a.branch === "long-stay")!;
+
+export const LONGSTAY_CASES: LongStayCase[] = [
+  {
+    ...audit(47, "compliance.officer"),
+    ...siteKeys(LS_AWB.site),
+    id: 1,
+    awbId: LS_AWB.AWBId,
+    AWBNO: LS_AWB.AWBNO,
+    IGMNO: LS_AWB.IGMNO,
+    HWBNo: null,
+    stage: "C4-escalated-customs",
+    arrivedAt: LS_AWB.arrivedAt,
+    section82Days: SECTION_82_DAYS,
+    ageDays: 47,
+    daysToDeadline: SECTION_82_DAYS - 47,
+    notices: [
+      { id: 1, noticeNo: "S82-KHI-2026-0091", docNumber: { series: "SECTION_82_NOTICE", value: "S82-KHI-2026-0091", sequence: 91, year: 2026, cargoClassId: null, continuesFromCmts: 90 }, dueOffsetDays: 14, dueAt: daysAgo(31, 9, 0), recipients: ["consignee", "cha"], sentAt: daysAgo(31, 9, 5), status: "sent" },
+      { id: 2, noticeNo: "S82-KHI-2026-0104", docNumber: { series: "SECTION_82_NOTICE", value: "S82-KHI-2026-0104", sequence: 104, year: 2026, cargoClassId: null, continuesFromCmts: 90 }, dueOffsetDays: 7, dueAt: daysAgo(24, 9, 0), recipients: ["consignee", "cha", "airline"], sentAt: daysAgo(24, 9, 8), status: "sent" },
+      { id: 3, noticeNo: "S82-KHI-2026-0118", docNumber: { series: "SECTION_82_NOTICE", value: "S82-KHI-2026-0118", sequence: 118, year: 2026, cargoClassId: null, continuesFromCmts: 90 }, dueOffsetDays: 0, dueAt: daysAgo(17, 9, 0), recipients: ["consignee", "cha", "airline"], sentAt: null, status: "overdue" },
+    ],
+    escalatedToCustomsAt: daysAgo(15, 11, 0),
+    Examiner: "A. Malik",
+    ReceivingPerson: null,
+    DCNumber: "DC-2026-00744",
+    Sequences: String(LS_AWB.SEQUENCE),
+    SubIndex: null,
+    Lock: false,
+    disposition: null,
+    auctionLotNo: null,
+    auctionReserve: null,
+    auctionDate: null,
+    auctionProceeds: null,
+    disposalMethod: null,
+    disposalAuthorisedBy: null,
+    disposalCertificateNo: null,
+    closedAt: null,
+    site: LS_AWB.site,
+  },
+];
+
+/**
+ * FC-10 amendment — "an aging dashboard surfaces the exception queue"
+ * across every hold state, not just long-stay.
+ */
+export const EXCEPTION_QUEUE: ExceptionQueueRow[] = [
+  ...CDRS.map((c) => ({
+    kind: "cdr" as const,
+    ref: c.cdrRef,
+    awbId: c.awbId,
+    AWBNO: c.AWBNO,
+    summary: `${c.type} — ${c.status}`,
+    ageDays: daysBetween(c.raisedAt, DEMO_NOW),
+    thresholdDays: EXCEPTION_THRESHOLD_DAYS.cdr,
+    overThreshold: daysBetween(c.raisedAt, DEMO_NOW) > EXCEPTION_THRESHOLD_DAYS.cdr,
+    locationId: c.holdLocationId,
+    site: c.site,
+    href: `/awb/${c.awbId}?tab=exceptions`,
+  })),
+  ...HOLDS.filter((h) => !h.Release).map((h) => ({
+    kind: "hold" as const,
+    ref: `HOLD-${h.SEQUENCE}`,
+    awbId: awbByNo(h.AWBNo)?.AWBId ?? 0,
+    AWBNO: h.AWBNo,
+    summary: `${h.type} hold — ${h.HeldBy}`,
+    ageDays: daysBetween(h.Date, DEMO_NOW),
+    thresholdDays: EXCEPTION_THRESHOLD_DAYS.hold,
+    overThreshold: daysBetween(h.Date, DEMO_NOW) > EXCEPTION_THRESHOLD_DAYS.hold,
+    locationId: null,
+    site: h.site,
+    href: `/exceptions/holds`,
+  })),
+  ...MISHANDLED_CASES.map((m) => ({
+    kind: "mishandled" as const,
+    ref: `MSH-${m.id}`,
+    awbId: m.awbId,
+    AWBNO: m.AWBNO,
+    summary: m.stage,
+    ageDays: m.ageDays,
+    thresholdDays: EXCEPTION_THRESHOLD_DAYS.mishandled,
+    overThreshold: m.ageDays > EXCEPTION_THRESHOLD_DAYS.mishandled,
+    locationId: m.holdLocationId,
+    site: m.site,
+    href: `/exceptions/mishandled`,
+  })),
+  ...REEXPORT_CASES.map((r) => ({
+    kind: "re-export" as const,
+    ref: `REX-${r.id}`,
+    awbId: r.awbId,
+    AWBNO: r.AWBNO,
+    summary: r.stage,
+    ageDays: r.ageDays,
+    thresholdDays: EXCEPTION_THRESHOLD_DAYS["re-export"],
+    overThreshold: r.ageDays > EXCEPTION_THRESHOLD_DAYS["re-export"],
+    locationId: r.holdLocationId,
+    site: r.site,
+    href: `/exceptions/re-export`,
+  })),
+  ...LONGSTAY_CASES.map((l) => ({
+    kind: "long-stay" as const,
+    ref: `S82-${l.id}`,
+    awbId: l.awbId,
+    AWBNO: l.AWBNO,
+    summary: `${l.stage} — ${Math.abs(l.daysToDeadline)}d past statutory deadline`,
+    ageDays: l.ageDays,
+    thresholdDays: l.section82Days,
+    overThreshold: l.ageDays > l.section82Days,
+    locationId: null,
+    site: l.site,
+    href: `/exceptions/long-stay`,
+  })),
+  ...DETENDS.filter((d) => !d.releasedAt).map((d) => ({
+    kind: "detend" as const,
+    ref: d.UniqueIdentification,
+    awbId: d.AwbId,
+    AWBNO: awbById(d.AwbId)?.AWBNO ?? "",
+    summary: d.reason,
+    ageDays: daysBetween(d.detainedAt, DEMO_NOW),
+    thresholdDays: EXCEPTION_THRESHOLD_DAYS.detend,
+    overThreshold: daysBetween(d.detainedAt, DEMO_NOW) > EXCEPTION_THRESHOLD_DAYS.detend,
+    locationId: d.locationId,
+    site: awbById(d.AwbId)?.site ?? "KHI",
+    href: `/awb/${d.AwbId}?tab=customs`,
+  })),
+].sort((a, b) => b.ageDays - a.ageDays);
+
+/* ------------------------------------------------------------------ *
+ * Customs (FC-06)
+ *
+ * Coverage is deliberate: every risk channel occupied, one open yellow
+ * query, one red examination with sampling, one red discrepancy that feeds
+ * the Detend register, one PSW/WeBOC divergence (BLK-04), and one OOC whose
+ * scan disagrees with the SD (the verify-vs-SD control actually firing).
+ * ------------------------------------------------------------------ */
+
+export const CUSTOMS_IGMS: CustomsIgm[] = MANIFESTS.map((m, i) => ({
+  ...audit(daysBetween(m.CARGODATE, DEMO_NOW), "customs.filing"),
+  ...siteKeys(m.site),
+  DOCUMENTNO: `CIGM-${m.site}-2026-${String(4400 + i)}`,
+  PORT: m.site === "KHI" ? "PKKHI" : m.site === "LHE" ? "PKLHE" : "PKPEW",
+  SHIPPINGAGENTNO: `SA-${String(70 + i)}`,
+  FLIGHTNO: m.FLIGHT,
+  VOYAGE: `V${String(1200 + i)}`,
+  COUNTRY: "PK",
+  ORIGIN: m.ORIGIN,
+  CAPTAINNAME: pick(seeded(i * 97 + 5), ["Capt. R. Iqbal", "Capt. M. Farooq", "Capt. S. Ahmed"]),
+  AIRPORTNAME:
+    m.site === "KHI"
+      ? "Jinnah International"
+      : m.site === "LHE"
+        ? "Allama Iqbal International"
+        : "Bacha Khan International",
+  SAMEBOTTOMCARGO: i % 4 === 0 ? "Y" : "N",
+  IGMNO: m.IGMNO,
+  IGMYEAR: 2026,
+  TOTALCONSIGNMENTS: AWBS.filter((a) => a.ManifiestId === m.ManifiestId).length,
+  INDEXNO: String(100 + i),
+  ARRIVALDATE: m.CARGODATE,
+  FILINGDATE: m.MANIFESTDATE,
+  SHIPPINGCOMPANY: m.AIRLINENAME,
+  manifestId: m.ManifiestId,
+  site: m.site,
+}));
+
+const CUSTOMS_AWBS = AWBS.filter((a) => hasReached(a.stage, "customs"));
+
+/** PCT headings that plausibly match the fixture goods descriptions. */
+const PCT_BY_GOODS: Record<string, string> = {
+  "Pharmaceutical preparations": "3004.9099",
+  "Cotton fabric rolls": "5208.5200",
+  "Automotive spare parts": "8708.9900",
+  "Consumer electronics": "8517.6290",
+  "Medical diagnostic kits": "3822.0000",
+  "Fresh cut flowers": "0603.1900",
+  "Lithium-ion battery packs": "8507.6000",
+  "Industrial valves": "8481.8090",
+  "Precision instruments": "9027.8990",
+  "Frozen seafood": "0306.1700",
+  "Aircraft hydraulic pumps": "8413.6090",
+  "Laboratory reagents": "3822.0000",
+};
+
+export const AWB_INFORMATION: AwbInformation[] = CUSTOMS_AWBS.map((a, i) => {
+  const rng = seeded((i + 1) * 4457);
+  const goods = detailsFor(a.AWBId)[0]?.GOODS ?? GOODS[i % GOODS.length];
+  const qty = intBetween(rng, 40, 900);
+  const valuePerUnit = intBetween(rng, 900, 26000);
+  const consignmentValue = round2(qty * valuePerUnit);
+
+  return {
+    DOCUMENTNO: `AWBINFO-${a.site}-2026-${String(6200 + i)}`,
+    AIRWAYBILLNO: a.AWBNO,
+    DESTINATIONPORT: a.DESTINATION,
+    INDEXNO: String(100 + (i % MANIFESTS.length)),
+    TYPE: "IMPORT",
+    CARGOTYPE: cargoClass(a.CARGOCLASSID).ABBREVATION,
+    TYPEBL: "AWB",
+    LCNUMBER: i % 3 === 0 ? null : `LC-${String(2026000 + i * 17)}`,
+    IMPORTLICENCENO: i % 4 === 0 ? `IL-2026-${String(880 + i)}` : null,
+    NATIONALTAXNO: `${String(3100000 + i * 331)}-${i % 9}`,
+    CONSIGNEE: a.CONSIGNEE1,
+    IMPORTNAME: a.CONSIGNEE1,
+    ADDRESS: [a.CONSIGNEE2, a.CONSIGNEE3].filter(Boolean).join(", ") || "Karachi, Pakistan",
+    SHIPPERNAME: a.SHIPPER1,
+    SHIPPERADDRESS: [a.SHIPPER2, a.SHIPPER3].filter(Boolean).join(", ") || a.ORIGIN,
+    ORIGIN: a.ORIGIN,
+    PORTDISCHARGE: a.site === "KHI" ? "PKKHI" : a.site === "LHE" ? "PKLHE" : "PKPEW",
+    CONSIGNMENTVALUE: consignmentValue,
+    INSURANCEAMOUNT: round2(consignmentValue * 0.011),
+    WEIGHT: a.TOTALWEIGHT,
+    NETWEIGHT: round2(a.TOTALWEIGHT * 0.93),
+    REMARKS: null,
+    PORTOFDELIVERY: a.DESTINATION,
+    AMOUNTOFFREIGHT: round2(a.TOTALCHRGWEIGHT * intBetween(rng, 240, 420)),
+    PORTOFSHIPMENT: a.ORIGIN,
+    PCTCODE: PCT_BY_GOODS[goods] ?? "9999.0000",
+    SERIALTYPE: "A",
+    UNITOFMEASURE: "KG",
+    QUANTITY: qty,
+    VALUEPERUNIT: valuePerUnit,
+    UNITOFPACKING: detailsFor(a.AWBId)[0]?.TYPEOFPACK ?? "Carton",
+    NUMBEROFPACKS: a.TOTALPCS,
+    COUNTRYOFORIGIN: a.ORIGIN.slice(0, 2).toUpperCase(),
+    DESCRIPTION: goods,
+    CASEMARKINGS: i % 3 === 0 ? `${a.CONSIGNEE1.slice(0, 12).toUpperCase()} / ${a.AWBNO}` : null,
+    awbId: a.AWBId,
+  } satisfies AwbInformation;
+});
+
+export const CUSTOMS_CLEARANCES: CustomsClearance[] = CUSTOMS_AWBS.map((a, i) => {
+  const rng = seeded((i + 1) * 7919);
+  const info = AWB_INFORMATION.find((x) => x.awbId === a.AWBId)!;
+  const filedDaysAgo = Math.max(1, daysBetween(a.arrivedAt, DEMO_NOW) - 1);
+
+  // Channel spread: deterministic, but chosen so all three appear and the
+  // detained AWB lands on red.
+  const channel: RiskChannel = a.IsDetend
+    ? "red"
+    : i % 5 === 0
+      ? "red"
+      : i % 3 === 0
+        ? "yellow"
+        : "green";
+
+  const cha = pick(rng, [
+    "Al-Huda Clearing",
+    "Pak Gulf CHA",
+    "Swift Clear Agency",
+    "United Customs",
+    "Al-Falah CHA",
+  ]);
+
+  // One AWB (index 4) shows PSW accepting while WeBOC rejects — the exact
+  // parallel-run divergence BLK-04 exists to catch.
+  const divergent = i === 4;
+  const submissions: GatewaySubmission[] = [
+    {
+      provider: "psw",
+      role: "primary",
+      state: "accepted",
+      reference: `PSW-SD-2026-${String(8800000 + a.AWBId * 13)}`,
+      submittedAt: daysAgo(filedDaysAgo, 9, 20),
+      acknowledgedAt: daysAgo(filedDaysAgo, 9, 24),
+      errorCode: null,
+      errorText: null,
+    },
+    {
+      provider: "weboc",
+      role: "parallel",
+      state: divergent ? "rejected" : "accepted",
+      reference: divergent ? null : `WBC-GD-2026-${String(44000 + a.AWBId)}`,
+      submittedAt: daysAgo(filedDaysAgo, 9, 21),
+      acknowledgedAt: daysAgo(filedDaysAgo, 9, 33),
+      errorCode: divergent ? "E-4412" : null,
+      errorText: divergent
+        ? "Consignee NTN not registered against the declared PCT heading"
+        : null,
+    },
+  ];
+
+  // Yellow: one case keeps a query open, the rest are answered and closed.
+  const queryOpen = channel === "yellow" && i % 6 === 3;
+  const queries: CustomsQuery[] =
+    channel === "yellow"
+      ? [
+          {
+            id: 1,
+            raisedAt: daysAgo(filedDaysAgo - 1, 11, 5),
+            raisedBy: "Appraising Officer — Group II",
+            subject: "Declared value below reference",
+            detail:
+              "Declared value per unit is below the valuation ruling for this PCT heading. Supply the commercial invoice and remittance evidence.",
+            respondedAt: queryOpen ? null : daysAgo(filedDaysAgo - 2, 15, 40),
+            responseBy: queryOpen ? null : cha,
+            responseText: queryOpen
+              ? null
+              : "Commercial invoice and bank remittance advice uploaded; value supported.",
+            closedAt: queryOpen ? null : daysAgo(filedDaysAgo - 2, 16, 20),
+          },
+        ]
+      : [];
+
+  // Red: the detained AWB is the one whose exam finds a discrepancy.
+  const examDiscrepancy = a.IsDetend;
+  const examination: ExaminationRecord | null =
+    channel === "red"
+      ? {
+          scheduledAt: daysAgo(filedDaysAgo - 1, 8, 30),
+          examinedAt: daysAgo(filedDaysAgo - 1, 13, 15),
+          examiningOfficer: "Examiner A. Malik",
+          packagesOpened: Math.max(1, Math.round(a.TOTALPCS * 0.2)),
+          packagesTotal: a.TOTALPCS,
+          sampleDrawn: true,
+          sampleRef: `SMP-${a.site}-2026-${String(310 + i)}`,
+          labReportRef: examDiscrepancy ? null : `LAB-2026-${String(770 + i)}`,
+          labReportAt: examDiscrepancy ? null : daysAgo(filedDaysAgo - 3, 10, 0),
+          findings: examDiscrepancy
+            ? "Goods in 6 cartons do not match the declared description; consignment partially detained pending adjudication."
+            : "Contents conform to declaration; sample drawn for record.",
+          discrepancyFound: examDiscrepancy,
+        }
+      : null;
+
+  // Duty is assessed for everything that got past its channel treatment.
+  const channelDone =
+    channel === "green" ||
+    (channel === "yellow" && !queryOpen) ||
+    (channel === "red" && !examDiscrepancy);
+
+  const customsDuty = round2(info.CONSIGNMENTVALUE * 0.11);
+  const salesTax = round2(info.CONSIGNMENTVALUE * 0.18);
+  const fed = round2(info.CONSIGNMENTVALUE * 0.02);
+  const wht = round2(info.CONSIGNMENTVALUE * 0.06);
+
+  const duty: DutyAssessment | null = channelDone
+    ? {
+        assessedAt: daysAgo(filedDaysAgo - 2, 12, 10),
+        assessingOfficer: "Principal Appraiser — Group II",
+        assessedValue: info.CONSIGNMENTVALUE,
+        customsDuty,
+        salesTax,
+        fed,
+        wht,
+        total: dutyTotal({
+          assessedAt: null,
+          assessingOfficer: null,
+          assessedValue: info.CONSIGNMENTVALUE,
+          customsDuty,
+          salesTax,
+          fed,
+          wht,
+          paidAt: null,
+          paymentRef: null,
+        }),
+        paidAt: daysAgo(filedDaysAgo - 3, 10, 45),
+        paymentRef: `PSID-2026-${String(551000 + a.AWBId * 7)}`,
+      }
+    : null;
+
+  // ANF is required for pharma/chemical classes; ASF for everything.
+  const cls = cargoClass(a.CARGOCLASSID);
+  const anfRequired = /pharma|chemical|dangerous|valuable/i.test(cls.NAME);
+  const agencies: AgencyClearance[] = [
+    {
+      agency: "ANF",
+      required: anfRequired,
+      clearedAt: anfRequired && channelDone ? daysAgo(filedDaysAgo - 3, 9, 5) : null,
+      clearanceRef: anfRequired && channelDone ? `ANF-2026-${String(2200 + i)}` : null,
+      officer: anfRequired && channelDone ? "ANF Insp. K. Shah" : null,
+    },
+    {
+      agency: "ASF",
+      required: true,
+      clearedAt: channelDone ? daysAgo(filedDaysAgo - 3, 9, 20) : null,
+      clearanceRef: channelDone ? `ASF-2026-${String(5100 + i)}` : null,
+      officer: channelDone ? "ASF Sgt. B. Nawaz" : null,
+    },
+  ];
+
+  const oocIssued = channelDone && duty?.paidAt != null;
+  const sdRef = submissions[0].reference!;
+
+  // One OOC (index 7) is scanner-captured and disagrees with the SD on
+  // package count — the verify-vs-SD control doing its job.
+  const scanMismatch = oocIssued && i === 7;
+  const declaredPacks = String(a.TOTALPCS);
+  const scannedPacks = scanMismatch ? String(a.TOTALPCS - 2) : declaredPacks;
+
+  const ooc: OutOfCharge | null = oocIssued
+    ? {
+        oocNo: `OOC-${a.site}-2026-${String(9100 + a.AWBId)}`,
+        docNumber: {
+          series: "OOC",
+          value: `OOC-${a.site}-2026-${String(9100 + a.AWBId)}`,
+          sequence: 9100 + a.AWBId,
+          year: 2026,
+          cargoClassId: a.CARGOCLASSID,
+          continuesFromCmts: 9099,
+        },
+        source: scanMismatch ? "scanner" : "psw-fetch",
+        fetchedAt: scanMismatch ? null : daysAgo(filedDaysAgo - 4, 11, 30),
+        scannedAt: scanMismatch ? daysAgo(filedDaysAgo - 4, 11, 35) : null,
+        issuedAt: daysAgo(filedDaysAgo - 4, 11, 15),
+        issuingOfficer: "Deputy Collector — Appraisement",
+        documentId: `DOC-OOC-${a.AWBId}`,
+        checks: [
+          {
+            field: "sdRef",
+            label: "SD reference",
+            scanned: ocr(sdRef, scanMismatch ? 0.93 : 0.99),
+            expected: sdRef,
+            matches: true,
+          },
+          {
+            field: "awbNo",
+            label: "AWB number",
+            scanned: ocr(a.AWBNO, scanMismatch ? 0.88 : 0.99),
+            expected: a.AWBNO,
+            matches: true,
+          },
+          {
+            field: "channel",
+            label: "Risk channel",
+            scanned: ocr(RISK_CHANNEL_LABEL[channel], scanMismatch ? 0.91 : 0.98),
+            expected: RISK_CHANNEL_LABEL[channel],
+            matches: true,
+          },
+          {
+            field: "packages",
+            label: "Number of packages",
+            scanned: ocr(scannedPacks, scanMismatch ? 0.72 : 0.97),
+            expected: declaredPacks,
+            matches: !scanMismatch,
+          },
+          {
+            field: "issuedAt",
+            label: "Issue date",
+            scanned: ocr(formatDate(daysAgo(filedDaysAgo - 4, 11, 15)), scanMismatch ? 0.9 : 0.99),
+            expected: formatDate(daysAgo(filedDaysAgo - 4, 11, 15)),
+            matches: true,
+          },
+        ],
+        verifiedAt: scanMismatch ? null : daysAgo(filedDaysAgo - 4, 11, 40),
+        verifiedBy: scanMismatch ? null : "n.hassan",
+      }
+    : null;
+
+  const status: SdStatus = !channelDone
+    ? channel === "yellow"
+      ? "query-raised"
+      : "under-examination"
+    : ooc
+      ? hasReached(a.stage, "charged")
+        ? "released"
+        : "ooc-issued"
+      : duty?.paidAt
+        ? "agency-clearance"
+        : "assessed";
+
+  return {
+    ...audit(filedDaysAgo, cha),
+    ...siteKeys(a.site),
+    id: i + 1,
+    awbId: a.AWBId,
+    AWBNO: a.AWBNO,
+    IGMNO: a.IGMNO,
+    INDEXNO: info.INDEXNO,
+    sdRef,
+    gdNo: divergent ? null : `GD-${a.site}-2026-${String(90 + i)}`,
+    docNumber: {
+      series: "SINGLE_DECLARATION",
+      value: sdRef,
+      sequence: 8800000 + a.AWBId * 13,
+      year: 2026,
+      cargoClassId: a.CARGOCLASSID,
+      continuesFromCmts: null,
+    },
+    cha,
+    status,
+    filedAt: daysAgo(filedDaysAgo, 9, 20),
+    channel,
+    channelAssignedAt: daysAgo(filedDaysAgo, 9, 45),
+    channelFetchedFrom: "psw",
+    submissions,
+    queries,
+    examination,
+    duty,
+    agencies,
+    ooc,
+    site: a.site,
+  } satisfies CustomsClearance;
+});
+
+export function clearanceFor(awbId: number): CustomsClearance | null {
+  return CUSTOMS_CLEARANCES.find((c) => c.awbId === awbId) ?? null;
+}
+
+export function awbInformationFor(awbId: number): AwbInformation | null {
+  return AWB_INFORMATION.find((x) => x.awbId === awbId) ?? null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Messaging
+ * ------------------------------------------------------------------ */
+
+export const IATA_MESSAGES: IataMessage[] = (() => {
+  const out: IataMessage[] = [];
+  let id = 1;
+
+  for (const m of MANIFESTS) {
+    for (const [type, receipt] of Object.entries(m.messages) as Array<
+      ["FFM" | "FWB" | "FHL" | "NOTOC", { received: boolean; receivedAt: string | null }]
+    >) {
+      if (!receipt.received) continue;
+      out.push({
+        id: id++,
+        type,
+        direction: "inbound",
+        awbId: null,
+        AWBNO: null,
+        IGMNO: m.IGMNO,
+        FLIGHT: m.FLIGHT,
+        raw: `${type}/8\n${m.FLIGHT}/${m.CARGODATE.slice(0, 10)}\n${m.ORIGIN}${m.DESTINATION}`,
+        status: "received",
+        timestamp: receipt.receivedAt!,
+        trigger: null,
+        manualSendBy: null,
+        failureReason: null,
+        site: m.site,
+      });
+    }
+  }
+
+  for (const a of AWBS) {
+    const emit = (type: IataMessage["type"], stage: LifecycleStage, trigger: IataMessage["trigger"]) => {
+      if (!hasReached(a.stage, stage)) return;
+      out.push({
+        id: id++,
+        type,
+        direction: "outbound",
+        awbId: a.AWBId,
+        AWBNO: a.AWBNO,
+        IGMNO: a.IGMNO,
+        FLIGHT: a.FLIGHT,
+        raw: `${type}/4\n${a.AWBNO}\n${a.ORIGIN}${a.DESTINATION}/T${a.TOTALPCS}K${a.TOTALWEIGHT}`,
+        status: "acknowledged",
+        timestamp: daysAgo(Math.max(0, daysBetween(a.arrivedAt, DEMO_NOW) - stageIndex(stage) / 4), 12, 0),
+        trigger,
+        manualSendBy: null,
+        failureReason: null,
+        site: a.site,
+      });
+    };
+    emit("RCF", "acceptance", "cargo-received");
+    emit("NFD", "stored", "cargo-warehoused");
+    emit("DLV", "delivered", "pod-captured");
+    if (a.cdrRaised) emit("DIS", "acceptance", "discrepancy-raised");
+    if (a.branch === "transhipment") emit("RCT", "stored", "transfer-cargo-accepted");
+  }
+
+  // One failed message so the console has a real failure to show.
+  out.push({
+    id: id++,
+    type: "NFD",
+    direction: "outbound",
+    awbId: AWBS[4].AWBId,
+    AWBNO: AWBS[4].AWBNO,
+    IGMNO: AWBS[4].IGMNO,
+    FLIGHT: AWBS[4].FLIGHT,
+    raw: `NFD/4\n${AWBS[4].AWBNO}`,
+    status: "failed",
+    timestamp: daysAgo(2, 9, 12),
+    trigger: "cargo-warehoused",
+    manualSendBy: null,
+    failureReason: "SITA session timeout — queued for retry (attempt 2 of 3)",
+    site: AWBS[4].site,
+  });
+
+  return out.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+})();
+
+export const NOTIFICATION_DISPATCHES: NotificationDispatch[] = (() => {
+  const out: NotificationDispatch[] = [];
+  let id = 1;
+
+  for (const a of AWBS) {
+    const consignee = PARTIES.find((p) => p.NAME === a.CONSIGNEE1);
+    if (!consignee) continue;
+
+    const push = (
+      notification: NotificationDispatch["notification"],
+      stage: LifecycleStage,
+      trigger: NotificationDispatch["trigger"],
+      dayOffset: number,
+    ) => {
+      if (!hasReached(a.stage, stage)) return;
+      for (const channel of consignee.channels) {
+        const sentAt = daysAgo(Math.max(0, daysBetween(a.arrivedAt, DEMO_NOW) - dayOffset), 9, 30);
+        const delivered = id % 9 !== 0;
+        const read = delivered && id % 3 === 0;
+        out.push({
+          Id: id++,
+          notification,
+          channel,
+          TemplateId: 1,
+          awbId: a.AWBId,
+          AWBNO: a.AWBNO,
+          IGMNO: a.IGMNO,
+          recipientPartyId: consignee.ID,
+          recipientName: consignee.NAME,
+          SenderName: "AirVault — SAPS",
+          destination: channel === "email" ? consignee.EMAIL : consignee.PHONENO,
+          status: !delivered ? "failed" : read ? "read" : "delivered",
+          queuedAt: sentAt,
+          sentAt,
+          deliveredAt: delivered ? sentAt : null,
+          readAt: read ? daysAgo(Math.max(0, daysBetween(a.arrivedAt, DEMO_NOW) - dayOffset), 11, 5) : null,
+          NoOfTry: delivered ? 1 : 3,
+          failureReason: delivered ? null : "Recipient mailbox full",
+          trigger,
+          site: a.site,
+        });
+      }
+    };
+
+    push("NOA", "notified", "cargo-warehoused", 1);
+    push("DO_READY", "do-issued", "payment-ooc-do-ready", 2);
+    push("DELIVERY_COMPLETED", "delivered", "pod-captured", 3);
+  }
+
+  return out.sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt));
+})();
+
+/* ------------------------------------------------------------------ *
+ * Documents (M02)
+ *
+ * Generated from the records that own them, so the repository is
+ * internally consistent with the rest of the fixture set rather than a
+ * parallel invention.
+ * ------------------------------------------------------------------ */
+
+export const DOCUMENTS: StoredDocument[] = (() => {
+  const out: StoredDocument[] = [];
+  let n = 1;
+
+  const add = (
+    awb: AWB,
+    type: DocumentType,
+    source: DocumentSource,
+    opts: Partial<StoredDocument> = {},
+  ) => {
+    const rng = seeded(n * 4271);
+    const conf = source === "scanner" ? round2(0.86 + rng() * 0.13) : null;
+    out.push({
+      id: `DOC-${String(10_000 + n).padStart(5, "0")}`,
+      type,
+      source,
+      title: `${type.replace(/_/g, " ")} — ${awb.AWBNO}`,
+      awbId: awb.AWBId,
+      AWBNO: awb.AWBNO,
+      IGMNO: awb.IGMNO,
+      cdrRef: null,
+      pages: intBetween(rng, 1, 4),
+      sizeKb: intBetween(rng, 120, 2400),
+      uploadedAt: daysAgo(Math.max(0, daysBetween(awb.arrivedAt, DEMO_NOW)), 8, 30 + (n % 25)),
+      uploadedBy: source === "generated" ? "system" : "import.docs",
+      versions: [
+        { version: 1, uploadedAt: daysAgo(Math.max(0, daysBetween(awb.arrivedAt, DEMO_NOW)), 8, 30), uploadedBy: "import.docs", superseded: false, note: null },
+      ],
+      ocrProcessed: source === "scanner",
+      ocrMeanConfidence: conf,
+      site: awb.site,
+      archived: awb.stage === "closed",
+      ...opts,
+    });
+    n++;
+  };
+
+  for (const a of AWBS) {
+    // Intake documents exist from document verification onward.
+    if (hasReached(a.stage, "doc-verification")) {
+      add(a, "MAWB", "scanner");
+      add(a, "MANIFEST", "edi");
+      if (a.IsHwb) add(a, "HAWB", "scanner");
+      if (a.CARGOCLASSID === 5) add(a, "DGR_DECLARATION", "scanner");
+      if ([5, 6, 8].includes(a.CARGOCLASSID)) add(a, "NOTOC", "edi");
+    }
+    if (hasReached(a.stage, "notified")) add(a, "ARRIVAL_ADVICE", "generated");
+    if (hasReached(a.stage, "customs")) {
+      add(a, "GD_SD", "edi");
+      if (a.branch !== "re-export") add(a, "OOC", "scanner");
+    }
+    if (hasReached(a.stage, "charged")) {
+      add(a, "GR_VOUCHER", "generated");
+      add(a, "INVOICE", "generated");
+    }
+    if (hasReached(a.stage, "do-issued")) add(a, "AUTHORITY_LETTER", "scanner");
+    if (hasReached(a.stage, "gate-pass")) add(a, "GATE_PASS", "generated");
+    if (hasReached(a.stage, "delivered")) add(a, "POD", "generated");
+  }
+
+  // CDR evidence, linked to its CDR rather than only to the AWB.
+  for (const c of CDRS) {
+    const awb = awbById(c.awbId)!;
+    add(awb, "CDR_EVIDENCE", "upload", {
+      cdrRef: c.cdrRef,
+      title: `CDR evidence — ${c.cdrRef}`,
+      // Two versions so the history view has something to diff.
+      versions: [
+        { version: 1, uploadedAt: daysAgo(4, 10, 30), uploadedBy: "i.ali", superseded: true, note: "Initial photo set" },
+        { version: 2, uploadedAt: daysAgo(4, 14, 10), uploadedBy: "s.khan", superseded: false, note: "Added seal condition photographs" },
+      ],
+    });
+  }
+
+  return out.sort((a, b) => Date.parse(b.uploadedAt) - Date.parse(a.uploadedAt));
+})();
+
+export function documentsFor(awbId: number): StoredDocument[] {
+  return DOCUMENTS.filter((d) => d.awbId === awbId);
+}
+
+/* ------------------------------------------------------------------ *
+ * Storage — tag bindings & bonded handovers (Phase 2)
+ * ------------------------------------------------------------------ */
+
+export const TAG_BINDINGS: TagBinding[] = PIECES.filter(
+  (p) => p.locationId !== null && p.scanState !== "unbound",
+).map((p, i) => {
+  const awb = awbById(p.awbId)!;
+  const unreadable = p.scanState === "unreadable";
+  return {
+    id: i + 1,
+    pieceId: p.pieceId,
+    awbId: p.awbId,
+    AWBNO: p.AWBNO,
+    tagValue: p.rfidEpc ?? p.barcode,
+    method: unreadable ? "manual" : p.rfidEpc ? "rfid" : "barcode",
+    locationId: p.locationId!,
+    boundAt: p.lastMovementAt,
+    boundBy: p.lastMovementBy,
+    unboundAt: null,
+    manualReason: unreadable ? "RFID tag unreadable on three attempts — barcode also damaged" : null,
+    site: awb.site,
+  } satisfies TagBinding;
+});
+
+export const BONDED_HANDOVERS: BondedHandover[] = AWBS.filter(
+  (a) => a.CARGOCLASSID === 14 || a.CARGOCLASSID === 15 || a.branch === "transhipment",
+).flatMap((a, i) => {
+  const loc = STORAGE_LOCATIONS.find(
+    (l) => l.site === a.site && (l.CLASSID === (a.branch === "transhipment" ? 15 : 14)),
+  );
+  if (!loc) return [];
+  const days = daysBetween(a.arrivedAt, DEMO_NOW);
+  return [
+    {
+      ...audit(days, "bonded.officer"),
+      ...siteKeys(a.site),
+      BoundedAreaId: i + 1,
+      AWBId: a.AWBId,
+      IGMNO: a.IGMNO,
+      AWBNO: a.AWBNO,
+      NameOfAirLineRepsntive: "K. Rahman",
+      AirlineId: a.AIRLINECODE,
+      GoodDescription: a.branch === "transhipment" ? "Transit cargo — onward carriage" : "Airline bonded stock",
+      HandOverDate: daysAgo(days, 12, 15),
+      HandOverTime: "12:15",
+      Destination: a.branch === "transhipment" ? "LHE" : a.DESTINATION,
+      DeliverBy: "SAPS Bonded Store",
+      USERID: "bonded.officer",
+      UniqueIdentification: `${a.AWBNO}-BND`,
+      direction: "in" as const,
+      locationId: loc.ID,
+      site: a.site,
+    },
+  ];
+});
+
+/* ------------------------------------------------------------------ *
+ * Coverage self-check — surfaced on the QA checklist screen so the
+ * fixture guarantees are visible rather than assumed.
+ * ------------------------------------------------------------------ */
+
+export const FIXTURE_COVERAGE = {
+  awbs: AWBS.length,
+  sites: new Set(AWBS.map((a) => a.site)).size,
+  cargoClassesCovered: new Set(AWBS.map((a) => a.CARGOCLASSID)).size,
+  cargoClassesTotal: CARGO_CLASSES.length,
+  lifecycleStagesCovered: new Set(AWBS.map((a) => a.stage)).size,
+  lifecycleStagesTotal: LIFECYCLE_ORDER.length,
+  branches: {
+    cdr: AWBS.filter((a) => a.branch === "cdr").length,
+    mishandled: AWBS.filter((a) => a.branch === "mishandled").length,
+    reExport: AWBS.filter((a) => a.branch === "re-export").length,
+    longStay: AWBS.filter((a) => a.branch === "long-stay").length,
+    transhipment: AWBS.filter((a) => a.branch === "transhipment").length,
+  },
+  detends: DETENDS.length,
+  houseAwbs: HOUSE_AWBS.length,
+  holdsLive: HOLDS.filter((h) => !h.Release).length,
+  holdsReleased: HOLDS.filter((h) => h.Release).length,
+  divergedLocations: AWB_LOCATIONS.filter((l) => l.LOGICALLOCATIONID !== l.PHYSICALLOCATIONID).length,
+  triggersMapped: TRIGGER_MAP.length,
+  pieces: PIECES.length,
+  iataMessages: IATA_MESSAGES.length,
+  notifications: NOTIFICATION_DISPATCHES.length,
+  documents: DOCUMENTS.length,
+} as const;

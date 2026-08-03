@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import AuthGuard from "@/components/auth/AuthGuard";
+import { SiteProvider } from "@/components/site/SiteContext";
 
 const NO_APP_SHELL_PATHS = [
   "/",
@@ -27,7 +28,9 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   return (
     <AuthProvider>
       <AuthGuard>
-        <AppShell>{children}</AppShell>
+        <SiteProvider>
+          <AppShell>{children}</AppShell>
+        </SiteProvider>
       </AuthGuard>
     </AuthProvider>
   );

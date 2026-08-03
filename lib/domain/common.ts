@@ -1,0 +1,375 @@
+/**
+ * AirVault domain — shared primitives.
+ *
+ * Field names deliberately mirror the CMTS (MS-SQL) column names so that
+ * parity is checkable at a glance and the migration mapping is direct.
+ * Where AirVault adds a concept CMTS has no column for, it is marked
+ * `AirVault addition` in a comment.
+ */
+
+/* ------------------------------------------------------------------ *
+ * Site / tenancy keys
+ *
+ * CMTS is already multi-site: `CityId` appears on ~30 tables and
+ * `Comp_Code` / `Off_Code` on ~20. AirVault adds the HQ tier on top.
+ * ------------------------------------------------------------------ */
+
+export type SiteCode = "KHI" | "LHE" | "PEW";
+
+/** The site selector also accepts "HQ", which means "all sites". */
+export type SiteScope = SiteCode | "HQ";
+
+export interface SiteKeys {
+  /** CMTS `CityId` */
+  CityId: number;
+  /** CMTS `Comp_Code` */
+  Comp_Code: number;
+  /** CMTS `Off_Code` */
+  Off_Code: number;
+}
+
+export interface Site extends SiteKeys {
+  code: SiteCode;
+  name: string;
+  city: string;
+  airportCode: string;
+  /** AirVault addition — FC-12 platform layer: per-site nodes are offline-capable. */
+  offlineCapable: boolean;
+  /** AirVault addition — CDC / outbox sync state for the HQ tier. */
+  lastSyncAt: string;
+  pendingOutbox: number;
+}
+
+/* ------------------------------------------------------------------ *
+ * Audit columns
+ *
+ * These six appear on ~60 CMTS tables. Every AirVault entity carries
+ * them so the AuditStrip component can render on any record drawer.
+ * ------------------------------------------------------------------ */
+
+export interface AuditColumns {
+  CreatedBy: string;
+  UpdatedBy: string | null;
+  /** ISO-8601 */
+  CreatedDate: string;
+  /** ISO-8601 */
+  UpdatedDate: string | null;
+  IsActive: boolean;
+  IsDeleted: boolean;
+}
+
+/** Every persisted domain record. */
+export interface DomainRecord extends AuditColumns, SiteKeys {}
+
+/* ------------------------------------------------------------------ *
+ * Document numbering (CMTS `AutoIncrementValues` + `TABLESEQUENCE`)
+ *
+ * Four separate flow amendments require AirVault numbering to continue
+ * the CMTS sequence — FC-04 (CDR refs), FC-07 (invoices / vouchers),
+ * FC-08 (gate passes), FC-10 (notices). Note the CMTS scoping:
+ * `AutoIncrementValues` is per cargo class AND per year, so series are
+ * not global.
+ * ------------------------------------------------------------------ */
+
+export type DocSeriesCode =
+  | "AWB_INDEX"
+  | "ARRIVAL_ADVICE"
+  | "CDR"
+  | "GR_VOUCHER"
+  | "GR_DUPLICATE"
+  | "INVOICE"
+  | "CREDIT_NOTE"
+  | "DELIVERY_ORDER"
+  | "GATE_PASS"
+  | "SECTION_82_NOTICE"
+  | "TRANSHIPMENT_PERMIT"
+  | "ULD_BUILD_REPORT"
+  | "DISCREPANCY_NOTE"
+  | "EXPORT_INVOICE"
+  /** FC-06 — Single Declaration replaces the legacy GD; no CMTS ancestor. */
+  | "SINGLE_DECLARATION"
+  | "OOC";
+
+export interface DocNumberRef {
+  series: DocSeriesCode;
+  /** The rendered number, e.g. "GR-2026-04421". */
+  value: string;
+  /** CMTS `AutoIncrementValues.IncrementedNo` */
+  sequence: number;
+  /** CMTS `AutoIncrementValues.Year` — series reset annually. */
+  year: number;
+  /** CMTS `AutoIncrementValues.CargoClassId` — series are scoped per class. */
+  cargoClassId: number | null;
+  /**
+   * Provenance: the last value CMTS issued before cutover.
+   *
+   * `null` for series with no legacy ancestor — the Single Declaration is
+   * the case in point, since FC-06 replaces the GD rather than continuing
+   * it. A null here is meaningful, not missing data.
+   */
+  continuesFromCmts: number | null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Money & weight
+ * ------------------------------------------------------------------ */
+
+/** All amounts are PKR in this demo. */
+export type Amount = number;
+
+export interface WeightSet {
+  /** CMTS `TOTALWEIGHT` / `WEIGTH` — measured actual weight, kg. */
+  actualKg: number;
+  /** FC-07 §05 — L × W × H / 6000. */
+  volumetricKg: number;
+  /** FC-07 §06 — max(actual, volumetric). CMTS `TOTALCHRGWEIGHT`. */
+  chargeableKg: number;
+}
+
+/**
+ * Dimension unit. Real AWBs use both — see the reference documents:
+ *   816-00059205  "DIM(CMS): 44x40x40 (4)"        → centimetres
+ *   816-00034156  "Volume Weight: 101.21 Kgs (Inches) 14X14X21/9" → inches
+ */
+export type DimensionUnit = "cm" | "in";
+
+export interface Dimensions {
+  /** CMTS `ACCEPTENCEDETAIL.LENGTH` */
+  lengthCm: number;
+  /** CMTS `ACCEPTENCEDETAIL.WIDTH` */
+  widthCm: number;
+  /** CMTS `ACCEPTENCEDETAIL.HEIGHT` */
+  heightCm: number;
+  /** CMTS `ACCEPTENCEDETAIL.UNIT` — the value is in this unit, not always cm. */
+  unit: DimensionUnit | string;
+}
+
+/**
+ * FC-07 §05 writes the divisor as a constant 6000. That is only correct for
+ * centimetres. IATA uses **6000 for cm and 366 for inches**, and the
+ * reference AWB 816-00034156 computes in inches:
+ *
+ *   14 × 14 × 21 × 9 = 37,044 cu.in ÷ 366 = 101.21 kg   ← matches the AWB
+ *   the same figures ÷ 6000 would give 6.17 kg          ← 16× understated
+ *
+ * So the divisor is unit-dependent. Flagged to SAPS as a correction to
+ * FC-07 §05 rather than a demo-only detail — it is a billing defect.
+ */
+export const VOLUMETRIC_DIVISORS: Record<DimensionUnit, number> = { cm: 6000, in: 366 };
+
+/** Kept for callers that genuinely mean centimetres. */
+export const VOLUMETRIC_DIVISOR = VOLUMETRIC_DIVISORS.cm;
+
+export function volumetricDivisor(unit: Dimensions["unit"]): number {
+  return unit === "in" ? VOLUMETRIC_DIVISORS.in : VOLUMETRIC_DIVISORS.cm;
+}
+
+export function volumetricKg(d: Dimensions): number {
+  return round2((d.lengthCm * d.widthCm * d.heightCm) / volumetricDivisor(d.unit));
+}
+
+/**
+ * IATA rounds chargeable weight **up to the next 0.5 kg**.
+ * Reference AWB 816-00034156: gross 231.6 kg is billed as 232.0 kg.
+ *
+ * FC-07 §06 says only `max(actual, volumetric)`. Without the round-up the
+ * demo under-bills every fractional weight — small per AWB, systematic at
+ * volume. Flagged to SAPS as a correction to FC-07 §06.
+ */
+export function roundUpHalfKg(kg: number): number {
+  return Math.ceil(kg * 2) / 2;
+}
+
+/** FC-07 §06 — chargeable = max(actual, volumetric), rounded up to 0.5 kg. */
+export function chargeableKg(actualKg: number, volKg: number): number {
+  return roundUpHalfKg(round2(Math.max(actualKg, volKg)));
+}
+
+export function buildWeightSet(actualKg: number, d: Dimensions): WeightSet {
+  const vol = volumetricKg(d);
+  return { actualKg: round2(actualKg), volumetricKg: vol, chargeableKg: chargeableKg(actualKg, vol) };
+}
+
+export function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/* ------------------------------------------------------------------ *
+ * OCR confidence (FC-01 05b/05c, FC-02, FC-06, FC-11 amendments)
+ *
+ * "Per-item confidence score + operator acceptance before commit."
+ * ------------------------------------------------------------------ */
+
+/** Below this, the operator must review the item individually (FC-01 05d). */
+export const OCR_CONFIDENCE_THRESHOLD = 0.9;
+
+export type OcrReviewState = "auto-accepted" | "needs-review" | "operator-corrected";
+
+export interface OcrValue<T> {
+  /** What OCR read. */
+  extracted: T;
+  /** What the operator committed — differs only when corrected. */
+  value: T;
+  /** 0–1. */
+  confidence: number;
+  state: OcrReviewState;
+  correctedBy?: string;
+}
+
+export function ocrState(confidence: number, corrected: boolean): OcrReviewState {
+  if (corrected) return "operator-corrected";
+  return confidence >= OCR_CONFIDENCE_THRESHOLD ? "auto-accepted" : "needs-review";
+}
+
+export function ocr<T>(extracted: T, confidence: number, corrected?: T): OcrValue<T> {
+  const isCorrected = corrected !== undefined && corrected !== extracted;
+  return {
+    extracted,
+    value: isCorrected ? (corrected as T) : extracted,
+    confidence,
+    state: ocrState(confidence, isCorrected),
+    ...(isCorrected ? { correctedBy: "n.hassan" } : {}),
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Declared vs physical variance (FC-01 05e → FC-04)
+ *
+ * "Declared (OCR) vs physical (received) variance feeds 07 Reconciliation
+ *  → 08 → CDR (FC-04)."
+ *
+ * CMTS already models the declared/received pairs on IMPORTAWBDETAIL:
+ *   PCS/RECEIVEDPCS, WEIGTH/RECEIVEDWT, CHARGEWEIGTH/CHARGEDRECEIVEDWT
+ * ------------------------------------------------------------------ */
+
+/** Above this relative difference, FC-04's amendment auto-raises a CDR. */
+export const VARIANCE_TOLERANCE = 0.02;
+
+export interface Variance {
+  declared: number;
+  physical: number;
+  delta: number;
+  /** Relative to declared; 0 when declared is 0 and physical is 0. */
+  ratio: number;
+  overTolerance: boolean;
+}
+
+export function variance(declared: number, physical: number): Variance {
+  const delta = round2(physical - declared);
+  const ratio = declared === 0 ? (physical === 0 ? 0 : 1) : Math.abs(delta) / declared;
+  return {
+    declared: round2(declared),
+    physical: round2(physical),
+    delta,
+    ratio: Math.round(ratio * 10000) / 10000,
+    overTolerance: ratio > VARIANCE_TOLERANCE,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Dwell / aging (FC-07 §02–03 storage clock, FC-10 aging engine)
+ * ------------------------------------------------------------------ */
+
+export const MS_PER_DAY = 86_400_000;
+
+export function daysBetween(fromIso: string, toIso: string): number {
+  return Math.max(0, Math.floor((Date.parse(toIso) - Date.parse(fromIso)) / MS_PER_DAY));
+}
+
+export interface DwellState {
+  arrivedAt: string;
+  asOf: string;
+  totalDays: number;
+  freeDays: number;
+  /** Days beyond the free period — what demurrage accrues on. */
+  chargeableDays: number;
+  /** FC-10 branch C — statutory threshold, from Section82Days. */
+  section82Days: number;
+  /** FC-10-C1 — cargo not cleared after the allowed period. */
+  longStay: boolean;
+  /** Days remaining before the Section 82 threshold; negative once past. */
+  daysToSection82: number;
+}
+
+export function dwell(
+  arrivedAt: string,
+  asOf: string,
+  freeDays: number,
+  section82Days: number,
+): DwellState {
+  const totalDays = daysBetween(arrivedAt, asOf);
+  return {
+    arrivedAt,
+    asOf,
+    totalDays,
+    freeDays,
+    chargeableDays: Math.max(0, totalDays - freeDays),
+    section82Days,
+    longStay: totalDays >= section82Days,
+    daysToSection82: section82Days - totalDays,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Deterministic pseudo-randomness
+ *
+ * Fixtures must be stable across server and client renders — Math.random()
+ * would produce hydration mismatches (see lib/rackData.ts, which has this
+ * problem today). Seeded mulberry32 instead.
+ * ------------------------------------------------------------------ */
+
+export function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return function next() {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function pick<T>(rng: () => number, xs: readonly T[]): T {
+  return xs[Math.floor(rng() * xs.length)];
+}
+
+export function intBetween(rng: () => number, lo: number, hi: number): number {
+  return lo + Math.floor(rng() * (hi - lo + 1));
+}
+
+/* ------------------------------------------------------------------ *
+ * Formatting
+ * ------------------------------------------------------------------ */
+
+export function formatPkr(n: Amount): string {
+  return `PKR ${Math.round(n).toLocaleString("en-PK")}`;
+}
+
+export function formatKg(n: number): string {
+  return `${n.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
+}
+
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * The demo's "now". Fixed rather than `Date.now()` so dwell clocks, aging
+ * badges and Section 82 countdowns are stable and reproducible in a
+ * walkthrough — and so server and client agree.
+ */
+export const DEMO_NOW = "2026-08-03T14:32:00+05:00";

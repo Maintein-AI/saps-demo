@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, ChevronDown, Search, X } from "lucide-react";
+import { Bell, ChevronDown, Search } from "lucide-react";
 import { useAuth } from "./auth/AuthContext";
+import SiteSwitcher from "./site/SiteSwitcher";
 
 interface HeaderProps {
   portalName: string;
@@ -91,6 +92,9 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-2 lg:gap-3 ml-auto" data-dropdown>
+        {/* P0-2 — site / HQ scope, present on every route */}
+        <SiteSwitcher />
+
         <div className="relative" data-dropdown>
           <button
             onClick={onToggleNotifications}
