@@ -30,6 +30,8 @@ import {
   AWB_LOCATIONS,
   AWB_INFORMATION,
   CDRS,
+  CHARGE_CALCULATIONS,
+  CLOSURES,
   CUSTOMS_CLEARANCES,
   CUSTOMS_IGMS,
   DAMAGE_DETAILS,
@@ -37,8 +39,10 @@ import {
   DETENDS,
   DOCUMENTS,
   EXCEPTION_QUEUE,
+  GATE_OUT_CHECKS,
   GATE_PASSES,
   GODOWN_RENTS,
+  GR_DUPLICATES,
   HOLDS,
   HOUSE_AWBS,
   IATA_MESSAGES,
@@ -47,6 +51,8 @@ import {
   MANIFESTS,
   MISHANDLED_CASES,
   NOTIFICATION_DISPATCHES,
+  PAYMENTS,
+  PICK_SESSIONS,
   PIECES,
   PODS,
   REEXPORT_CASES,
@@ -59,6 +65,7 @@ import {
 } from "./fixtures";
 import { LIFECYCLE_ORDER, hasReached, stageIndex, type AWB, type LifecycleStage } from "./cargo";
 import { evaluateClearance, type RiskChannel } from "./customs";
+import { waiverStatus } from "./finance";
 
 /* ------------------------------------------------------------------ *
  * Site scoping
@@ -233,6 +240,63 @@ export function listReExport(scope: SiteScope = "HQ", openOnly = false) {
 export function listLongStay(scope: SiteScope = "HQ", openOnly = false) {
   const rows = inScope(LONGSTAY_CASES, scope);
   return openOnly ? rows.filter((l) => l.stage !== "C7-closed") : rows;
+}
+
+/* ---- Phase 6 · dispatch, POD & closure (FC-08) ---- */
+
+export function listPickSessions(scope: SiteScope = "HQ") {
+  const ids = new Set(inScope(AWBS, scope).map((a) => a.AWBId));
+  return PICK_SESSIONS.filter((s) => ids.has(s.awbId));
+}
+
+export function pickSessionFor(gatePassNo: number) {
+  return PICK_SESSIONS.find((s) => s.gatePassNo === gatePassNo) ?? null;
+}
+
+export function listGateOutChecks(scope: SiteScope = "HQ", blockedOnly = false) {
+  const passes = new Set(inScope(GATE_PASSES, scope).map((g) => g.GATEPASSNO));
+  const rows = GATE_OUT_CHECKS.filter((c) => passes.has(c.gatePassNo));
+  return blockedOnly ? rows.filter((c) => c.outcome === "blocked") : rows;
+}
+
+export function gateOutFor(gatePassNo: number) {
+  return GATE_OUT_CHECKS.find((c) => c.gatePassNo === gatePassNo) ?? null;
+}
+
+export function listPods(scope: SiteScope = "HQ") {
+  return inScope(PODS, scope);
+}
+
+export function listClosures(scope: SiteScope = "HQ") {
+  const ids = new Set(inScope(AWBS, scope).map((a) => a.AWBId));
+  return CLOSURES.filter((c) => ids.has(c.awbId));
+}
+
+/* ---- Phase 5 · charges, invoice, waiver, DO (FC-07) ---- */
+
+export function listChargeCalculations(scope: SiteScope = "HQ") {
+  const ids = new Set(inScope(AWBS, scope).map((a) => a.AWBId));
+  return CHARGE_CALCULATIONS.filter((c) => ids.has(c.awbId));
+}
+
+export function listWaivers(scope: SiteScope = "HQ", pendingOnly = false) {
+  const ids = new Set(inScope(AWBS, scope).map((a) => a.AWBId));
+  const rows = WAIVER_REQUESTS.filter((w) => ids.has(w.awbId));
+  return pendingOnly ? rows.filter((w) => waiverStatus(w.levels) === "pending") : rows;
+}
+
+export function listPayments(scope: SiteScope = "HQ", unreconciledOnly = false) {
+  const rows = inScope(PAYMENTS, scope);
+  return unreconciledOnly ? rows.filter((p) => !p.reconciled) : rows;
+}
+
+/** GR reprints — CMTS `GODOWNRENTDUPLICATE`, keyed by voucher not site. */
+export function duplicatesFor(voucherNo: string) {
+  return GR_DUPLICATES.filter((d) => d.VOUCHERNO === voucherNo);
+}
+
+export function paymentsFor(invoiceNo: string) {
+  return PAYMENTS.filter((p) => p.invoiceNo === invoiceNo);
 }
 
 /* ---- Phase 4 · customs (FC-06) ---- */

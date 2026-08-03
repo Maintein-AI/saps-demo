@@ -32,6 +32,9 @@ import {
   Boxes,
   TriangleAlert,
   Landmark,
+  Coins,
+  PackageCheck,
+  Send,
 } from "lucide-react";
 
 interface NavItem {
@@ -100,6 +103,39 @@ const navItems: NavItem[] = [
       { label: "SD / GD Filing — M09", href: "/customs/filing" },
       { label: "Channels & OOC", href: "/customs/channels" },
       { label: "Detained Cargo", href: "/customs/detained" },
+    ],
+  },
+  // Phase 5 — charges, invoice, waiver & delivery order, M10-M12 (FC-07).
+  {
+    label: "Billing & Release",
+    icon: Coins,
+    href: "/billing/calculator",
+    subItems: [
+      { label: "Charges Calculator — M10", href: "/billing/calculator" },
+      { label: "Godown Rent Voucher — M11", href: "/billing/godown-rent" },
+      { label: "Invoice & Waiver", href: "/billing/invoice" },
+      { label: "Delivery Order — M12", href: "/billing/delivery-order" },
+    ],
+  },
+  // Phase 6 — gate pass, dispatch, POD & closure, M13-M14 (FC-08).
+  {
+    label: "Dispatch & Closure",
+    icon: PackageCheck,
+    href: "/dispatch/gate-pass",
+    subItems: [
+      { label: "Gate Pass & Picking — M13", href: "/dispatch/gate-pass" },
+      { label: "Gate-out & POD — M14", href: "/dispatch/gate-out" },
+      { label: "AWB Closure & Archive", href: "/dispatch/closure" },
+    ],
+  },
+  // Phase 7 — messaging & notification engine, M07-M08 (FC-05).
+  {
+    label: "Messaging & Alerts",
+    icon: Send,
+    href: "/messaging/iata",
+    subItems: [
+      { label: "IATA Cargo-IMP — M07", href: "/messaging/iata" },
+      { label: "Notification Engine — M08", href: "/messaging/notifications" },
     ],
   },
   {

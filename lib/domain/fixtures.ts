@@ -57,10 +57,21 @@ import {
   evaluateReleaseGate,
   type DeliveryOrder,
   type GodownRent,
+  type GodownRentDetail,
+  type GodownRentDuplicate,
   type Invoice,
+  type PaymentRecord,
   type WaiverRequest,
 } from "./finance";
-import type { GatePass, ProofOfDelivery } from "./dispatch";
+import type {
+  ClosureChecklistItem,
+  ClosureState,
+  GateOutCheck,
+  GatePass,
+  PickLine,
+  PickSession,
+  ProofOfDelivery,
+} from "./dispatch";
 import {
   EXCEPTION_THRESHOLD_DAYS,
   type CDR,
@@ -86,7 +97,16 @@ import {
   type RiskChannel,
   type SdStatus,
 } from "./customs";
-import { TRIGGER_MAP, type IataMessage, type NotificationDispatch } from "./messaging";
+import {
+  CHANNEL_LABEL,
+  CUSTOMER_NOTIFICATION_LABEL,
+  TRIGGER_MAP,
+  type Channel,
+  type CustomerNotification,
+  type IataMessage,
+  type NotificationDispatch,
+  type NotificationTemplate,
+} from "./messaging";
 import type { DocumentSource, DocumentType, StoredDocument } from "./documents";
 import type { BondedHandover, TagBinding } from "./storage";
 
@@ -899,6 +919,112 @@ export const INVOICES: Invoice[] = GODOWN_RENTS.map((g, i) => ({
   site: g.site,
 }));
 
+/**
+ * GR detail lines — CMTS `GODOWNRENTDETAIL` (26 cols), gap G9.
+ *
+ * The voucher header carries `sum*` totals; this is what they are the sum
+ * *of*. One line per class/subclass/location combination the consignment
+ * occupied, because a consignment split across two zones is charged at two
+ * location rates — which the header alone can never show.
+ */
+export const GODOWN_RENT_DETAILS: GodownRentDetail[] = GODOWN_RENTS.flatMap((g, gi) => {
+  const awb = awbByNo(g.AWBNO)!;
+  const calc = chargesFor(awb.AWBId)!;
+  const loc = awb.locationId ?? STORAGE_LOCATIONS.find((l) => l.site === awb.site)!.ID;
+  // Most consignments sit in one zone; a consolidation spans two.
+  const zones = awb.IsHwb ? [loc, loc + 1] : [loc];
+
+  return zones.map((locationId, li) => {
+    const share = 1 / zones.length;
+    const withoutTax = round2(calc.subTotal * share);
+    const tax = round2(calc.taxAmount * share);
+    return {
+      Id: gi * 10 + li + 1,
+      GRNO: g.VOUCHERNO,
+      CLASSID: awb.CARGOCLASSID,
+      SUBCLASSID: awb.cargoSubClassId,
+      LOCATIONID: locationId,
+      INDEXNO: li + 1,
+      DAYS: calc.chargeableDays,
+      WEIGHT: round2(calc.chargeableKg * share),
+      HandlingUnit: "PER KG",
+      HandlingCharges: round2(calc.handlingAmount * share),
+      StorgeUnit: "PER KG / DAY",
+      StorgeUnitCharges: round2(calc.storageAmount * share),
+      LocationUnit: "PER DAY",
+      LocationCharges: round2(calc.locationChargesAmount * share),
+      MinimumCharges: round2(calc.minimumCharges * share),
+      SpecialCharges: round2(calc.specialHandlingCharges * share),
+      Deconsolidation: round2(calc.deconsolidationCharges * share),
+      DocCharges: round2(calc.documentationCharges * share),
+      // Advance Freight Undertaking — carried per line in CMTS.
+      AFUAmount: 0,
+      Freedays: calc.freeDays,
+      TaxPercentage: String(calc.taxPercent),
+      Tax: tax,
+      TaxAmount: tax,
+      TotalAmountWithoutTax: withoutTax,
+      TotalAmountWithTax: round2(withoutTax + tax),
+      GodownId: g.GodownId,
+    } satisfies GodownRentDetail;
+  });
+});
+
+export function grDetailsFor(voucherNo: string): GodownRentDetail[] {
+  return GODOWN_RENT_DETAILS.filter((d) => d.GRNO === voucherNo);
+}
+
+/**
+ * Payments — CMTS spreads these across `GODOWNRENT` (PAYORDERNO/DATE/AMOUNT,
+ * CASHNO, Paymode, CREDITCARD, ACCTITLE, BANKNAME, CHEQUENO…) with **0
+ * occurrences in the pre-P0 demo**. The FC-07 amendment adds cash-less
+ * payment via gateway with auto-reconciliation, so the fixture deliberately
+ * spans both worlds: legacy instruments that need manual reconciliation, and
+ * gateway transactions that reconcile themselves.
+ */
+export const PAYMENTS: PaymentRecord[] = INVOICES.filter((inv) => inv.paid > 0).map((inv, i) => {
+  const rng = seeded((i + 1) * 8191);
+  const mode = pick(rng, ["GATEWAY", "GATEWAY", "PAYORDER", "CHEQUE", "CASH", "BANK_TRANSFER"] as const);
+  const gateway = mode === "GATEWAY";
+  return {
+    id: i + 1,
+    invoiceNo: inv.invoiceNo,
+    paidAt: inv.issuedAt,
+    amount: inv.paid,
+    mode,
+    gatewayRef: gateway ? `PG-2026-${String(330000 + inv.id * 41)}` : null,
+    // FC-07: gateway transactions auto-reconcile; legacy instruments do not.
+    reconciled: gateway,
+    challanNo: mode === "CASH" ? `CH-${String(90400 + i)}` : null,
+    payOrderNo: mode === "PAYORDER" ? `PO-${String(55120 + i)}` : null,
+    chequeNo: mode === "CHEQUE" ? 480900 + i : null,
+    bankName: mode === "CHEQUE" || mode === "BANK_TRANSFER" ? pick(rng, ["Meezan Bank", "HBL", "Bank Alfalah", "UBL"]) : null,
+    receivedBy: "finance.officer",
+    site: inv.site,
+  } satisfies PaymentRecord;
+});
+
+/**
+ * GR duplicates — CMTS `GODOWNRENTDUPLICATE` (10 cols). A reprint is a
+ * chargeable, sequenced event with its own reason, not a silent reprint.
+ */
+export const GR_DUPLICATES: GodownRentDuplicate[] = GODOWN_RENTS.slice(0, 3).map((g, i) => ({
+  VOUCHERNO: g.VOUCHERNO,
+  SEQUENCENO: i + 1,
+  COMMENTS: pick(seeded((i + 1) * 613), [
+    "Consignee lost the original voucher; reprint requested at the counter.",
+    "CHA requires a second copy for the customs file.",
+    "Original damaged during handling at the gate.",
+  ]),
+  DUPLICATEDATE: daysAgo(Math.max(1, i + 1), 11, 30),
+  USERID: "finance.officer",
+  CityId: g.CityId,
+  DuplicateAmount: 500,
+  DuplicateTax: 75,
+  DuplicateTotalAmount: 575,
+  DuplicateTaxPercen: 15,
+}));
+
 export const WAIVER_REQUESTS: WaiverRequest[] = GODOWN_RENTS.filter((g) => g.WAIVEOFF).map((g, i) => ({
   id: i + 1,
   voucherNo: g.VOUCHERNO,
@@ -1004,6 +1130,91 @@ export const GATE_PASSES: GatePass[] = AWBS.filter((a) => hasReached(a.stage, "g
     } satisfies GatePass;
   },
 );
+
+/**
+ * Pick sessions — FC-08 §07–09. The RFID amendment is the point: the tag
+ * bound at putaway (FC-03) is read again at retrieval, so the piece count
+ * verifies itself instead of being typed.
+ *
+ * Coverage is deliberate — one session comes back short so the
+ * "Piece Count Matched?" decision has a No branch to take.
+ */
+export const PICK_SESSIONS: PickSession[] = GATE_PASSES.map((gp, gi) => {
+  const awb = awbByNo(gp.AWBNO)!;
+  const pieces = PIECES.filter((p) => p.awbId === awb.AWBId);
+  // The second gate pass is short by one piece; everything else reconciles.
+  const shortOne = gi === 1 && pieces.length > 1;
+
+  const lines: PickLine[] = pieces.map((p, li) => {
+    const isMissing = shortOne && li === pieces.length - 1;
+    return {
+      id: gi * 100 + li + 1,
+      gatePassNo: gp.GATEPASSNO,
+      awbId: awb.AWBId,
+      pieceId: p.pieceId,
+      locationId: p.locationId ?? 0,
+      expectedRfid: p.rfidEpc,
+      scannedRfid: isMissing ? null : p.rfidEpc,
+      outcome: isMissing ? "unavailable" : "retrieved",
+      scannedAt: isMissing ? null : daysAgo(1, 8, 20 + li),
+      scannedBy: isMissing ? null : "lifter.operator",
+      note: isMissing ? "Not at the pick location; rack re-swept, tag not read." : null,
+    } satisfies PickLine;
+  });
+
+  const scanned = lines.filter((l) => l.outcome === "retrieved").length;
+  return {
+    gatePassNo: gp.GATEPASSNO,
+    awbId: awb.AWBId,
+    startedAt: daysAgo(1, 8, 15),
+    completedAt: shortOne ? null : daysAgo(1, 8, 45),
+    lines,
+    expectedPieces: pieces.length,
+    scannedPieces: scanned,
+    countMatched: scanned === pieces.length,
+    // FC-08: a short pick routes to FC-04, it does not just stop.
+    cdrRef: shortOne ? "CDR-KHI-2026-00322" : null,
+  } satisfies PickSession;
+});
+
+/**
+ * Gate-out verification — the FC-08 amendment's strongest claim: at exit the
+ * tags are matched against the gate pass **and** the FC-07 release
+ * conditions are re-evaluated. A release that was valid at issuance can have
+ * gone stale by the time the vehicle reaches the gate.
+ */
+export const GATE_OUT_CHECKS: GateOutCheck[] = GATE_PASSES.map((gp, gi) => {
+  const awb = awbByNo(gp.AWBNO)!;
+  const session = PICK_SESSIONS.find((s) => s.gatePassNo === gp.GATEPASSNO)!;
+  const expected = session.lines.map((l) => l.expectedRfid).filter((x): x is string => !!x);
+  const scanned = session.lines
+    .filter((l) => l.outcome === "retrieved")
+    .map((l) => l.expectedRfid)
+    .filter((x): x is string => !!x);
+
+  // The third gate pass had a hold placed after the pass was issued.
+  const staleRelease = gi === 2;
+  const missing = expected.filter((t) => !scanned.includes(t));
+
+  return {
+    gatePassNo: gp.GATEPASSNO,
+    checkedAt: daysAgo(1, 9, 30),
+    checkedBy: "gate.security",
+    scannedTags: scanned,
+    expectedTags: expected,
+    tagsMatched: missing.length === 0,
+    extraTags: [],
+    missingTags: missing,
+    releaseStillValid: !staleRelease,
+    newlyFailedConditions: staleRelease ? ["not-on-hold"] : [],
+    outcome: missing.length === 0 && !staleRelease ? "cleared" : "blocked",
+    blockReason: staleRelease
+      ? "A customs hold was placed after this gate pass was issued — release is no longer valid."
+      : missing.length > 0
+        ? `${missing.length} tag(s) on the gate pass were not read on the vehicle.`
+        : null,
+  } satisfies GateOutCheck;
+});
 
 export const PODS: ProofOfDelivery[] = AWBS.filter((a) => hasReached(a.stage, "delivered")).map(
   (a, i) => {
@@ -1416,6 +1627,99 @@ export const EXCEPTION_QUEUE: ExceptionQueueRow[] = [
     href: `/awb/${d.AwbId}?tab=customs`,
   })),
 ].sort((a, b) => b.ageDays - a.ageDays);
+
+/**
+ * AWB closure — FC-08 §17–20. The last gate in the whole system.
+ *
+ * CMTS has `Lock`, which flips a record read-only, but nothing that says
+ * *why* it was safe to flip. The checklist is that reason, and it is
+ * evaluated rather than asserted: an AWB with an open CDR or a live hold
+ * cannot close, no matter that the cargo physically left.
+ *
+ * `Lock` propagates — to houses, splits, detends, the DO and the gate pass.
+ * Closing a parent while a detained sub-identity is still open would strand
+ * that portion with no way to bill or release it.
+ */
+export const CLOSURES: ClosureState[] = AWBS.filter((a) => hasReached(a.stage, "delivered")).map(
+  (a) => {
+    const pod = PODS.find((p) => p.awbId === a.AWBId) ?? null;
+    const invoice = INVOICES.find((i) => i.awbId === a.AWBId) ?? null;
+    const openCdr = CDRS.some((c) => c.awbId === a.AWBId && c.status !== "closed");
+    const liveHold = HOLDS.some((h) => h.AWBNo === a.AWBNO && !h.Release);
+    const closed = a.stage === "closed";
+
+    const items: ClosureChecklistItem[] = [
+      {
+        code: "delivered",
+        label: "Cargo delivered",
+        pass: a.DELIVERED,
+        detail: a.DELIVERED ? "Physical delivery recorded" : "Not yet delivered",
+        href: "/dispatch/gate-out",
+      },
+      {
+        code: "pod",
+        label: "Proof of delivery complete",
+        pass: !!pod && pod.complete,
+        detail: !pod
+          ? "No POD captured"
+          : pod.complete
+            ? `Captured ${formatDate(pod.capturedAt)} by ${pod.capturedBy}`
+            : "POD captured but incomplete — missing evidence",
+        href: "/dispatch/pod",
+      },
+      {
+        code: "charges",
+        label: "Finance reconciled",
+        pass: !!invoice && invoice.outstanding === 0,
+        detail: !invoice
+          ? "No invoice raised"
+          : invoice.outstanding === 0
+            ? `${invoice.invoiceNo} settled in full`
+            : `${invoice.invoiceNo} outstanding`,
+        href: "/billing/invoice",
+      },
+      {
+        code: "no-open-cdr",
+        label: "No open discrepancy",
+        pass: !openCdr,
+        detail: openCdr ? "A CDR is still open against this AWB" : "No open CDR",
+        href: "/exceptions/cdr",
+      },
+      {
+        code: "no-hold",
+        label: "No live hold",
+        pass: !liveHold,
+        detail: liveHold ? "A hold is still live" : "No live hold",
+        href: "/exceptions/holds",
+      },
+      {
+        code: "archived",
+        label: "Archive bundle generated",
+        pass: closed,
+        detail: closed
+          ? "Documents, messages and audit trail bundled"
+          : "Archive is generated at closure",
+        href: null,
+      },
+    ];
+
+    const canClose = items.filter((i) => i.code !== "archived").every((i) => i.pass);
+
+    return {
+      awbId: a.AWBId,
+      items,
+      canClose,
+      closedAt: closed ? daysAgo(1, 17, 0) : null,
+      closedBy: closed ? "ops.supervisor" : null,
+      locked: a.Lock,
+      archiveBundleId: closed ? `ARCH-${a.site}-2026-${String(3300 + a.AWBId)}` : null,
+    } satisfies ClosureState;
+  },
+);
+
+export function closureFor(awbId: number): ClosureState | null {
+  return CLOSURES.find((c) => c.awbId === awbId) ?? null;
+}
 
 /* ------------------------------------------------------------------ *
  * Customs (FC-06)
@@ -1871,6 +2175,88 @@ export const IATA_MESSAGES: IataMessage[] = (() => {
 
   return out.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
 })();
+
+/**
+ * Notification templates — the FC-05 amendment's "Email / SMS / WhatsApp
+ * templates". CMTS has no template table at all; notifications were free
+ * text typed per send, which is why no two NOAs ever read the same.
+ *
+ * Versioned deliberately: a template edit must not retroactively change
+ * what a dispatch three months ago actually said, so a dispatch records
+ * the TemplateId it used.
+ */
+export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = (() => {
+  const out: NotificationTemplate[] = [];
+  let id = 1;
+
+  const COPY: Record<CustomerNotification, { subject: string; body: string; vars: string[] }> = {
+    NOA: {
+      subject: "Arrival Notice — AWB {{awbNo}}",
+      body: "Dear {{recipientName}},\n\nYour consignment on AWB {{awbNo}} ({{pieces}} pcs / {{weight}}) arrived at {{site}} on {{arrivalDate}} per flight {{flight}}.\n\nFree period expires {{freeExpiry}}. Storage charges accrue from that date.\n\nShaheen Airport Services",
+      vars: ["recipientName", "awbNo", "pieces", "weight", "site", "arrivalDate", "flight", "freeExpiry"],
+    },
+    MISSING_DOCUMENT: {
+      subject: "Documents required — AWB {{awbNo}}",
+      body: "Dear {{recipientName}},\n\nClearance of AWB {{awbNo}} is held pending: {{missingDocs}}.\n\nPlease submit to the SAPS documentation counter at {{site}}.",
+      vars: ["recipientName", "awbNo", "missingDocs", "site"],
+    },
+    DO_READY: {
+      subject: "Delivery Order ready — AWB {{awbNo}}",
+      body: "Dear {{recipientName}},\n\nDelivery Order {{doNo}} for AWB {{awbNo}} is ready for collection. Charges of {{amount}} are settled and out-of-charge is on file.\n\nBring original CNIC and the authority letter.",
+      vars: ["recipientName", "awbNo", "doNo", "amount"],
+    },
+    DELIVERY_COMPLETED: {
+      subject: "Delivery completed — AWB {{awbNo}}",
+      body: "Dear {{recipientName}},\n\n{{pieces}} pieces against AWB {{awbNo}} were delivered on {{deliveredAt}} and received by {{receiverName}}.\n\nProof of delivery is attached.",
+      vars: ["recipientName", "awbNo", "pieces", "deliveredAt", "receiverName"],
+    },
+    FREE_PERIOD_EXPIRY: {
+      subject: "Free period expiring — AWB {{awbNo}}",
+      body: "Dear {{recipientName}},\n\nThe free storage period for AWB {{awbNo}} expires on {{freeExpiry}}. Demurrage accrues at {{rate}} thereafter.",
+      vars: ["recipientName", "awbNo", "freeExpiry", "rate"],
+    },
+    CUSTOMS_HOLD: {
+      subject: "Customs hold placed — AWB {{awbNo}}",
+      body: "Dear {{recipientName}},\n\nA customs hold has been placed on AWB {{awbNo}} on {{holdDate}}. Reason: {{holdReason}}.\n\nCargo cannot be released until the hold is lifted.",
+      vars: ["recipientName", "awbNo", "holdDate", "holdReason"],
+    },
+    PAYMENT_DUE: {
+      subject: "Payment due — invoice {{invoiceNo}}",
+      body: "Dear {{recipientName}},\n\nInvoice {{invoiceNo}} against AWB {{awbNo}} shows {{outstanding}} outstanding, due {{dueDate}}.\n\nPay online or at the SAPS finance counter.",
+      vars: ["recipientName", "invoiceNo", "awbNo", "outstanding", "dueDate"],
+    },
+  };
+
+  const notifications = Object.keys(COPY) as CustomerNotification[];
+  for (const n of notifications) {
+    for (const channel of ["email", "sms", "whatsapp"] as Channel[]) {
+      const c = COPY[n];
+      // SMS is length-constrained — one line, no salutation.
+      const body =
+        channel === "sms"
+          ? c.body.split("\n").filter(Boolean)[1] ?? c.body.split("\n")[0]
+          : c.body;
+      out.push({
+        Id: id++,
+        notification: n,
+        channel,
+        DisplayName: `${CUSTOMER_NOTIFICATION_LABEL[n]} — ${CHANNEL_LABEL[channel]}`,
+        Subject: channel === "sms" ? null : c.subject,
+        Body: body,
+        IsHtml: channel === "email",
+        variables: c.vars,
+        version: 2,
+        IsActive: true,
+        IsDeleted: false,
+      } satisfies NotificationTemplate);
+    }
+  }
+  return out;
+})();
+
+export function templatesFor(notification: CustomerNotification) {
+  return NOTIFICATION_TEMPLATES.filter((t) => t.notification === notification && t.IsActive);
+}
 
 export const NOTIFICATION_DISPATCHES: NotificationDispatch[] = (() => {
   const out: NotificationDispatch[] = [];
