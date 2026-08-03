@@ -242,11 +242,15 @@ export const MODULES: ModuleDef[] = [
     code: "M15",
     name: "Transhipment Management",
     tier: "exception",
-    coverage: "not-started",
+    coverage: "built",
     phase: "P8-1, P8-2",
     flows: ["FC-09"],
-    screens: [],
-    gap: "Does not exist. FC-01 branches into it and FC-03 routes cargo to a transhipment bonded zone — both are dead ends today.",
+    screens: [
+      { label: "Bonded transhipment register", href: "/transhipment/register" },
+      { label: "Inter-station handoff", href: "/transhipment/handoff" },
+      { label: "Bonded area", href: "/storage/bonded" },
+    ],
+    gap: "Covered. AWBTRANSFER 25-col parity plus the permit, digital bond supervision and the HQ-synced inter-station handoff — none of which have a CMTS table.",
   },
   {
     code: "M16",

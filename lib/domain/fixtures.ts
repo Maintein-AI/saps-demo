@@ -26,6 +26,7 @@ import {
   round2,
   seeded,
   variance,
+  VARIANCE_TOLERANCE,
   type Dimensions,
   type SiteCode,
 } from "./common";
@@ -109,6 +110,25 @@ import {
 } from "./messaging";
 import type { DocumentSource, DocumentType, StoredDocument } from "./documents";
 import type { BondedHandover, TagBinding } from "./storage";
+import type {
+  AcceptanceLine,
+  CargoAcceptance,
+  CustodyEvent,
+  ExportConsignment,
+  ExportDeclaration,
+  ExportStage,
+  PfmLine,
+  ScreeningRecord,
+  Weighment,
+} from "./exportcargo";
+import type {
+  AwbTransfer,
+  InterStationHandoff,
+  SupervisionEvent,
+  TranshipmentCase,
+  TranshipmentPermit,
+  TranshipmentStage,
+} from "./transhipment";
 
 /* ------------------------------------------------------------------ *
  * Helpers
@@ -1719,6 +1739,443 @@ export const CLOSURES: ClosureState[] = AWBS.filter((a) => hasReached(a.stage, "
 
 export function closureFor(awbId: number): ClosureState | null {
   return CLOSURES.find((c) => c.awbId === awbId) ?? null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Export cargo (FC-11)
+ *
+ * Greenfield: only CARGOACCEPTANCE / ACCEPTENCEDETAIL / ExportGodownrent
+ * exist in CMTS, so most of this is a proposal rather than a transcription.
+ *
+ * Three consignments, each blocking the ramp gate a different way:
+ *   1. clean — screened, sealed, declaration cleared, build matches the PFM
+ *   2. a **broken seal** discovered at a custody handover → re-screen
+ *   3. a **PFM mismatch** — one AWB built onto the wrong ULD → Discrepancy Note
+ * ------------------------------------------------------------------ */
+
+const EXPORT_SEED = [
+  { awb: "618-44120935", dest: "DXB", carrier: "EK", goods: "Surgical instruments", pcs: 84, kg: 1240 },
+  { awb: "618-44120946", dest: "LHR", carrier: "BA", goods: "Cotton garments", pcs: 210, kg: 3180 },
+  { awb: "618-44120957", dest: "JFK", carrier: "QR", goods: "Sports goods", pcs: 156, kg: 2440 },
+];
+
+export const EXPORT_CONSIGNMENTS: ExportConsignment[] = EXPORT_SEED.map((seed, i) => {
+  const rng = seeded((i + 1) * 6737);
+  const site: SiteCode = i === 1 ? "LHE" : "KHI";
+  const brokenSeal = i === 1;
+  const pfmMismatch = i === 2;
+  const acceptedDaysAgo = 3 - i;
+
+  const declaredKg = seed.kg;
+  const grossKg = round2(declaredKg + 480 + intBetween(rng, 10, 40));
+  const tareKg = 480;
+  const palletKg = 120;
+  const lashingKg = 18;
+  const netKg = round2(grossKg - tareKg);
+  const varianceKg = round2(netKg - declaredKg);
+
+  const acceptance: CargoAcceptance = {
+    CARGODATE: daysAgo(acceptedDaysAgo, 8, 30),
+    CARGOID: 7100 + i,
+    REVENUECODE: `RC-${420 + i}`,
+    CARGOGROUP: "GENERAL",
+    CARGOTYPE: "EXPORT",
+    PAYMENT: i === 0 ? "PP" : "CC",
+    AWBCODE: seed.awb,
+    BAGNO: null,
+    LOADEDWEIGHT: grossKg,
+    UNLOADEDWEIGHT: tareKg,
+    TIMEOFWEIGHMENT: "08:12",
+    TIMEOFACCEPTENCE: "08:30",
+    VEHICALNO: `${site}-${String(4420 + i)}`,
+    AGENTNAME: pick(rng, ["Al-Huda Clearing", "Pak Gulf CHA", "Swift Clear Agency"]),
+    CARGOAGENTNAME: pick(rng, ["Skybridge Forwarding", "Indus Air Cargo", "Gulf Link Logistics"]),
+    DESTINATION: seed.dest,
+    ORIGIN: site,
+    SHIPPERNAME: pick(rng, ["Sialkot Surgical Works", "Style Textile (Pvt) Ltd", "Anwar Sports Ind."]),
+    SHIPPERADDRESS: `Industrial Estate, ${site === "LHE" ? "Lahore" : "Karachi"}, Pakistan`,
+    SHIPPERPHONENO: `+92-3${intBetween(rng, 10, 49)}-${intBetween(rng, 1000000, 9999999)}`,
+    CONSIGNEENAME: pick(rng, ["Gulf Medical Supplies FZE", "Northgate Apparel Ltd", "Atlantic Sports Inc"]),
+    CONSIGNEEADDRESS: `${seed.dest} — consignee address on file`,
+    CONSIGNEEPHONENO: "+971-4-0000000",
+    REMARKS: null,
+    STATUS: "ACCEPTED",
+    PCSAWB: seed.pcs,
+    WEIGHTAWB: declaredKg,
+    DISCREPANCY: null,
+    LEASHINGWEIGHT: lashingKg,
+    PALLETWEIGHT: palletKg,
+    AIRLINEABB: seed.carrier,
+  };
+
+  const lines: AcceptanceLine[] = Array.from({ length: 2 }, (_, li) => ({
+    CARGODATE: acceptance.CARGODATE,
+    CARGOID: acceptance.CARGOID,
+    SEQUENCE: li + 1,
+    NATUREOFGOODS: seed.goods,
+    PCS: Math.round(seed.pcs / 2),
+    WEIGHT: round2(declaredKg / 2),
+    WIDTH: intBetween(rng, 60, 110),
+    HEIGHT: intBetween(rng, 60, 140),
+    LENGTH: intBetween(rng, 90, 180),
+    UNIT: "cm",
+  }));
+
+  const weighment: Weighment = {
+    scaleId: `SCALE-${site}-0${i + 1}`,
+    weighedAt: daysAgo(acceptedDaysAgo, 8, 12),
+    weighedBy: "export.counter",
+    grossKg,
+    tareKg,
+    netKg,
+    palletKg,
+    lashingKg,
+    declaredKg,
+    varianceKg,
+    varianceRatio: Math.abs(varianceKg) / declaredKg,
+    withinTolerance: Math.abs(varianceKg) / declaredKg <= VARIANCE_TOLERANCE,
+    autoCaptured: true,
+  };
+
+  const sealNo = `SEAL-${site}-2026-${String(3300 + i)}`;
+  const screening: ScreeningRecord[] = [
+    {
+      id: 1,
+      method: i === 2 ? "etd" : "x-ray",
+      screenedAt: daysAgo(acceptedDaysAgo, 10, 5),
+      screenerId: `SCR-${String(220 + i)}`,
+      screenerName: pick(rng, ["A. Nadeem", "S. Bashir", "R. Qureshi"]),
+      result: "pass",
+      piecesScreened: seed.pcs,
+      notes: null,
+      sealNo,
+      sealAppliedAt: daysAgo(acceptedDaysAgo, 10, 20),
+      sealRfid: `E2003417${String(50000 + i * 7)}`,
+    },
+  ];
+
+  const custodyChain: CustodyEvent[] = [
+    {
+      id: 1,
+      at: daysAgo(acceptedDaysAgo, 8, 35),
+      fromParty: acceptance.CARGOAGENTNAME,
+      toParty: "SAPS export warehouse",
+      location: `${site} export shed`,
+      sealIntact: null,
+      sealNo: null,
+      signedBy: "export.counter",
+      note: "Accepted at the export counter.",
+    },
+    {
+      id: 2,
+      at: daysAgo(acceptedDaysAgo, 10, 25),
+      fromParty: "SAPS export warehouse",
+      toParty: "SAPS screening point",
+      location: `${site} screening`,
+      sealIntact: true,
+      sealNo,
+      signedBy: "screening.lead",
+      note: "Screened and sealed.",
+    },
+    {
+      id: 3,
+      at: daysAgo(Math.max(0, acceptedDaysAgo - 1), 6, 40),
+      fromParty: "SAPS screening point",
+      toParty: "SAPS build-up area",
+      location: `${site} build-up`,
+      sealIntact: !brokenSeal,
+      sealNo,
+      signedBy: "buildup.lead",
+      note: brokenSeal
+        ? "Seal found broken on handover to build-up. Consignment quarantined for re-screening."
+        : "Seal verified intact on handover.",
+    },
+  ];
+
+  // PFM: case 3 has an AWB built onto a ULD the load plan did not assign.
+  const uld1 = `AKE${String(41200 + i)}${seed.carrier}`;
+  const uld2 = `AKE${String(41300 + i)}${seed.carrier}`;
+  const pfm: PfmLine[] = [
+    {
+      uldNo: uld1,
+      uldType: "AKE",
+      plannedAwbs: [seed.awb],
+      plannedPieces: Math.round(seed.pcs * 0.6),
+      plannedWeightKg: round2(declaredKg * 0.6),
+      actualAwbs: [seed.awb],
+      actualPieces: Math.round(seed.pcs * 0.6),
+      actualWeightKg: round2(declaredKg * 0.6),
+      builtAt: daysAgo(Math.max(0, acceptedDaysAgo - 1), 7, 30),
+      builtBy: "buildup.lead",
+    },
+    {
+      uldNo: uld2,
+      uldType: "AKE",
+      plannedAwbs: [seed.awb],
+      plannedPieces: seed.pcs - Math.round(seed.pcs * 0.6),
+      plannedWeightKg: round2(declaredKg * 0.4),
+      actualAwbs: pfmMismatch ? [seed.awb, "618-44120968"] : [seed.awb],
+      actualPieces: pfmMismatch
+        ? seed.pcs - Math.round(seed.pcs * 0.6) + 12
+        : seed.pcs - Math.round(seed.pcs * 0.6),
+      actualWeightKg: round2(declaredKg * 0.4),
+      builtAt: daysAgo(Math.max(0, acceptedDaysAgo - 1), 7, 55),
+      builtBy: "buildup.lead",
+    },
+  ];
+
+  const declaration: ExportDeclaration = {
+    sdRef: `PSW-XSD-2026-${String(6600200 + i * 11)}`,
+    sdLodgedAt: daysAgo(acceptedDaysAgo, 12, 0),
+    formERef: `EFE-2026-${String(88400 + i)}`,
+    formEBank: pick(rng, ["Meezan Bank", "HBL", "Bank Alfalah"]),
+    formEValue: round2(declaredKg * 3200),
+    formEExpiry: daysAgo(-90, 23, 59),
+    pswAckRef: `PSWACK-${String(775000 + i)}`,
+    pswAckAt: daysAgo(acceptedDaysAgo, 12, 18),
+    clearedAt: daysAgo(Math.max(0, acceptedDaysAgo - 1), 9, 10),
+    rejectionCode: null,
+    rejectionText: null,
+  };
+
+  const stage: ExportStage = brokenSeal
+    ? "E06-screened"
+    : pfmMismatch
+      ? "E09-built-up"
+      : "E10-messages-sent";
+
+  return {
+    ...audit(acceptedDaysAgo, "export.counter"),
+    ...siteKeys(site),
+    id: i + 1,
+    awbNo: seed.awb,
+    stage,
+    acceptance,
+    lines,
+    capturedDocs: [
+      { label: "Shipping bill", value: ocr(`SB-2026-${String(44100 + i)}`, 0.96), documentId: `DOC-EXP-${i}-01` },
+      { label: "Commercial invoice", value: ocr(`INV-EXP-${String(9900 + i)}`, i === 1 ? 0.74 : 0.95), documentId: `DOC-EXP-${i}-02` },
+      { label: "Packing list", value: ocr(`PL-${String(3300 + i)}`, 0.93), documentId: `DOC-EXP-${i}-03` },
+      { label: "Form-E", value: ocr(declaration.formERef ?? "", 0.98), documentId: `DOC-EXP-${i}-04` },
+    ],
+    weighment,
+    screening,
+    custodyRegime: i === 0 ? "known-consignor" : "ACC3",
+    custodyChain,
+    flightNo: `${seed.carrier}-${600 + i}`,
+    scheduledDeparture: daysAgo(-1, 4, 20),
+    pfm,
+    discrepancyNoteNo: pfmMismatch ? `DN-${site}-2026-00${41 + i}` : null,
+    discrepancyNote: pfmMismatch
+      ? {
+          series: "DISCREPANCY_NOTE",
+          value: `DN-${site}-2026-00${41 + i}`,
+          sequence: 41 + i,
+          year: 2026,
+          cargoClassId: null,
+          continuesFromCmts: 40,
+        }
+      : null,
+    declaration,
+    exportCharges: round2(declaredKg * 26),
+    closedAt: null,
+    site,
+  } satisfies ExportConsignment;
+});
+
+/* ------------------------------------------------------------------ *
+ * Transhipment (FC-09) — M15
+ *
+ * Coverage is deliberate. Three cases, each exercising a different way the
+ * FC-09 §T10 re-tender gate can fail:
+ *   1. clean — permit live, bond trail unbroken, onward flight confirmed
+ *   2. a **lapsed permit** — cargo sat past the permit's validity
+ *   3. an **inter-station handoff mid-flight**, where bond continuity is
+ *      not yet verified, so the receiving site cannot accept custody
+ * ------------------------------------------------------------------ */
+
+/**
+ * The Phase 0 seed table carries exactly one AWB per exception branch, which
+ * is right for the branches that need one example. M15 needs three, because
+ * the re-tender gate has three distinct failure modes and a single clean case
+ * demonstrates none of them. The branch-marked AWB leads; two stored
+ * consignments are added behind it so the gate has something to block on.
+ */
+const TRANSHIP_AWBS = [
+  ...AWBS.filter((a) => a.branch === "transhipment"),
+  ...AWBS.filter(
+    (a) => a.branch === null && hasReached(a.stage, "stored") && !hasReached(a.stage, "charged"),
+  ),
+  ...AWBS.filter((a) => a.branch === null && hasReached(a.stage, "stored")),
+].filter((a, i, arr) => arr.findIndex((x) => x.AWBId === a.AWBId) === i);
+
+export const TRANSHIPMENT_CASES: TranshipmentCase[] = TRANSHIP_AWBS.slice(0, 3).map((a, i) => {
+  const rng = seeded((i + 1) * 5711);
+  const arrived = daysBetween(a.arrivedAt, DEMO_NOW);
+  const airline = AIRLINES.find((x) => x.AIRLINEID === a.AIRLINECODE) ?? AIRLINES[0];
+  const zone =
+    STORAGE_LOCATIONS.find((l) => l.site === a.site && /transhipment|bonded/i.test(l.NAME)) ??
+    STORAGE_LOCATIONS.find((l) => l.site === a.site)!;
+
+  // Case 2 lapses; case 3 is the inter-station handoff.
+  const lapsed = i === 1;
+  const interStation = i === 2;
+  const toSite: SiteCode = a.site === "KHI" ? "LHE" : "KHI";
+
+  const transfer: AwbTransfer = {
+    AWBTRANSID: 4400 + i,
+    AirlineId: airline.AIRLINEID,
+    AirlineName: airline.DESCRIPTION,
+    AirlineAbb: airline.ABBREVATION,
+    ArrivalDate: a.arrivedAt,
+    ArrivalTime: a.CARGOTIME,
+    FlightNo: a.FLIGHT,
+    TotalWeight: a.TOTALWEIGHT,
+    Destination: interStation ? toSite : a.DESTINATION,
+    AirportName: interStation ? `${toSite} — SAPS station` : "Onward international",
+    TransferTo: interStation ? `SAPS ${toSite}` : pick(rng, ["Emirates SkyCargo", "Qatar Airways Cargo", "Turkish Cargo"]),
+    SerialNo: 1200 + i,
+    AWBNo: a.AWBNO,
+    Origin: a.ORIGIN,
+    NoOfPackages: a.TOTALPCS,
+    Weight: a.TOTALWEIGHT,
+    Remarks: interStation ? "Onward leg served by another SAPS station — ownership handoff." : null,
+    UniqueIdentification: `TR-${a.site}-2026-${String(880 + i)}`,
+    IGMNO: a.IGMNO,
+    TransferBy: "ops.supervisor",
+    CreatedOn: daysAgo(arrived, 10, 5),
+    Staff: "t.mahmood",
+    TransferFlight: interStation ? `PK-${300 + i}` : `EK-${600 + i}`,
+    HWBNO: null,
+    CityId: a.CityId,
+  };
+
+  const permitValidDays = lapsed ? arrived - 2 : arrived + 10;
+  const permit: TranshipmentPermit = {
+    permitNo: `TP-${a.site}-2026-${String(510 + i)}`,
+    issuedAt: daysAgo(Math.max(1, arrived - 1), 12, 0),
+    issuedBy: "Deputy Collector — Transhipment",
+    bondRef: `BOND-2026-${String(77100 + i)}`,
+    bondAmount: round2(a.TOTALWEIGHT * 1800),
+    validUntil: daysAgo(-permitValidDays + arrived, 23, 59),
+    discharged: false,
+    dischargedAt: null,
+  };
+
+  // Bond supervision: a clean trail, except case 2 where a sweep came up short.
+  const supervision: SupervisionEvent[] = [
+    {
+      id: 1,
+      kind: "seal-check",
+      at: daysAgo(Math.max(1, arrived - 1), 14, 10),
+      by: "bond.supervisor",
+      customsOfficer: "Insp. F. Rahman",
+      piecesExpected: a.TOTALPCS,
+      piecesObserved: a.TOTALPCS,
+      sealIntact: true,
+      tagsRead: null,
+      finding: "ULD seal intact on arrival into the bonded zone.",
+      clean: true,
+    },
+    {
+      id: 2,
+      kind: "rfid-sweep",
+      at: daysAgo(Math.max(0, arrived - 3), 9, 40),
+      by: "system (zone reader)",
+      customsOfficer: null,
+      piecesExpected: a.TOTALPCS,
+      piecesObserved: lapsed ? a.TOTALPCS - 1 : a.TOTALPCS,
+      sealIntact: null,
+      tagsRead: lapsed ? a.TOTALPCS - 1 : a.TOTALPCS,
+      finding: lapsed
+        ? "Zone sweep read one tag short; piece re-located behind a pallet on manual search but the gap is on the bond record."
+        : "All tags accounted for in the bonded zone.",
+      clean: !lapsed,
+    },
+    {
+      id: 3,
+      kind: "customs-visit",
+      at: daysAgo(Math.max(0, arrived - 5), 11, 15),
+      by: "bond.supervisor",
+      customsOfficer: "Insp. F. Rahman",
+      piecesExpected: a.TOTALPCS,
+      piecesObserved: a.TOTALPCS,
+      sealIntact: true,
+      tagsRead: null,
+      finding: "Routine bond supervision visit; count and seal verified.",
+      clean: true,
+    },
+  ];
+
+  const handoff: InterStationHandoff = interStation
+    ? {
+        fromSite: a.site,
+        toSite,
+        state: "in-transit",
+        proposedAt: daysAgo(Math.max(0, arrived - 4), 10, 0),
+        hqApprovedAt: daysAgo(Math.max(0, arrived - 4), 15, 30),
+        hqApprovedBy: "hq.oversight",
+        acceptedAt: null,
+        acceptedBy: null,
+        rejectedReason: null,
+        bondContinuityRef: `BONDC-2026-${String(4400 + i)}`,
+        // The point of the whole ticket: not yet verified, so custody cannot pass.
+        bondContinuityVerified: false,
+        syncOutboxId: `OUTBOX-${a.site}-${String(99120 + i)}`,
+        syncedAt: daysAgo(Math.max(0, arrived - 4), 15, 32),
+      }
+    : {
+        fromSite: a.site,
+        toSite: a.site,
+        state: "not-applicable",
+        proposedAt: null,
+        hqApprovedAt: null,
+        hqApprovedBy: null,
+        acceptedAt: null,
+        acceptedBy: null,
+        rejectedReason: null,
+        bondContinuityRef: null,
+        bondContinuityVerified: false,
+        syncOutboxId: null,
+        syncedAt: null,
+      };
+
+  const stage: TranshipmentStage = lapsed
+    ? "T08-awaiting-flight"
+    : interStation
+      ? "T07-under-supervision"
+      : "T09-charges-raised";
+
+  return {
+    ...audit(arrived, "ops.supervisor"),
+    ...siteKeys(a.site),
+    id: i + 1,
+    awbId: a.AWBId,
+    AWBNO: a.AWBNO,
+    IGMNO: a.IGMNO,
+    stage,
+    transfer,
+    permit,
+    supervision,
+    handoff,
+    locationId: zone.ID,
+    inboundFlight: a.FLIGHT,
+    onwardFlight: lapsed ? null : transfer.TransferFlight,
+    onwardCarrier: lapsed ? null : transfer.TransferTo,
+    scheduledDeparture: lapsed ? null : daysAgo(-2, 6, 30),
+    rctSentAt: daysAgo(Math.max(1, arrived - 1), 13, 0),
+    tfdSentAt: null,
+    depSentAt: null,
+    storageCharges: round2(a.TOTALCHRGWEIGHT * 42 * Math.max(1, arrived - 3)),
+    chargesRaisedAt: stage === "T09-charges-raised" ? daysAgo(1, 10, 0) : null,
+    dwellDays: arrived,
+    closedAt: null,
+    site: a.site,
+  } satisfies TranshipmentCase;
+});
+
+export function transhipmentFor(awbId: number): TranshipmentCase | null {
+  return TRANSHIPMENT_CASES.find((c) => c.awbId === awbId) ?? null;
 }
 
 /* ------------------------------------------------------------------ *

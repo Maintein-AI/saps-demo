@@ -35,6 +35,8 @@ import {
   Coins,
   PackageCheck,
   Send,
+  Repeat,
+  PlaneTakeoff,
 } from "lucide-react";
 
 interface NavItem {
@@ -136,6 +138,26 @@ const navItems: NavItem[] = [
     subItems: [
       { label: "IATA Cargo-IMP — M07", href: "/messaging/iata" },
       { label: "Notification Engine — M08", href: "/messaging/notifications" },
+    ],
+  },
+  // Phase 8 — transhipment & bonded transfer, M15 (FC-09). New module.
+  {
+    label: "Transhipment",
+    icon: Repeat,
+    href: "/transhipment/register",
+    subItems: [
+      { label: "Bonded Register — M15", href: "/transhipment/register" },
+      { label: "Inter-station Handoff", href: "/transhipment/handoff" },
+    ],
+  },
+  // Phase 9 — export cargo, FC-11. P9-1 (revenue) and P9-6 (airmail) parked.
+  {
+    label: "Export Cargo",
+    icon: PlaneTakeoff,
+    href: "/export/acceptance",
+    subItems: [
+      { label: "Acceptance & Screening", href: "/export/acceptance" },
+      { label: "Build-up & Declaration", href: "/export/buildup" },
     ],
   },
   {

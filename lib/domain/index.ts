@@ -17,6 +17,8 @@ export * from "./messaging";
 export * from "./documents";
 export * from "./storage";
 export * from "./customs";
+export * from "./transhipment";
+export * from "./exportcargo";
 export * from "./awbdoc";
 export * from "./reference";
 export * from "./fixtures";
@@ -39,6 +41,7 @@ import {
   DETENDS,
   DOCUMENTS,
   EXCEPTION_QUEUE,
+  EXPORT_CONSIGNMENTS,
   GATE_OUT_CHECKS,
   GATE_PASSES,
   GODOWN_RENTS,
@@ -56,6 +59,7 @@ import {
   PIECES,
   PODS,
   REEXPORT_CASES,
+  TRANSHIPMENT_CASES,
   WAIVER_REQUESTS,
   awbById,
   awbByNo,
@@ -65,6 +69,8 @@ import {
 } from "./fixtures";
 import { LIFECYCLE_ORDER, hasReached, stageIndex, type AWB, type LifecycleStage } from "./cargo";
 import { evaluateClearance, type RiskChannel } from "./customs";
+import { evaluateRetender } from "./transhipment";
+import { evaluateRampHandover } from "./exportcargo";
 import { waiverStatus } from "./finance";
 
 /* ------------------------------------------------------------------ *
@@ -240,6 +246,39 @@ export function listReExport(scope: SiteScope = "HQ", openOnly = false) {
 export function listLongStay(scope: SiteScope = "HQ", openOnly = false) {
   const rows = inScope(LONGSTAY_CASES, scope);
   return openOnly ? rows.filter((l) => l.stage !== "C7-closed") : rows;
+}
+
+/* ---- Phase 9 · export cargo (FC-11) ---- */
+
+export function listExports(scope: SiteScope = "HQ", openOnly = false) {
+  const rows = inScope(EXPORT_CONSIGNMENTS, scope);
+  return openOnly ? rows.filter((c) => c.stage !== "E13-closed") : rows;
+}
+
+export function rampGateFor(consignmentId: number) {
+  const c = EXPORT_CONSIGNMENTS.find((x) => x.id === consignmentId);
+  if (!c) return null;
+  return { consignment: c, ...evaluateRampHandover(c) };
+}
+
+/* ---- Phase 8 · transhipment & bonded transfer (FC-09) ---- */
+
+export function listTranshipments(scope: SiteScope = "HQ", openOnly = false) {
+  const rows = inScope(TRANSHIPMENT_CASES, scope);
+  return openOnly ? rows.filter((c) => c.stage !== "T13-closed") : rows;
+}
+
+/** Cases whose onward leg is another SAPS station — the P8-2 handoff queue. */
+export function listHandoffs(scope: SiteScope = "HQ") {
+  return inScope(TRANSHIPMENT_CASES, scope).filter(
+    (c) => c.handoff.state !== "not-applicable",
+  );
+}
+
+export function retenderGateFor(awbId: number) {
+  const c = TRANSHIPMENT_CASES.find((x) => x.awbId === awbId);
+  if (!c) return null;
+  return { case: c, ...evaluateRetender(c, DEMO_NOW) };
 }
 
 /* ---- Phase 6 · dispatch, POD & closure (FC-08) ---- */
