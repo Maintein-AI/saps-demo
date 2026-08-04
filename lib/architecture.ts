@@ -520,16 +520,32 @@ export const FLOWS: FlowDef[] = [
     amendment:
       "CDR is variance-driven: declared-vs-physical variance ≥ tolerance auto-raises it. Evidence is a digital pack (scan/photos, RFID/AWB-linked, timestamped) rather than remarks-only. CDR numbering continues the CMTS sequence.",
     steps: [
-      { ref: "—", label: "Variance flagged at intake / acceptance", href: "/awb/20?tab=intake", module: "M04" },
-      { ref: "01", label: "Discrepancy identified", href: "/exceptions/cdr", module: "M06", note: "Auto-raised when variance ≥ tolerance — no operator required" },
-      { ref: "02", label: "Type selected (9 types)", href: "/exceptions/cdr", module: "M06" },
-      { ref: "03", label: "Capture evidence (6 items)", href: "/exceptions/cdr", module: "M06", note: "Digital pack, RFID/AWB-linked" },
-      { ref: "03a", label: "Damage recorded (DamageDetail)", href: "/exceptions/damage", module: "M06", note: "Not every damage finding escalates to a CDR" },
-      { ref: "04–05", label: "Create CDR, assign reference", href: "/exceptions/cdr", module: "M06" },
-      { ref: "06–08", label: "Notify airline / customs, send DIS", href: "/excise-compliance/customs-messaging", module: "M07" },
-      { ref: "09", label: "Move to discrepancy / quarantine hold", href: "/exceptions/holds", module: "M05" },
-      { ref: "10–11", label: "Instruction received? → final action (5 options)", href: "/exceptions/cdr", module: "M06", note: "F3 → FC-10-A, F4 → FC-10-B" },
-      { ref: "12", label: "Close CDR", href: "/exceptions/cdr", module: "M06" },
+      { lane: "Entry decision", ref: "—", label: "Variance flagged at intake / acceptance (FC-01/02 declared vs physical)", href: "/import/ocr-intake", module: "M04" },
+      { lane: "Entry decision", ref: "—", label: "Declared vs physical variance ≥ tolerance?", href: "/exceptions/cdr", module: "M06", decision: true },
+      { lane: "Entry decision", ref: "—", label: "No → continue normal flow, no CDR raised", href: "/exceptions/cdr", module: "M06", note: "The No edge leaves no record behind, so the near-misses are listed on the workbench — otherwise there is no way to tell the rule ran from the rule being off." },
+
+      { lane: "Identify & evidence", ref: "01", label: "Discrepancy identified", href: "/exceptions/cdr", module: "M06", note: "Auto-raised when variance ≥ tolerance — no operator required." },
+      { lane: "Identify & evidence", ref: "02", label: "Type of discrepancy selected (9 types)", href: "/exceptions/cdr", module: "M06", note: "Shortage · Overage · Damage · Leakage/Wet · Tampering · Pilferage · Missing Documents · Wrong Weight · Misrouted." },
+      { lane: "Identify & evidence", ref: "03", label: "Capture evidence (6 items)", href: "/exceptions/cdr", module: "M06", note: "Photos · weight · piece count · package condition · seal condition · remarks." },
+      { lane: "Identify & evidence", ref: "03a", label: "Digital evidence pack — RFID / AWB-linked, timestamped, attached (M02)", href: "/import/documents", module: "M02", note: "The amendment: a pack, not remarks-only as in CMTS." },
+      { lane: "Identify & evidence", ref: "03b", label: "Damage recorded (DamageDetail)", href: "/exceptions/damage", module: "M06", note: "Not every damage finding escalates to a CDR." },
+
+      { lane: "Raise & notify", ref: "04", label: "Create CDR in CMTS", href: "/exceptions/cdr", module: "M06" },
+      { lane: "Raise & notify", ref: "05", label: "Assign CDR reference number", href: "/exceptions/cdr", module: "M06", note: "Continues the CMTS sequence — doc-numbering continuity." },
+      { lane: "Raise & notify", ref: "06", label: "Notify airline representative", href: "/messaging/notifications", module: "M08" },
+      { lane: "Raise & notify", ref: "07", label: "Notify customs if required", href: "/messaging/notifications", module: "M08" },
+      { lane: "Raise & notify", ref: "08", label: "Send DIS status message", href: "/messaging/iata", module: "M07", note: "§10's No edge returns here — the DIS is re-sent on every escalation round, to a higher authority each time." },
+      { lane: "Raise & notify", ref: "09", label: "Move cargo to discrepancy / quarantine hold", href: "/exceptions/holds", module: "M05" },
+
+      { lane: "Instruction loop", ref: "10", label: "Instruction received?", href: "/exceptions/cdr", module: "M06", decision: true, note: "No → keep on hold / escalate, back to §08. Rounds are recorded individually; a chase nobody can date is not evidence of chasing." },
+      { lane: "Instruction loop", ref: "11", label: "Final action", href: "/exceptions/cdr", module: "M06", decision: true },
+      { lane: "Instruction loop", ref: "F1", label: "Release after correction", href: "/exceptions/cdr", module: "M06", note: "Closes inside FC-04 — rejoins the main flow at FC-07 charging." },
+      { lane: "Instruction loop", ref: "F2", label: "Adjust pieces / weight", href: "/exceptions/cdr", module: "M06", note: "Closes inside FC-04 — the adjusted basis re-drives the FC-07 charge." },
+      { lane: "Instruction loop", ref: "F3", label: "Forward as mishandled → FC-10-A", href: "/exceptions/mishandled", module: "M17" },
+      { lane: "Instruction loop", ref: "F4", label: "Re-export → FC-10-B", href: "/exceptions/re-export", module: "M16" },
+      { lane: "Instruction loop", ref: "F5", label: "Claim / liability process", href: "/exceptions/cdr", module: "M06", note: "No demo module — carrier liability claims are flagged on the module map." },
+
+      { lane: "Closure", ref: "12", label: "Close CDR", href: "/exceptions/cdr", module: "M06", note: "Gated: evidence measured, airline notified, DIS sent, instruction received, final action selected. Closing short of that is abandonment, not resolution." },
     ],
   },
   {

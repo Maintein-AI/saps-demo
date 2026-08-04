@@ -25,6 +25,8 @@ import {
 import {
   BRANCH_LABEL,
   CDR_FINAL_ACTION_LABEL,
+  cdrEscalations,
+  cdrFirstDisAt,
   DISCREPANCY_LABEL,
   HOLD_TYPE_LABEL,
   IATA_MESSAGE_LABEL,
@@ -958,8 +960,11 @@ export function ExceptionsPanel({ b }: { b: AwbBundle }) {
                 </>
               )}
               <Field label="Airline notified" value={c.airlineNotifiedAt ? formatDateTime(c.airlineNotifiedAt) : null} />
-              <Field label="DIS sent" value={c.disMessageSentAt ? formatDateTime(c.disMessageSentAt) : null} />
-              <Field label="Escalations" value={c.escalationCount} mono />
+              <Field
+                label="DIS sent"
+                value={cdrFirstDisAt(c) ? formatDateTime(cdrFirstDisAt(c)!) : null}
+              />
+              <Field label="Escalations" value={cdrEscalations(c)} mono />
               <Field
                 label="Final action"
                 value={c.finalAction ? CDR_FINAL_ACTION_LABEL[c.finalAction] : "Awaiting instruction"}

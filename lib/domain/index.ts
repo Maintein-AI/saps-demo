@@ -72,6 +72,7 @@ import { evaluateClearance, type RiskChannel } from "./customs";
 import { evaluateRetender } from "./transhipment";
 import { evaluateRampHandover } from "./exportcargo";
 import { waiverStatus } from "./finance";
+import { screenVariance } from "./exceptions";
 
 /* ------------------------------------------------------------------ *
  * Site scoping
@@ -221,6 +222,21 @@ export function listHolds(scope: SiteScope = "HQ", liveOnly = false) {
 export function listCdrs(scope: SiteScope = "HQ", openOnly = false) {
   const rows = inScope(CDRS, scope);
   return openOnly ? rows.filter((c) => c.status !== "closed") : rows;
+}
+
+/**
+ * FC-04's entry decision across every intake in scope — including the No
+ * edge, where variance stayed inside tolerance and no CDR exists.
+ *
+ * A CDR list alone cannot distinguish "the auto-raise ran and found
+ * nothing" from "the auto-raise is not running". These rows are the
+ * difference, and the ones nearest the threshold are what an auditor asks
+ * about.
+ */
+export function listVarianceScreen(scope: SiteScope = "HQ") {
+  return inScope(AWBS, scope)
+    .map((a) => screenVariance(a, CDRS.find((c) => c.awbId === a.AWBId)?.cdrRef ?? null))
+    .filter((x): x is NonNullable<typeof x> => x !== null);
 }
 
 /**

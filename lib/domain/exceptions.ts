@@ -124,21 +124,136 @@ export interface CDR extends DomainRecord {
 
   evidence: EvidenceItem[];
 
-  /** FC-04 §06–08 */
+  /** FC-04 §06–07 — these happen once, on creation. */
   airlineNotifiedAt: string | null;
   customsNotifiedAt: string | null;
-  disMessageSentAt: string | null;
+
+  /**
+   * FC-04 §08 — one entry per pass through the instruction loop.
+   *
+   * §10's No edge is labelled "Keep on Hold / Escalate" and points **back
+   * at §08 Send DIS Status Message** — so the DIS goes out again on every
+   * round, to a higher authority each time. This was previously an
+   * `escalationCount: number` beside a single `disMessageSentAt`, which
+   * could not say when each chase went out, to whom, or under what DIS
+   * reference. A stored count next to a list is also how the two come to
+   * disagree, so the count is now derived — see `cdrEscalations`.
+   */
+  dispatches: CdrDispatch[];
 
   /** FC-04 §09 — quarantine hold zone. */
   holdLocationId: number | null;
-  /** FC-04 §10 — instruction loop; increments each time it returns to hold. */
-  escalationCount: number;
-  instructionReceivedAt: string | null;
-  instructionText: string | null;
 
   finalAction: CdrFinalAction | null;
   closedAt: string | null;
   site: SiteCode;
+}
+
+/** One §08 dispatch — the first send, then one per escalation round. */
+export interface CdrDispatch {
+  round: number;
+  /** IATA DIS message reference for this send. */
+  disMessageRef: string;
+  sentAt: string;
+  /** Who this round went to — escalation means a higher authority. */
+  sentTo: string;
+  /** Why it was re-sent; null on the first send. */
+  escalationReason: string | null;
+  /** FC-04 §10 — the instruction, when this round finally produced one. */
+  instructionReceivedAt: string | null;
+  instructionText: string | null;
+}
+
+/**
+ * FC-04 §10 — how many times the No edge was taken. The first dispatch is
+ * the original §08 send, not an escalation, so it does not count.
+ */
+export function cdrEscalations(c: CDR): number {
+  return Math.max(0, c.dispatches.length - 1);
+}
+
+/** The original §08 send. */
+export function cdrFirstDisAt(c: CDR): string | null {
+  return c.dispatches[0]?.sentAt ?? null;
+}
+
+/** The round that produced an instruction, if any has. */
+export function cdrInstruction(c: CDR): CdrDispatch | null {
+  return c.dispatches.find((d) => d.instructionReceivedAt !== null) ?? null;
+}
+
+/* ------------------------------------------------------------------ *
+ * FC-04 §12 — the closure gate
+ *
+ * The flow reaches "12. Close CDR" only through §11, and §11 only through
+ * a Yes at §10. Closing without an instruction, or without a final action,
+ * means the discrepancy was abandoned rather than resolved — which is the
+ * state a claim later gets argued over.
+ * ------------------------------------------------------------------ */
+
+export interface CdrCloseCondition {
+  code: "evidence" | "notified" | "dis-sent" | "instruction" | "final-action";
+  label: string;
+  pass: boolean;
+  detail: string;
+}
+
+export function evaluateCdrClosure(c: CDR) {
+  const instruction = cdrInstruction(c);
+  // §03's six evidence kinds. Photos and remarks alone are the CMTS
+  // remarks-only pattern the amendment exists to replace, so a pack that
+  // has not measured anything does not count as captured.
+  const kinds = new Set(c.evidence.map((e) => e.kind));
+  const measured = ["weight", "piece-count"].some((k) => kinds.has(k as EvidenceKind));
+
+  const conditions: CdrCloseCondition[] = [
+    {
+      code: "evidence",
+      label: "Evidence pack captured",
+      pass: kinds.size >= 3 && measured,
+      detail:
+        kinds.size === 0
+          ? "No evidence captured"
+          : !measured
+            ? `${kinds.size} of 6 kinds — but nothing measured (weight or piece count)`
+            : `${kinds.size} of 6 kinds, ${c.evidence.length} items`,
+    },
+    {
+      code: "notified",
+      label: "Airline representative notified (§06)",
+      pass: c.airlineNotifiedAt !== null,
+      detail: c.airlineNotifiedAt ? "Notified" : "Not notified",
+    },
+    {
+      code: "dis-sent",
+      label: "DIS status message sent (§08)",
+      pass: c.dispatches.length > 0,
+      detail:
+        c.dispatches.length === 0
+          ? "Never sent"
+          : `${c.dispatches.length} dispatch(es), ${cdrEscalations(c)} escalation(s)`,
+    },
+    {
+      code: "instruction",
+      label: "Instruction received (§10)",
+      pass: instruction !== null,
+      detail: instruction
+        ? `Round ${instruction.round} — ${instruction.instructionText ?? ""}`
+        : "Still on hold, awaiting the airline",
+    },
+    {
+      code: "final-action",
+      label: "Final action selected (§11)",
+      pass: c.finalAction !== null,
+      detail: c.finalAction ? CDR_FINAL_ACTION_LABEL[c.finalAction] : "Not selected",
+    },
+  ];
+
+  return {
+    conditions,
+    canClose: conditions.every((x) => x.pass),
+    blockedBy: conditions.filter((x) => !x.pass),
+  };
 }
 
 /* ================================================================== *
@@ -450,3 +565,85 @@ export const EXCEPTION_THRESHOLD_DAYS: Record<ExceptionKind, number> = {
   "long-stay": 30,
   detend: 10,
 };
+
+/* ================================================================== *
+ * The variance screen — FC-04's entry decision, including its No edge
+ *
+ * The flow starts before §01. A variance is flagged at intake, then
+ * "Declared vs physical variance ≥ tolerance?" decides:
+ *
+ *   Yes → 01. Discrepancy Identified          (a CDR exists)
+ *   No  → continue normal flow (no CDR)       (nothing exists)
+ *
+ * The No edge leaves no record behind, which is precisely why it is worth
+ * surfacing: a screen that only lists CDRs cannot distinguish "the rule
+ * ran and found nothing" from "the rule is not running". Near-misses are
+ * the evidence that the auto-raise is alive, and the row just under
+ * tolerance is the one an auditor asks about.
+ * ================================================================== */
+
+export type VarianceMeasure = "pieces" | "weightKg" | "volumeM3";
+
+export interface VarianceScreenRow {
+  awbId: number;
+  AWBNO: string;
+  site: SiteCode;
+  measure: VarianceMeasure;
+  variance: Variance;
+  /** True where this measure alone would have raised a CDR. */
+  overTolerance: boolean;
+  /** Set when a CDR was actually raised on this AWB. */
+  cdrRef: string | null;
+}
+
+export const VARIANCE_MEASURE_LABEL: Record<VarianceMeasure, string> = {
+  pieces: "Pieces",
+  weightKg: "Gross weight",
+  volumeM3: "Volume",
+};
+
+/**
+ * FC-04 entry decision, evaluated across every measure of one intake.
+ * Returns null where intake recorded no variance at all — a clean receipt
+ * never entered the decision, which is different from passing it.
+ */
+export function screenVariance(awb: {
+  AWBId: number;
+  AWBNO: string;
+  site: SiteCode;
+  intakeVariance: { pieces: Variance; weightKg: Variance; volumeM3: Variance } | null;
+  cdrRaised: boolean;
+}, cdrRef: string | null) {
+  if (!awb.intakeVariance) return null;
+
+  const rows: VarianceScreenRow[] = (
+    ["pieces", "weightKg", "volumeM3"] as VarianceMeasure[]
+  ).map((measure) => ({
+    awbId: awb.AWBId,
+    AWBNO: awb.AWBNO,
+    site: awb.site,
+    measure,
+    variance: awb.intakeVariance![measure],
+    overTolerance: awb.intakeVariance![measure].overTolerance,
+    cdrRef,
+  }));
+
+  const breaching = rows.filter((r) => r.overTolerance);
+  // The widest miss that stayed inside tolerance — the interesting row.
+  const nearest = rows
+    .filter((r) => !r.overTolerance)
+    .sort((a, b) => b.variance.ratio - a.variance.ratio)[0] ?? null;
+
+  return {
+    rows,
+    breaching,
+    /** Yes edge — the auto-raise fires. */
+    shouldRaise: breaching.length > 0,
+    /** No edge — flagged at intake, but inside tolerance on every measure. */
+    nearMiss: breaching.length === 0 && rows.some((r) => r.variance.delta !== 0),
+    nearest,
+    cdrRef,
+    /** Set where the flow and the record disagree — worth seeing loudly. */
+    inconsistent: breaching.length > 0 !== awb.cdrRaised,
+  };
+}

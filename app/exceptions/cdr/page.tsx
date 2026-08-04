@@ -27,9 +27,11 @@ import {
   ArrowUpRight,
   Ban,
   Bell,
+  CheckCircle2,
   ClipboardList,
   Radio,
   RotateCcw,
+  XCircle,
   Zap,
 } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
@@ -43,8 +45,14 @@ import {
   DISCREPANCY_LABEL,
   VARIANCE_DERIVED_TYPES,
   VARIANCE_TOLERANCE,
+  VARIANCE_MEASURE_LABEL,
+  cdrEscalations,
+  cdrFirstDisAt,
+  cdrInstruction,
+  evaluateCdrClosure,
   formatDateTime,
   listCdrs,
+  listVarianceScreen,
   storageLocation,
   type CdrFinalAction,
   type CdrStatus,
@@ -107,6 +115,18 @@ export default function CdrWorkbenchPage() {
   const [draftAction, setDraftAction] = useState<CdrFinalAction | null>(null);
   const chosen = cdr?.finalAction ?? draftAction;
 
+  const closureGate = useMemo(
+    () => (cdr ? evaluateCdrClosure(cdr) : null),
+    [cdr],
+  );
+
+  // FC-04's entry decision across every intake in scope, so the No edge
+  // has somewhere to be seen.
+  const screen = useMemo(() => listVarianceScreen(scope), [scope]);
+  const breaching = screen.filter((s) => s.shouldRaise);
+  const nearMisses = screen.filter((s) => s.nearMiss);
+  const inconsistent = screen.filter((s) => s.inconsistent);
+
   const openCount = cdrs.filter((c) => c.status !== "closed").length;
   const autoRaised = cdrs.filter((c) => c.autoRaised).length;
 
@@ -123,16 +143,16 @@ export default function CdrWorkbenchPage() {
                   cdr.customsNotifiedAt
                     ? `Customs ${formatDateTime(cdr.customsNotifiedAt)}`
                     : "Customs not notified",
-                  cdr.disMessageSentAt && `DIS ${formatDateTime(cdr.disMessageSentAt)}`,
+                  cdrFirstDisAt(cdr) && `DIS ${formatDateTime(cdrFirstDisAt(cdr)!)}`,
                 ]
                   .filter(Boolean)
                   .join(" · ")
               : s === "on-hold" && cdr.holdLocationId
                 ? `Quarantine zone ${storageLocation(cdr.holdLocationId)?.ABBREVATION ?? "—"}`
                 : s === "awaiting-instruction"
-                  ? cdr.instructionReceivedAt
-                    ? `Instruction ${formatDateTime(cdr.instructionReceivedAt)}`
-                    : `Escalated ${cdr.escalationCount}×, no instruction yet`
+                  ? cdrInstruction(cdr)
+                    ? `Instruction on round ${cdrInstruction(cdr)!.round}`
+                    : `Escalated ${cdrEscalations(cdr)}×, no instruction yet`
                   : s === "action-selected" && cdr.finalAction
                     ? CDR_FINAL_ACTION_LABEL[cdr.finalAction]
                     : s === "closed" && cdr.closedAt
@@ -176,7 +196,7 @@ export default function CdrWorkbenchPage() {
           },
           {
             label: "Escalations",
-            value: cdrs.reduce((n, c) => n + c.escalationCount, 0),
+            value: cdrs.reduce((n, c) => n + cdrEscalations(c), 0),
             tone: "#7C3AED",
           },
         ].map((k) => (
@@ -189,6 +209,88 @@ export default function CdrWorkbenchPage() {
             </p>
           </div>
         ))}
+      </div>
+
+      {/* FC-04's entry decision — including the No edge, which leaves no
+          record behind and so is invisible on a list of CDRs alone. */}
+      <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h3 className="text-[14px] font-semibold text-[#0F172A]">
+              Variance screen — &ldquo;declared vs physical ≥ tolerance?&rdquo;
+            </h3>
+            <p className="text-[11px] text-[#94A3B8] mt-0.5">
+              The decision before §01. Yes opens a CDR; No continues the normal flow and leaves
+              nothing behind — which is exactly why the near-misses are listed.
+            </p>
+          </div>
+          <span className="h-[22px] px-2.5 rounded-full bg-[#EBF0F7] text-[#1B4F8B] text-[10px] font-bold inline-flex items-center gap-1">
+            <Zap size={10} />
+            tolerance ±{(VARIANCE_TOLERANCE * 100).toFixed(0)}%
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {[
+            { label: "Intakes screened", value: screen.length, tone: "#0F172A" },
+            { label: "Over tolerance → CDR", value: breaching.length, tone: "#DC2626" },
+            { label: "Near miss → no CDR", value: nearMisses.length, tone: "#D97706" },
+            {
+              label: "Flow / record disagree",
+              value: inconsistent.length,
+              tone: inconsistent.length ? "#DC2626" : "#16A34A",
+            },
+          ].map((k) => (
+            <div key={k.label} className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5">
+              <p className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                {k.label}
+              </p>
+              <p className="text-[18px] font-bold mt-0.5" style={{ color: k.tone }}>
+                {k.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {nearMisses.length === 0 ? (
+          <p className="text-[12px] text-[#94A3B8]">
+            No near-misses in scope — every flagged variance either breached tolerance or was
+            exactly zero.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+              Took the No edge — flagged at intake, inside tolerance, no CDR raised
+            </p>
+            {nearMisses.map((s) => (
+              <div
+                key={s.rows[0].awbId}
+                className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap"
+              >
+                <div className="min-w-0">
+                  <AwbLink awbNo={s.rows[0].AWBNO} awbId={s.rows[0].awbId} />
+                  <span className="text-[11px] text-[#94A3B8] ml-2">{s.rows[0].site}</span>
+                </div>
+                <div className="flex items-center gap-4 flex-wrap text-[11px]">
+                  {s.rows
+                    .filter((r) => r.variance.delta !== 0)
+                    .map((r) => (
+                      <span key={r.measure} className="text-[#92400E]">
+                        <span className="font-semibold">{VARIANCE_MEASURE_LABEL[r.measure]}</span>{" "}
+                        {r.variance.declared} → {r.variance.physical} (
+                        {(r.variance.ratio * 100).toFixed(2)}%)
+                      </span>
+                    ))}
+                </div>
+              </div>
+            ))}
+            <p className="text-[11px] text-[#64748B]">
+              These are the rows an auditor asks about: the rule ran, measured a real difference,
+              and correctly declined to raise. Without them the screen cannot show the difference
+              between &ldquo;nothing breached&rdquo; and &ldquo;the auto-raise is not running&rdquo;.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* FC-04 §02 — the nine types, with the three that auto-raise marked */}
@@ -346,7 +448,7 @@ export default function CdrWorkbenchPage() {
                       {[
                         { icon: Bell, label: "Airline notified", at: cdr.airlineNotifiedAt },
                         { icon: Bell, label: "Customs notified", at: cdr.customsNotifiedAt },
-                        { icon: Radio, label: "DIS message sent (IATA)", at: cdr.disMessageSentAt },
+                        { icon: Radio, label: "DIS message sent (IATA)", at: cdrFirstDisAt(cdr) },
                       ].map(({ icon: Icon, label, at }) => (
                         <div key={label} className="flex items-center gap-2.5">
                           <span
@@ -381,28 +483,119 @@ export default function CdrWorkbenchPage() {
                       <span
                         className="h-[22px] px-2.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1"
                         style={{
-                          backgroundColor: cdr.escalationCount > 0 ? "#FEF3C7" : "#F1F5F9",
-                          color: cdr.escalationCount > 0 ? "#D97706" : "#64748B",
+                          backgroundColor: cdrEscalations(cdr) > 0 ? "#FEF3C7" : "#F1F5F9",
+                          color: cdrEscalations(cdr) > 0 ? "#D97706" : "#64748B",
                         }}
                       >
                         <RotateCcw size={10} />
-                        {cdr.escalationCount} escalation
-                        {cdr.escalationCount === 1 ? "" : "s"}
+                        {cdrEscalations(cdr)} escalation
+                        {cdrEscalations(cdr) === 1 ? "" : "s"}
                       </span>
                     </div>
-                    {cdr.instructionReceivedAt ? (
-                      <>
-                        <p className="text-[13px] text-[#0F172A]">{cdr.instructionText}</p>
-                        <p className="text-[11px] text-[#94A3B8] mt-1">
-                          Received {formatDateTime(cdr.instructionReceivedAt)}
-                        </p>
-                      </>
-                    ) : (
+
+                    {/* Each pass through the loop, not just a count. §10's No
+                        edge points back at §08, so the DIS goes out again —
+                        to a higher authority each round. */}
+                    {cdr.dispatches.length === 0 ? (
                       <p className="text-[12px] text-[#64748B]">
-                        No instruction received. FC-04 §10 returns the CDR to hold and re-escalates
-                        each cycle — the count above is what the aging dashboard reads.
+                        No DIS dispatched yet — §08 has not run, so the instruction loop has not
+                        started.
                       </p>
+                    ) : (
+                      <div className="flex flex-col gap-2.5">
+                        {cdr.dispatches.map((d) => (
+                          <div
+                            key={d.round}
+                            className="rounded-xl border px-3.5 py-2.5"
+                            style={{
+                              borderColor: d.instructionReceivedAt ? "#BBF7D0" : "#FDE68A",
+                              backgroundColor: d.instructionReceivedAt ? "#F0FDF4" : "#FFFBEB",
+                            }}
+                          >
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span className="text-[12px] font-bold text-[#0F172A]">
+                                {d.round === 1 ? "Original DIS" : `Escalation ${d.round - 1}`}
+                              </span>
+                              <span className="font-mono text-[10px] text-[#64748B]">
+                                {d.disMessageRef}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-[#64748B] mt-1">
+                              {formatDateTime(d.sentAt)} → {d.sentTo}
+                            </p>
+                            {d.escalationReason && (
+                              <p className="text-[11px] text-[#D97706] mt-1">{d.escalationReason}</p>
+                            )}
+                            {d.instructionReceivedAt ? (
+                              <p className="text-[12px] text-[#0F172A] mt-1.5">
+                                <span className="font-semibold text-[#16A34A]">
+                                  Instruction received —{" "}
+                                </span>
+                                {d.instructionText}
+                              </p>
+                            ) : (
+                              <p className="text-[11px] text-[#94A3B8] mt-1">No reply this round</p>
+                            )}
+                          </div>
+                        ))}
+                        {!cdrInstruction(cdr) && (
+                          <p className="text-[11px] text-[#64748B]">
+                            Still on the No edge — FC-04 §10 returns the CDR to hold and re-sends
+                            the DIS each cycle. Rounds, not a counter: a chase nobody can date is
+                            not evidence of chasing.
+                          </p>
+                        )}
+                      </div>
                     )}
+                  </div>
+
+                  {/* §12 closure gate */}
+                  <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5">
+                    <h3 className="text-[14px] font-semibold text-[#0F172A]">
+                      Closure gate — §12
+                    </h3>
+                    <p className="text-[11px] text-[#94A3B8] mt-0.5 mb-3">
+                      §12 is reachable only through §11, and §11 only through a Yes at §10. Closing
+                      short of that is abandonment, not resolution.
+                    </p>
+                    <div
+                      className="rounded-xl border px-4 py-3 mb-3"
+                      style={{
+                        borderColor: closureGate!.canClose ? "#BBF7D0" : "#FDE68A",
+                        backgroundColor: closureGate!.canClose ? "#F0FDF4" : "#FFFBEB",
+                      }}
+                    >
+                      <p
+                        className="text-[13px] font-semibold"
+                        style={{ color: closureGate!.canClose ? "#16A34A" : "#D97706" }}
+                      >
+                        {closureGate!.canClose
+                          ? "All five conditions met — CDR can be closed"
+                          : `${closureGate!.blockedBy.length} of 5 outstanding`}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {closureGate!.conditions.map((cond) => (
+                        <div
+                          key={cond.code}
+                          className="flex items-start justify-between gap-3 rounded-lg border px-3 py-2"
+                          style={{
+                            borderColor: cond.pass ? "#E2E8F0" : "#FDE68A",
+                            backgroundColor: cond.pass ? "#FFFFFF" : "#FFFBEB",
+                          }}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-[12px] font-medium text-[#0F172A]">{cond.label}</p>
+                            <p className="text-[11px] text-[#94A3B8] mt-0.5">{cond.detail}</p>
+                          </div>
+                          {cond.pass ? (
+                            <CheckCircle2 size={15} className="text-[#16A34A] flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <XCircle size={15} className="text-[#D97706] flex-shrink-0 mt-0.5" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

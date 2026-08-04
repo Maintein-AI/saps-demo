@@ -77,7 +77,13 @@ import type {
 import {
   EXCEPTION_THRESHOLD_DAYS,
   type CDR,
+  type CdrDispatch,
+  type CdrFinalAction,
+  type CdrStatus,
   type DamageDetail,
+  type DiscrepancyType,
+  type EvidenceItem,
+  type EvidenceKind,
   type ExceptionQueueRow,
   type HoldRecord,
   type LongStayCase,
@@ -235,11 +241,11 @@ const SEEDS: Seed[] = [
   // walkthrough have a live example at every step of FC-01.
   { awbNo: "214-10045566", site: "KHI", airline: "EK", origin: "DXB", classAbbr: "GCR", stage: "handover", branch: null, arrivedDaysAgo: 0, pieces: 41, weightKg: 1870 },
   { awbNo: "176-20099887", site: "KHI", airline: "QR", origin: "DOH", classAbbr: "GCR", stage: "awb-summary", branch: null, arrivedDaysAgo: 0, pieces: 19, weightKg: 730 },
-  { awbNo: "125-30011223", site: "LHE", airline: "SV", origin: "JED", classAbbr: "GCR", stage: "tagging", branch: null, arrivedDaysAgo: 0, pieces: 23, weightKg: 890 },
+  { awbNo: "125-30011223", site: "LHE", airline: "SV", origin: "JED", classAbbr: "GCR", stage: "tagging", branch: null, arrivedDaysAgo: 0, pieces: 23, weightKg: 890, varianceRatio: 0.012 },
   { awbNo: "306-40077665", site: "PEW", airline: "PK", origin: "PVG", classAbbr: "AFU", stage: "segregation", branch: null, arrivedDaysAgo: 0, pieces: 11, weightKg: 1420 },
-  { awbNo: "607-55018822", site: "LHE", airline: "TK", origin: "IST", classAbbr: "GCR", stage: "doc-verification", branch: null, arrivedDaysAgo: 0, pieces: 35, weightKg: 1560 },
+  { awbNo: "607-55018822", site: "LHE", airline: "TK", origin: "IST", classAbbr: "GCR", stage: "doc-verification", branch: null, arrivedDaysAgo: 0, pieces: 35, weightKg: 1560, varianceRatio: 0.024 },
   { awbNo: "214-77220198", site: "KHI", airline: "EK", origin: "DXB", classAbbr: "GCR", stage: "reconciliation", branch: null, arrivedDaysAgo: 0, pieces: 52, weightKg: 2340, varianceRatio: 0.06 },
-  { awbNo: "306-19827364", site: "PEW", airline: "PK", origin: "PVG", classAbbr: "GCR", stage: "indexation", branch: null, arrivedDaysAgo: 0, pieces: 27, weightKg: 1105 },
+  { awbNo: "306-19827364", site: "PEW", airline: "PK", origin: "PVG", classAbbr: "GCR", stage: "indexation", branch: null, arrivedDaysAgo: 0, pieces: 27, weightKg: 1105, varianceRatio: 0.018 },
 
   // --- Consolidation & split ----------------------------------------
   { awbNo: "176-92018374", site: "KHI", airline: "QR", origin: "DOH", classAbbr: "GCR", stage: "stored", branch: null, arrivedDaysAgo: 10, pieces: 96, weightKg: 4120, isHwb: true },
@@ -1333,52 +1339,184 @@ HOLDS.push({
   site: "KHI",
 });
 
+/* ------------------------------------------------------------------ *
+ * CDR register — FC-04
+ *
+ * Previously a single hand-authored row. That was enough to render the
+ * workbench but not to exercise it: the screen offers nine discrepancy
+ * types and five final actions, and one CDR stuck at `awaiting-instruction`
+ * demonstrated 1 of 9 and 0 of 5. A flow that looks built and covers one
+ * node is worse than a visible gap.
+ *
+ * Now one CDR per discrepancy type, positioned at different points in the
+ * flow so every branch has data behind it:
+ *   • all 9 §02 types
+ *   • all 5 §11 final actions (F1 wrong-weight, F2 overage, F3 misrouted,
+ *     F4 damage, F5 pilferage)
+ *   • the §10 escalation loop at 0, 1 and 2 rounds
+ *   • one deliberately thin evidence pack (missing-documents) so the §12
+ *     closure gate has something to refuse
+ *
+ * COMPROMISE, recorded rather than hidden: only one AWB carries
+ * `branch === "cdr"`, so the other eight CDRs are attached to AWBs that
+ * have an intake variance but are not flagged onto the CDR branch. The
+ * alternative was nine near-identical rows on one AWB, which would not
+ * exercise site scoping. Worth reconciling when the branch flags are
+ * revisited.
+ * ------------------------------------------------------------------ */
+
 const CDR_AWB = AWBS.find((a) => a.branch === "cdr")!;
 
-export const CDRS: CDR[] = [
-  {
-    ...audit(4, "warehouse.supervisor"),
-    ...siteKeys(CDR_AWB.site),
-    id: 1,
-    cdrRef: "CDR-KHI-2026-00318",
-    docNumber: {
-      series: "CDR",
-      value: "CDR-KHI-2026-00318",
-      sequence: 318,
-      year: 2026,
-      cargoClassId: CDR_AWB.CARGOCLASSID,
-      continuesFromCmts: 317,
-    },
-    awbId: CDR_AWB.AWBId,
-    IGMNO: CDR_AWB.IGMNO,
-    AWBNO: CDR_AWB.AWBNO,
-    HWBNO: null,
-    type: "shortage",
-    autoRaised: true,
-    variance: CDR_AWB.intakeVariance!.pieces,
-    raisedAt: daysAgo(4, 10, 22),
-    raisedBy: "system (variance ≥ tolerance)",
-    status: "awaiting-instruction",
-    evidence: [
-      { id: 1, kind: "photo", value: "Outer carton damage, 3 angles", documentId: "DOC-CDR-318-01", linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: "E200341502001080189054C1", capturedAt: daysAgo(4, 10, 30), capturedBy: "i.ali" },
-      { id: 2, kind: "piece-count", value: "17 received against 20 declared", documentId: null, linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 32), capturedBy: "i.ali" },
-      { id: 3, kind: "weight", value: "748.0 kg received against 880.0 kg declared", documentId: null, linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 34), capturedBy: "i.ali" },
-      { id: 4, kind: "seal-condition", value: "ULD seal intact on arrival", documentId: "DOC-CDR-318-02", linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 36), capturedBy: "i.ali" },
-      { id: 5, kind: "package-condition", value: "3 cartons crushed, contents intact", documentId: null, linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 38), capturedBy: "i.ali" },
-      { id: 6, kind: "remarks", value: "Shortage consistent with FFM count; airline notified same shift.", documentId: null, linkedAwbNo: CDR_AWB.AWBNO, linkedRfid: null, capturedAt: daysAgo(4, 10, 40), capturedBy: "s.khan" },
-    ],
-    airlineNotifiedAt: daysAgo(4, 11, 5),
-    customsNotifiedAt: null,
-    disMessageSentAt: daysAgo(4, 11, 6),
-    holdLocationId: STORAGE_LOCATIONS.find((l) => l.site === CDR_AWB.site && l.CLASSID === 17)!.ID,
-    escalationCount: 1,
-    instructionReceivedAt: null,
-    instructionText: null,
-    finalAction: null,
-    closedAt: null,
-    site: CDR_AWB.site,
-  },
+const CDR_SEED: Array<{
+  type: DiscrepancyType;
+  status: CdrStatus;
+  auto: boolean;
+  /** §08 dispatch rounds; index 0 is the original send. */
+  rounds: number;
+  instructionOnRound: number | null;
+  finalAction: CdrFinalAction | null;
+  closed: boolean;
+  customsNotified: boolean;
+  /** Which of the six evidence kinds this pack captured. */
+  evidence: EvidenceKind[];
+  detail: string;
+}> = [
+  { type: "shortage", status: "awaiting-instruction", auto: true, rounds: 3, instructionOnRound: null, finalAction: null, closed: false, customsNotified: false,
+    evidence: ["photo", "piece-count", "weight", "seal-condition", "package-condition", "remarks"],
+    detail: "17 pieces received against 20 declared; shortage consistent with the FFM count." },
+  { type: "overage", status: "closed", auto: true, rounds: 1, instructionOnRound: 1, finalAction: "F2-adjust-pieces-weight", closed: true, customsNotified: true,
+    evidence: ["photo", "piece-count", "weight", "remarks"],
+    detail: "2 pieces over manifest; airline confirmed a mis-split at origin." },
+  { type: "damage", status: "action-selected", auto: false, rounds: 2, instructionOnRound: 2, finalAction: "F4-re-export", closed: false, customsNotified: true,
+    evidence: ["photo", "package-condition", "weight", "piece-count", "remarks"],
+    detail: "Water ingress through the outer carton; consignee refused acceptance." },
+  { type: "leakage-wet", status: "on-hold", auto: false, rounds: 2, instructionOnRound: null, finalAction: null, closed: false, customsNotified: true,
+    evidence: ["photo", "package-condition", "weight", "remarks"],
+    detail: "Drum seepage detected in the bonded aisle; pallet isolated." },
+  { type: "tampering", status: "notified", auto: false, rounds: 1, instructionOnRound: null, finalAction: null, closed: false, customsNotified: true,
+    evidence: ["photo", "seal-condition", "piece-count", "remarks"],
+    detail: "ULD seal number does not match the FFM; seal cut and re-applied." },
+  { type: "pilferage", status: "closed", auto: false, rounds: 2, instructionOnRound: 2, finalAction: "F5-claim-liability", closed: true, customsNotified: true,
+    evidence: ["photo", "piece-count", "weight", "package-condition", "seal-condition", "remarks"],
+    detail: "Carton opened and re-taped; 4 units missing against the packing list." },
+  // Deliberately thin — two kinds, nothing measured. This is the CMTS
+  // remarks-only pattern the FC-04 amendment exists to replace, so the
+  // closure gate must refuse it.
+  { type: "missing-documents", status: "evidence", auto: false, rounds: 0, instructionOnRound: null, finalAction: null, closed: false, customsNotified: false,
+    evidence: ["photo", "remarks"],
+    detail: "Shipper's invoice and fumigation certificate absent from the pouch." },
+  { type: "wrong-weight", status: "closed", auto: true, rounds: 1, instructionOnRound: 1, finalAction: "F1-release-after-correction", closed: true, customsNotified: false,
+    evidence: ["weight", "piece-count", "photo", "remarks"],
+    detail: "Scale reads 132 kg over the declared gross; re-weighed and corrected." },
+  { type: "misrouted", status: "action-selected", auto: false, rounds: 2, instructionOnRound: 2, finalAction: "F3-forward-mishandled", closed: false, customsNotified: true,
+    evidence: ["photo", "piece-count", "remarks", "package-condition"],
+    detail: "Offloaded at KHI against an LHE routing; onward carriage required." },
 ];
+
+export const CDRS: CDR[] = (() => {
+  // The cdr-branch AWB first, then other AWBs carrying an intake variance.
+  const pool = [CDR_AWB, ...AWBS.filter((a) => a.intakeVariance && a.AWBId !== CDR_AWB.AWBId)];
+
+  return CDR_SEED.map((seed, i) => {
+    const awb = pool[i % pool.length];
+    const raisedDaysAgo = 6 - Math.floor(i / 2);
+    const seq = 318 + i;
+    const ref = `CDR-${awb.site}-2026-${String(seq).padStart(5, "0")}`;
+    const rng = seeded((i + 1) * 9311);
+
+    const dispatches: CdrDispatch[] = Array.from({ length: seed.rounds }, (_, r) => {
+      const round = r + 1;
+      const gotInstruction = seed.instructionOnRound === round;
+      return {
+        round,
+        disMessageRef: `DIS-${awb.site}-${String(74100 + i * 10 + r)}`,
+        sentAt: daysAgo(raisedDaysAgo - r, 11 + r, 6 + r * 4),
+        sentTo:
+          round === 1
+            ? `${awb.ABBREVATION} station representative`
+            : round === 2
+              ? `${awb.ABBREVATION} regional cargo manager`
+              : `${awb.ABBREVATION} head office — cargo claims`,
+        escalationReason:
+          round === 1
+            ? null
+            : `No instruction within ${round === 2 ? 24 : 48}h of the previous DIS — escalated a level.`,
+        instructionReceivedAt: gotInstruction ? daysAgo(raisedDaysAgo - r, 15, 20) : null,
+        instructionText: gotInstruction
+          ? seed.finalAction === "F1-release-after-correction"
+            ? "Correct the weight against the scale ticket and release."
+            : seed.finalAction === "F2-adjust-pieces-weight"
+              ? "Adjust the manifest to the received count and proceed."
+              : seed.finalAction === "F3-forward-mishandled"
+                ? "Forward to LHE on the next available service; raise a corrective AWB."
+                : seed.finalAction === "F4-re-export"
+                  ? "Consignee has refused; return to origin under a re-export SD."
+                  : "Hold pending the claims assessor; do not release."
+          : null,
+      };
+    });
+
+    const evidence: EvidenceItem[] = seed.evidence.map((kind, e) => ({
+      id: e + 1,
+      kind,
+      value:
+        kind === "piece-count"
+          ? `${awb.TOTALPCS - intBetween(rng, 1, 3)} received against ${awb.TOTALPCS} declared`
+          : kind === "weight"
+            ? `${round2(awb.TOTALWEIGHT * 0.94)} kg received against ${round2(awb.TOTALWEIGHT)} kg declared`
+            : kind === "photo"
+              ? `${intBetween(rng, 2, 5)} angles, geo-tagged at the discrepancy bay`
+              : kind === "seal-condition"
+                ? i === 4 ? "Seal cut and re-applied — number mismatch" : "ULD seal intact on arrival"
+                : kind === "package-condition"
+                  ? `${intBetween(rng, 1, 4)} cartons affected, contents inspected`
+                  : seed.detail,
+      documentId: kind === "photo" ? `DOC-CDR-${seq}-0${e + 1}` : null,
+      linkedAwbNo: awb.AWBNO,
+      linkedRfid: kind === "photo" ? `E2003415020010801890${54 + i}C1` : null,
+      capturedAt: daysAgo(raisedDaysAgo, 10, 30 + e * 2),
+      capturedBy: e >= seed.evidence.length - 1 ? "s.khan" : "i.ali",
+    }));
+
+    const hold =
+      STORAGE_LOCATIONS.find((l) => l.site === awb.site && l.CLASSID === 17) ??
+      STORAGE_LOCATIONS.find((l) => l.CLASSID === 17) ??
+      null;
+
+    return {
+      ...audit(raisedDaysAgo, "warehouse.supervisor"),
+      ...siteKeys(awb.site),
+      id: i + 1,
+      cdrRef: ref,
+      docNumber: {
+        series: "CDR",
+        value: ref,
+        sequence: seq,
+        year: 2026,
+        cargoClassId: awb.CARGOCLASSID,
+        continuesFromCmts: 317,
+      },
+      awbId: awb.AWBId,
+      IGMNO: awb.IGMNO,
+      AWBNO: awb.AWBNO,
+      HWBNO: null,
+      type: seed.type,
+      autoRaised: seed.auto,
+      variance: seed.auto ? (awb.intakeVariance?.pieces ?? null) : null,
+      raisedAt: daysAgo(raisedDaysAgo, 10, 22),
+      raisedBy: seed.auto ? "system (variance \u2265 tolerance)" : "i.ali",
+      status: seed.status,
+      evidence,
+      airlineNotifiedAt: seed.rounds > 0 ? daysAgo(raisedDaysAgo, 11, 5) : null,
+      customsNotifiedAt: seed.customsNotified ? daysAgo(raisedDaysAgo, 11, 40) : null,
+      dispatches,
+      holdLocationId: hold?.ID ?? null,
+      finalAction: seed.finalAction,
+      closedAt: seed.closed ? daysAgo(Math.max(0, raisedDaysAgo - 3), 16, 10) : null,
+      site: awb.site,
+    } satisfies CDR;
+  });
+})();
 
 /* ------------------------------------------------------------------ *
  * Damage register — CMTS `DamageDetail` (8 cols)
