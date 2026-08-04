@@ -35,6 +35,7 @@ import {
   CARGO_CLASSES,
   DOCUMENT_TYPE_LABEL,
   OCR_CONFIDENCE_THRESHOLD,
+  ocrState,
   VARIANCE_TOLERANCE,
   cargoSubClass,
   formatKg,
@@ -119,19 +120,44 @@ export default function OcrIntakePage() {
   const outstanding = lines.filter((l) => !l.confirmed).length;
   const allAccepted = lines.length > 0 && outstanding === 0;
 
+  /**
+   * 05c — the operator accepts the line as it stands.
+   *
+   * Confirming is *not* correcting. This previously stamped
+   * `operator-corrected` on goods / weight / volume regardless, which put
+   * "OCR read X · corrected by n.hassan" under fields nobody had touched
+   * and where extracted === value. A fabricated audit trail is worse than
+   * none, so acceptance now only sets `confirmed`.
+   */
   function confirmLine(id: number) {
+    setLines((ls) => ls.map((l) => (l.id === id ? { ...l, confirmed: true } : l)));
+  }
+
+  /**
+   * 05d — the actual correction. Recomputes the review state from the
+   * domain helper so a value edited back to what OCR read stops claiming
+   * to be corrected, and a genuine edit is attributed.
+   */
+  function correctField<K extends "goods" | "pcs" | "weightKg" | "volumeM3">(
+    id: number,
+    field: K,
+    next: WorkingLine[K]["value"],
+  ) {
     setLines((ls) =>
-      ls.map((l) =>
-        l.id === id
-          ? {
-              ...l,
-              confirmed: true,
-              goods: { ...l.goods, state: "operator-corrected", correctedBy: "n.hassan" },
-              weightKg: { ...l.weightKg, state: "operator-corrected", correctedBy: "n.hassan" },
-              volumeM3: { ...l.volumeM3, state: "operator-corrected", correctedBy: "n.hassan" },
-            }
-          : l,
-      ),
+      ls.map((l) => {
+        if (l.id !== id) return l;
+        const cur = l[field];
+        const corrected = next !== cur.extracted;
+        return {
+          ...l,
+          [field]: {
+            ...cur,
+            value: next,
+            state: ocrState(cur.confidence, corrected),
+            ...(corrected ? { correctedBy: "n.hassan" } : { correctedBy: undefined }),
+          },
+        } as WorkingLine;
+      }),
     );
   }
 
@@ -441,21 +467,46 @@ export default function OcrIntakePage() {
                       <span className="text-[12px] font-bold text-[#D97706]">
                         Line {l.id} — needs review
                       </span>
+                      {/* `outstanding` is derived from the pre-update render,
+                          so the loop back to 05c is decided on the count as
+                          it will be *after* this confirmation lands. */}
                       <button
                         onClick={() => {
                           confirmLine(l.id);
-                          if (outstanding === 1) setStep("05c");
+                          if (outstanding - 1 === 0) setStep("05c");
                         }}
                         className="h-8 px-3 rounded-lg bg-[#0B2545] text-white text-[12px] font-semibold cursor-pointer"
                       >
                         Confirm line
                       </button>
                     </div>
+                    {/* Every field is correctable here, pieces included —
+                        it drives the 05e declared-vs-physical variance and
+                        so the CDR, and was previously the one field with no
+                        way to fix it. */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <OcrConfidenceField label="Goods" value={l.goods} onCorrect={() => confirmLine(l.id)} />
-                      <OcrConfidenceField label="Pieces" value={l.pcs} />
-                      <OcrConfidenceField label="Gross weight" value={l.weightKg} suffix="kg" onCorrect={() => confirmLine(l.id)} />
-                      <OcrConfidenceField label="Volume" value={l.volumeM3} suffix="m³" onCorrect={() => confirmLine(l.id)} />
+                      <OcrConfidenceField
+                        label="Goods"
+                        value={l.goods}
+                        onChange={(v) => correctField(l.id, "goods", v)}
+                      />
+                      <OcrConfidenceField
+                        label="Pieces"
+                        value={l.pcs}
+                        onChange={(v) => correctField(l.id, "pcs", v)}
+                      />
+                      <OcrConfidenceField
+                        label="Gross weight"
+                        value={l.weightKg}
+                        suffix="kg"
+                        onChange={(v) => correctField(l.id, "weightKg", v)}
+                      />
+                      <OcrConfidenceField
+                        label="Volume"
+                        value={l.volumeM3}
+                        suffix="m³"
+                        onChange={(v) => correctField(l.id, "volumeM3", v)}
+                      />
                     </div>
                   </div>
                 ))}

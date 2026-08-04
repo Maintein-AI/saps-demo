@@ -159,10 +159,16 @@ const navItems: NavItem[] = [
   {
     label: "Export (FC-11)",
     icon: PlaneTakeoff,
-    href: "/export/acceptance",
+    href: "/export/booking",
+    // FC-11's own connector order, which is not its step numbering — see
+    // the note on the FC-11 flow definition in lib/architecture.ts.
     subItems: [
-      { label: "Acceptance & Screening", href: "/export/acceptance" },
-      { label: "Build-up & Declaration", href: "/export/buildup" },
+      { label: "Booking & Allotment", href: "/export/booking" }, //            E01
+      { label: "Acceptance & Screening", href: "/export/acceptance" }, //      E02–E04, E06
+      { label: "Customs & ANF", href: "/export/customs" }, //                  E05
+      { label: "Classification & Warehousing", href: "/export/warehousing" }, //E07–E08
+      { label: "Build-up & Declaration", href: "/export/buildup" }, //         E09–E11
+      { label: "Uplift & Closure", href: "/export/uplift" }, //                E12–E13
     ],
   },
   {

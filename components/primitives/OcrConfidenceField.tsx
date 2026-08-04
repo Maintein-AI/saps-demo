@@ -17,6 +17,7 @@
  * for this control only where a scanner is genuinely in the loop.
  */
 
+import { useState } from "react";
 import { AlertTriangle, Check, PencilLine } from "lucide-react";
 import { OCR_CONFIDENCE_THRESHOLD, type OcrValue } from "@/lib/domain";
 
@@ -31,8 +32,13 @@ interface Props<T extends string | number> {
   value: OcrValue<T>;
   /** Rendered after the value, e.g. "kg". */
   suffix?: string;
-  /** Called when the operator accepts or edits — omit for read-only views. */
-  onCorrect?: () => void;
+  /**
+   * Commit a corrected value. Supplying this is what makes the field
+   * editable — FC-01 05d / FC-02 §06d is "operator corrects low-confidence
+   * items", which needs a real edit, not an acknowledgement. Omit for
+   * read-only views.
+   */
+  onChange?: (next: T) => void;
   compact?: boolean;
 }
 
@@ -40,12 +46,35 @@ export default function OcrConfidenceField<T extends string | number>({
   label,
   value,
   suffix,
-  onCorrect,
+  onChange,
   compact,
 }: Props<T>) {
   const s = STATE_STYLE[value.state];
   const pct = Math.round(value.confidence * 100);
   const changed = value.state === "operator-corrected";
+  const numeric = typeof value.extracted === "number";
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  function open() {
+    setDraft(String(value.value));
+    setEditing(true);
+  }
+
+  function commit() {
+    setEditing(false);
+    const raw = draft.trim();
+    // An empty box is a cancelled edit, not a blanked field.
+    if (raw === "") return;
+    if (numeric) {
+      const n = Number(raw);
+      if (!Number.isFinite(n)) return;
+      if (n !== (value.value as number)) onChange?.(n as T);
+      return;
+    }
+    if (raw !== (value.value as string)) onChange?.(raw as T);
+  }
 
   return (
     <div className="flex flex-col gap-1">
@@ -66,21 +95,40 @@ export default function OcrConfidenceField<T extends string | number>({
       <div
         className="flex items-center gap-2 rounded-lg border px-3"
         style={{
-          borderColor: s.border,
-          backgroundColor: value.state === "auto-accepted" ? "#F8FAFC" : s.bg,
+          borderColor: editing ? "#1B4F8B" : s.border,
+          backgroundColor: editing ? "#FFFFFF" : value.state === "auto-accepted" ? "#F8FAFC" : s.bg,
           height: compact ? 32 : 36,
         }}
       >
-        <span className="text-[13px] font-medium text-[#0F172A] truncate flex-1">
-          {String(value.value)}
-          {suffix ? <span className="text-[#64748B] ml-1">{suffix}</span> : null}
-        </span>
-        {onCorrect && value.state === "needs-review" && (
+        {editing ? (
+          <input
+            autoFocus
+            type={numeric ? "number" : "text"}
+            step={numeric ? "any" : undefined}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") setEditing(false);
+            }}
+            aria-label={`${label} — corrected value`}
+            className="flex-1 min-w-0 bg-transparent text-[13px] font-medium text-[#0F172A] outline-none"
+          />
+        ) : (
+          <span className="text-[13px] font-medium text-[#0F172A] truncate flex-1">
+            {String(value.value)}
+            {suffix ? <span className="text-[#64748B] ml-1">{suffix}</span> : null}
+          </span>
+        )}
+
+        {onChange && !editing && (
           <button
-            onClick={onCorrect}
-            className="text-[11px] font-semibold text-[#D97706] hover:underline cursor-pointer flex-shrink-0"
+            onClick={open}
+            className="text-[11px] font-semibold hover:underline cursor-pointer flex-shrink-0"
+            style={{ color: value.state === "needs-review" ? "#D97706" : "#1B4F8B" }}
           >
-            Review
+            {value.state === "needs-review" ? "Correct" : "Edit"}
           </button>
         )}
       </div>
@@ -90,7 +138,10 @@ export default function OcrConfidenceField<T extends string | number>({
           OCR read “{String(value.extracted)}” · corrected by {value.correctedBy}
         </span>
       )}
-      {value.state === "needs-review" && (
+      {editing && (
+        <span className="text-[10px] text-[#64748B]">Enter to save · Esc to cancel</span>
+      )}
+      {!editing && value.state === "needs-review" && (
         <span className="text-[10px] text-[#D97706]">
           Below {Math.round(OCR_CONFIDENCE_THRESHOLD * 100)}% threshold — operator confirmation required
         </span>

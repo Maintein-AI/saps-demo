@@ -299,6 +299,9 @@ export interface ExportConsignment extends DomainRecord {
   awbNo: string;
   stage: ExportStage;
 
+  /** E01 — what the airline sold, before any cargo arrived. */
+  booking: ExportBooking | null;
+
   acceptance: CargoAcceptance;
   lines: AcceptanceLine[];
   /**
@@ -311,17 +314,31 @@ export interface ExportConsignment extends DomainRecord {
   capturedDocs: Array<{ label: string; value: FormValue<string>; documentId: string | null }>;
 
   weighment: Weighment | null;
+  /** E05 — the customs / ANF check and its correction loop. */
+  clearance: ExportClearance;
   screening: ScreeningRecord[];
   custodyRegime: CustodyRegime;
   custodyChain: CustodyEvent[];
+
+  /** E07 — classification and the 08a / 08b branch. */
+  classification: ExportClassification | null;
+  /** E08 — where it sits until build-up. */
+  warehousing: ExportWarehousing | null;
 
   flightNo: string | null;
   scheduledDeparture: string | null;
   pfm: PfmLine[];
   discrepancyNoteNo: string | null;
   discrepancyNote: DocNumberRef | null;
+  /** E10 — when FFM / FWB / FHL went out. */
+  messagesSentAt: string | null;
 
   declaration: ExportDeclaration;
+
+  /** E12 — the aircraft's decision, which is not the ramp handover. */
+  uplift: UpliftRecord | null;
+  /** E13 — closure and archive; the invoice half is parked (BLK-02). */
+  closure: ExportClosure | null;
 
   exportCharges: Amount;
   closedAt: string | null;
@@ -411,5 +428,321 @@ export function evaluateRampHandover(c: ExportConsignment) {
     canHandOver: conditions.every((x) => x.pass),
     blockedBy: conditions.filter((x) => !x.pass),
     discrepancies: disc,
+  };
+}
+
+/* ================================================================== *
+ * E01 — Booking from the airline / GSA
+ *
+ * FC-11's start node. Nothing in CMTS: the legacy system picks the export
+ * story up at acceptance, which means the allotment the airline actually
+ * sold is invisible to the terminal until cargo is already on the floor.
+ * Modelling it is what lets E12 answer "does this fit the aircraft?" with
+ * something other than a guess.
+ * ================================================================== */
+
+export interface ExportBooking {
+  bookingRef: string;
+  /** Booked directly by the carrier, or through a General Sales Agent. */
+  channel: "airline-direct" | "gsa" | "forwarder";
+  gsaName: string | null;
+  bookedAt: string;
+  /** What the airline sold — the allotment this consignment is held against. */
+  allottedPieces: number;
+  allottedWeightKg: number;
+  allottedVolumeM3: number;
+  /** Flight the booking is held against; may move before uplift. */
+  bookedFlightNo: string;
+  bookedDeparture: string;
+  /** Rate the booking was sold at, for the E13 export invoice. */
+  agreedRatePerKg: Amount;
+  shipperName: string;
+  commodity: string;
+}
+
+/* ================================================================== *
+ * E05 — Customs / ANF check, and the correction loop
+ *
+ * The part of FC-11 with the most edges and the least legacy support. The
+ * flow does NOT go check → cleared. It goes:
+ *
+ *   Custom / ANF Check ─┬→ Inspection for Clearance ─┐
+ *                       └→ Document Check (AWB / GD) ─┴→ Clearance?
+ *                                                        │ Yes → Physical Check
+ *                                                        │ No  → Hold till correction?
+ *                                                                 │ Yes → back to Custom / ANF Check
+ *                                                                 └ No  → Returned to shipper / Detained
+ *
+ * Both arms feed the same decision, and the hold is itself a decision with
+ * a terminal reject on the No edge. A model that stores a single boolean
+ * "cleared" cannot express a consignment on its second correction round,
+ * which is the state an export desk spends most of its day in.
+ * ================================================================== */
+
+export type ClearanceArm = "inspection" | "document-check";
+
+export type ClearanceOutcome =
+  | "cleared" //           → physical check, then weighment
+  | "held-for-correction" //  correctable — loops back to the check
+  | "returned-to-shipper" //  terminal
+  | "detained"; //            terminal, customs retains the goods
+
+export const CLEARANCE_OUTCOME_LABEL: Record<ClearanceOutcome, string> = {
+  cleared: "Cleared",
+  "held-for-correction": "Held till correction",
+  "returned-to-shipper": "Returned to shipper",
+  detained: "Detained by customs",
+};
+
+/** One pass through the Custom / ANF check. A consignment may have several. */
+export interface ClearanceRound {
+  round: number;
+  startedAt: string;
+  /** Which arm(s) of the check this round ran. */
+  arms: ClearanceArm[];
+  /** Officer for the inspection arm. */
+  inspectingOfficer: string | null;
+  /** AWB / GD signed off by customs or ANF on the document arm. */
+  documentsSignedBy: string | null;
+  anfRequired: boolean;
+  anfClearedAt: string | null;
+  outcome: ClearanceOutcome;
+  /** Why it did not clear — the thing the shipper has to fix. */
+  defect: string | null;
+  closedAt: string | null;
+}
+
+export interface ExportClearance {
+  rounds: ClearanceRound[];
+  /** Terminal state, or null while the loop is still running. */
+  settledAs: ClearanceOutcome | null;
+  settledAt: string | null;
+}
+
+/**
+ * FC-11 — a consignment is through E05 only on a `cleared` round. An open
+ * `held-for-correction` round means the loop is still live, which is a
+ * different thing from having failed.
+ */
+export function clearanceState(c: ExportClearance) {
+  const last = c.rounds[c.rounds.length - 1] ?? null;
+  const terminal =
+    c.settledAs === "returned-to-shipper" || c.settledAs === "detained";
+  return {
+    last,
+    rounds: c.rounds.length,
+    /** Still looping — held, awaiting the shipper's correction. */
+    inCorrectionLoop: last?.outcome === "held-for-correction" && !terminal,
+    cleared: c.settledAs === "cleared",
+    terminal,
+    /** How many times this consignment has been round the loop. */
+    corrections: c.rounds.filter((r) => r.outcome === "held-for-correction").length,
+  };
+}
+
+/* ================================================================== *
+ * E07 — Classification and the special-cargo branch
+ *
+ * FC-11 08: "Special Cargo?" → 08a special handling verification
+ * (DGR / PER / AVI / VAL) or 08b normal export storage. The branch is not
+ * cosmetic: 08a is a verification with a named verifier and a document
+ * behind it, and skipping it for cargo that needed it is how a DG shipment
+ * reaches a ULD unverified.
+ * ================================================================== */
+
+export type SpecialHandlingCode = "DGR" | "PER" | "AVI" | "VAL" | "HUM" | "COL";
+
+export const SPECIAL_HANDLING_LABEL: Record<SpecialHandlingCode, string> = {
+  DGR: "Dangerous goods",
+  PER: "Perishable",
+  AVI: "Live animals",
+  VAL: "Valuable cargo",
+  HUM: "Human remains",
+  COL: "Cool chain",
+};
+
+export interface SpecialHandlingCheck {
+  code: SpecialHandlingCode;
+  label: string;
+  /** e.g. "Shipper's Declaration for Dangerous Goods". */
+  requiredDocument: string;
+  documentRef: string | null;
+  verifiedBy: string | null;
+  verifiedAt: string | null;
+  pass: boolean;
+  note: string | null;
+}
+
+export interface ExportClassification {
+  /** IATA Special Cargo Code carried on the booking. */
+  scc: string | null;
+  isSpecial: boolean;
+  codes: SpecialHandlingCode[];
+  /** Empty on the 08b normal path. */
+  checks: SpecialHandlingCheck[];
+  classifiedBy: string;
+  classifiedAt: string;
+  /** 08a for special, 08b for normal — kept so the branch stays visible. */
+  route: "08a-special-handling" | "08b-normal-storage";
+}
+
+/** Special cargo may not proceed to E08 with an unverified handling check. */
+export function classificationCleared(x: ExportClassification): boolean {
+  if (!x.isSpecial) return true;
+  return x.checks.length > 0 && x.checks.every((c) => c.pass);
+}
+
+/* ================================================================== *
+ * E08 — Export warehousing
+ * ================================================================== */
+
+export interface ExportWarehousing {
+  /** Bay / rack the consignment sits in until build-up. */
+  locationCode: string;
+  zone: "general" | "dgr" | "cool-chain" | "strongroom" | "avi";
+  putawayAt: string;
+  putawayBy: string;
+  /** Temperature-controlled ULDs are labelled — FC-11 annotation. */
+  temperatureControlled: boolean;
+  temperatureC: number | null;
+  /** Set when E12 sends the consignment back here after an offload. */
+  returnedFromOffload: boolean;
+}
+
+/* ================================================================== *
+ * E12 — Payload compatibility and uplift
+ *
+ * FC-11's most consequential loop, and the one most easily missed: the
+ * "Payload compatibility with Flight" diamond has a **No** edge that goes
+ * back to 09 Export Warehousing, annotated "Can be offloaded depending
+ * upon weight provision". Cargo that has passed every gate — screened,
+ * sealed, cleared, built — can still come off the aircraft for payload,
+ * and it re-enters at warehousing rather than dropping out of the flow.
+ *
+ * Modelling only the Yes edge would make the demo claim that a handover to
+ * ramp is an uplift. It is not; the aircraft decides.
+ * ================================================================== */
+
+export interface UpliftRecord {
+  /** Aircraft payload available for this consignment's ULD position. */
+  availablePayloadKg: number;
+  offeredWeightKg: number;
+  assessedAt: string;
+  assessedBy: string;
+  compatible: boolean;
+  outcome: "onboarded" | "offloaded";
+  onboardedAt: string | null;
+  /** Populated on the No edge. */
+  offloadReason: string | null;
+  /** The flight it rolled to, once rebooked. */
+  rebookedFlightNo: string | null;
+  rebookedDeparture: string | null;
+}
+
+/**
+ * FC-11 — "Can be offloaded depending upon weight provision". Compatibility
+ * is decided on the payload actually available at the ULD position, not on
+ * what the booking sold at E01, which is why both numbers are carried.
+ */
+export function evaluateUplift(u: UpliftRecord | null, booking: ExportBooking | null) {
+  if (!u) {
+    return {
+      assessed: false,
+      compatible: false,
+      marginKg: null as number | null,
+      overBookedKg: null as number | null,
+      summary: "Payload compatibility not yet assessed",
+    };
+  }
+  const marginKg = Math.round((u.availablePayloadKg - u.offeredWeightKg) * 100) / 100;
+  const overBookedKg =
+    booking === null
+      ? null
+      : Math.round((u.offeredWeightKg - booking.allottedWeightKg) * 100) / 100;
+  return {
+    assessed: true,
+    compatible: u.compatible,
+    marginKg,
+    overBookedKg,
+    summary: u.compatible
+      ? `Onboarded — ${marginKg} kg payload margin`
+      : `Offloaded — ${Math.abs(marginKg)} kg over available payload · ${u.offloadReason ?? "no reason recorded"}`,
+  };
+}
+
+/* ================================================================== *
+ * E13 — Closure and archive
+ *
+ * The flow's end node is "15. Export Invoice / Closure / Archive". The
+ * closure and archive halves are modelled here. The **invoice** half is
+ * not: export revenue (`INTERNATIONALCARGO`, the SAPS revenue share) is
+ * P9-1 / BLK-02 and is parked pending SAPS confirmation of how export
+ * revenue is split. `invoiceRaised` is therefore deliberately a reference
+ * with no amount behind it — the gap is visible rather than guessed.
+ * ================================================================== */
+
+export interface ExportClosure {
+  /** BLK-02 — reference only; the revenue model is not settled. */
+  invoiceRef: string | null;
+  invoiceRaisedAt: string | null;
+  /** All export charges other than the parked revenue share. */
+  chargesSettled: boolean;
+  fileClosedAt: string | null;
+  archivedAt: string | null;
+  archiveRef: string | null;
+  closedBy: string | null;
+}
+
+export interface ClosureCondition {
+  code: "uplifted" | "messages-sent" | "declaration-cleared" | "charges-settled";
+  label: string;
+  pass: boolean;
+  detail: string;
+}
+
+/** A file may not be closed while any of these is outstanding. */
+export function evaluateClosure(c: {
+  uplift: UpliftRecord | null;
+  declaration: ExportDeclaration;
+  closure: ExportClosure | null;
+  messagesSentAt: string | null;
+}) {
+  const conditions: ClosureCondition[] = [
+    {
+      code: "uplifted",
+      label: "Consignment onboarded",
+      pass: c.uplift?.outcome === "onboarded",
+      detail:
+        c.uplift === null
+          ? "Uplift not assessed"
+          : c.uplift.outcome === "onboarded"
+            ? `Onboarded ${c.uplift.onboardedAt ?? ""}`
+            : "Offloaded — returned to warehousing, file stays open",
+    },
+    {
+      code: "messages-sent",
+      label: "FFM / FWB / FHL transmitted",
+      pass: c.messagesSentAt !== null,
+      detail: c.messagesSentAt ? `Sent ${c.messagesSentAt}` : "Not transmitted",
+    },
+    {
+      code: "declaration-cleared",
+      label: "Export declaration cleared",
+      pass: c.declaration.clearedAt !== null,
+      detail: c.declaration.clearedAt ? `${c.declaration.sdRef} cleared` : "Not cleared",
+    },
+    {
+      code: "charges-settled",
+      label: "Export charges settled",
+      pass: c.closure?.chargesSettled ?? false,
+      detail: c.closure?.chargesSettled
+        ? "Settled — excludes the parked revenue share (BLK-02)"
+        : "Outstanding",
+    },
+  ];
+  return {
+    conditions,
+    canClose: conditions.every((x) => x.pass),
+    blockedBy: conditions.filter((x) => !x.pass),
   };
 }

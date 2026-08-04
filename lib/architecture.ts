@@ -639,6 +639,67 @@ export const FLOWS: FlowDef[] = [
       { ref: "aging", label: "Cross-branch aging dashboard", href: "/exceptions/queue", module: "M18", note: "The FC-10 amendment's unified exception queue — six kinds, six thresholds" },
     ],
   },
+  {
+    id: "FC-11",
+    title: "Export Cargo Management Flow",
+    subtitle: "Terminal-side export from booking to airline handover (ramp excluded)",
+    docNo: "SAPS-ACMS-FC-11-02",
+    rev: "Rev 2.0",
+    amendment:
+      "Greenfield — CMTS holds only CARGOACCEPTANCE / ACCEPTENCEDETAIL / ExportGodownrent, so this flow is the specification. Export documents are keyed at the counter (OCR is limited to the two import-side scan points). SD + Form-E (EFE) lodged via PSW EDI, PSW-primary from day one with no WeBOC fallback. Security screening produces a tamper-evident record — method, result, screener ID, RFID seal — feeding a chain of custody (ACC3 / known-consignor); a broken seal forces re-screening before uplift. Weighing scales auto-capture gross / net / tare. Handheld RFID scans pieces at acceptance, build-up and ULD verification; the ULD build is verified against the PFM / load plan, and missing or excess items produce a Build-up Report + Discrepancy Note before handover to ramp.",
+    // Ordered by the diagram's connectors. NOTE: FC-11's own step numbers do
+    // not follow its connector order — 03 Cargo Acceptance is reached after
+    // 04 Document Collection and 06 Weight Captured — and 02, 10 and 11 are
+    // absent from the chart entirely. The connector order is authoritative
+    // here; the numbering discrepancy is raised for SAPS rather than
+    // silently renumbered.
+    steps: [
+      { lane: "Booking", ref: "01", label: "Booking information from airline / GSA", href: "/export/booking", module: "M16" },
+
+      { lane: "Documentation", ref: "04", label: "Document collection — AWB, invoice, packing list", href: "/export/acceptance", module: "M16" },
+      { lane: "Documentation", ref: "04a", label: "Export documents captured — keyed at the counter", href: "/export/acceptance", module: "M16", note: "Drawn as OCR; converted once SAPS confirmed OCR runs only at the two import-side scan points." },
+
+      { lane: "Weighment", ref: "06", label: "Weight captured / verified — gross, net, tare", href: "/export/acceptance", module: "M16" },
+      { lane: "Weighment", ref: "06a", label: "Weighing-scale integration — auto-captured, no manual entry", href: "/export/acceptance", module: "M18" },
+
+      { lane: "Customs / ANF", ref: "05a", label: "Custom / ANF check", href: "/export/customs", module: "M09", decision: true },
+      { lane: "Customs / ANF", ref: "05b", label: "Inspection for clearance", href: "/export/customs", module: "M09" },
+      { lane: "Customs / ANF", ref: "05c", label: "Document check — AWB / GD signed by customs / ANF", href: "/export/customs", module: "M09" },
+      { lane: "Customs / ANF", ref: "05d", label: "Export declaration (SD) + Form-E (EFE) lodged via PSW EDI", href: "/export/customs", module: "M09", note: "PSW-primary day one — no WeBOC parallel run on the export side." },
+      { lane: "Customs / ANF", ref: "05e", label: "Clearance?", href: "/export/customs", module: "M09", decision: true },
+      { lane: "Customs / ANF", ref: "05f", label: "Hold till correction? → loops back to the check", href: "/export/customs", module: "M09", decision: true },
+      { lane: "Customs / ANF", ref: "05g", label: "Returned to shipper / detained", href: "/export/customs", module: "M09", note: "The terminal No edge — the only way out of the loop that is not clearance." },
+
+      { lane: "Acceptance", ref: "—", label: "Physical check — dimensions, count, marking, packaging, damage", href: "/export/acceptance", module: "M16" },
+      { lane: "Acceptance", ref: "—", label: "Weighment", href: "/export/acceptance", module: "M16" },
+      { lane: "Acceptance", ref: "03", label: "Cargo acceptance at the export terminal", href: "/export/acceptance", module: "M16" },
+
+      { lane: "Screening", ref: "05", label: "Security screening — X-ray / ETD / EDD / physical", href: "/export/acceptance", module: "M16" },
+      { lane: "Screening", ref: "05h", label: "Screening record — method, result, screener ID, RFID seal, chain of custody", href: "/export/acceptance", module: "M16", note: "ACC3 / known-consignor. A broken seal at any handover forces re-screening." },
+
+      { lane: "Classification & Storage", ref: "07", label: "Cargo classification", href: "/export/warehousing", module: "M16" },
+      { lane: "Classification & Storage", ref: "08", label: "Special cargo?", href: "/export/warehousing", module: "M16", decision: true },
+      { lane: "Classification & Storage", ref: "08a", label: "Special handling verification — DGR / PER / AVI / VAL", href: "/export/warehousing", module: "M16" },
+      { lane: "Classification & Storage", ref: "08b", label: "Normal export storage", href: "/export/warehousing", module: "M16" },
+      { lane: "Classification & Storage", ref: "09", label: "Export warehousing", href: "/export/warehousing", module: "M16" },
+
+      { lane: "Build-up", ref: "12", label: "Build-up as per PFM / load plan", href: "/export/buildup", module: "M16" },
+      { lane: "Build-up", ref: "12a", label: "Handheld RFID reader — piece-level scan", href: "/export/buildup", module: "M18" },
+      { lane: "Build-up", ref: "12b", label: "ULD build verification — built items vs PFM / load plan", href: "/export/buildup", module: "M16" },
+      { lane: "Build-up", ref: "12c", label: "Missing / excess items?", href: "/export/buildup", module: "M16", decision: true },
+      { lane: "Build-up", ref: "12d", label: "Flag & reconcile — add / remove / return items", href: "/export/buildup", module: "M16" },
+      { lane: "Build-up", ref: "12e", label: "Generate ULD Build-up Report + Discrepancy Note", href: "/export/buildup", module: "M16" },
+
+      { lane: "Messaging", ref: "13", label: "Manifest / FFM / FWB / FHL messaging", href: "/messaging/iata", module: "M07" },
+
+      { lane: "Handover & Uplift", ref: "06b", label: "Weighment after build-up / RFID / volume confirmation", href: "/export/buildup", module: "M16", decision: true, note: "No edge routes back to hold-till-correction." },
+      { lane: "Handover & Uplift", ref: "14", label: "Handover to ramp / airline", href: "/export/buildup", module: "M16" },
+      { lane: "Handover & Uplift", ref: "—", label: "Payload compatibility with flight?", href: "/export/uplift", module: "M16", decision: true, note: "No edge returns the consignment to §09 warehousing — “can be offloaded depending upon weight provision”." },
+      { lane: "Handover & Uplift", ref: "—", label: "On-boarded", href: "/export/uplift", module: "M16" },
+
+      { lane: "Closure", ref: "15", label: "Export invoice / closure / archive", href: "/export/uplift", module: "M20", note: "BLK-02 — closure and archive are built; the export revenue share (INTERNATIONALCARGO) is parked pending SAPS." },
+    ],
+  },
 ];
 
 export function flow(id: string): FlowDef | undefined {

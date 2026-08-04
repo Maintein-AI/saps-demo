@@ -111,15 +111,23 @@ import {
 } from "./messaging";
 import type { DocumentSource, DocumentType, StoredDocument } from "./documents";
 import type { BondedHandover, TagBinding } from "./storage";
+import { SPECIAL_HANDLING_LABEL } from "./exportcargo";
 import type {
   AcceptanceLine,
   CargoAcceptance,
+  ClearanceRound,
   CustodyEvent,
+  ExportBooking,
+  ExportClassification,
+  ExportClearance,
+  ExportClosure,
   ExportConsignment,
   ExportDeclaration,
   ExportStage,
+  ExportWarehousing,
   PfmLine,
   ScreeningRecord,
+  UpliftRecord,
   Weighment,
 } from "./exportcargo";
 import type {
@@ -1748,16 +1756,26 @@ export function closureFor(awbId: number): ClosureState | null {
  * Greenfield: only CARGOACCEPTANCE / ACCEPTENCEDETAIL / ExportGodownrent
  * exist in CMTS, so most of this is a proposal rather than a transcription.
  *
- * Three consignments, each blocking the ramp gate a different way:
+ * Five consignments. The first three each block the **ramp gate** a
+ * different way; the last two exist because nothing in the original three
+ * reaches E12 or E13, so the uplift decision and the closure gate had no
+ * data to discriminate on:
  *   1. clean — screened, sealed, declaration cleared, build matches the PFM
- *   2. a **broken seal** discovered at a custody handover → re-screen
+ *   2. a **broken seal** at a custody handover → re-screen, and a customs
+ *      **correction loop** (held → corrected → cleared on round 2)
  *   3. a **PFM mismatch** — one AWB built onto the wrong ULD → Discrepancy Note
+ *   4. **special cargo (PER)** through the 08a handling branch, run all the
+ *      way to E13 closed — the only row that exercises the closure gate
+ *   5. **offloaded for payload** at E12 — the flow's No edge back to
+ *      warehousing, which is the edge most easily left unmodelled
  * ------------------------------------------------------------------ */
 
 const EXPORT_SEED = [
   { awb: "618-44120935", dest: "DXB", carrier: "EK", goods: "Surgical instruments", pcs: 84, kg: 1240 },
   { awb: "618-44120946", dest: "LHR", carrier: "BA", goods: "Cotton garments", pcs: 210, kg: 3180 },
   { awb: "618-44120957", dest: "JFK", carrier: "QR", goods: "Sports goods", pcs: 156, kg: 2440 },
+  { awb: "618-44120968", dest: "AMS", carrier: "KL", goods: "Chilled seafood", pcs: 64, kg: 980 },
+  { awb: "618-44120979", dest: "IST", carrier: "TK", goods: "Machinery parts", pcs: 122, kg: 4260 },
 ];
 
 export const EXPORT_CONSIGNMENTS: ExportConsignment[] = EXPORT_SEED.map((seed, i) => {
@@ -1765,7 +1783,12 @@ export const EXPORT_CONSIGNMENTS: ExportConsignment[] = EXPORT_SEED.map((seed, i
   const site: SiteCode = i === 1 ? "LHE" : "KHI";
   const brokenSeal = i === 1;
   const pfmMismatch = i === 2;
-  const acceptedDaysAgo = 3 - i;
+  const specialCargo = i === 3;
+  const fullyClosed = i === 3;
+  const offloaded = i === 4;
+  // Explicit rather than `3 - i`, which went negative once the seed grew
+  // past three rows and would have dated acceptance into the future.
+  const acceptedDaysAgo = [3, 2, 1, 6, 4][i];
 
   const declaredKg = seed.kg;
   const grossKg = round2(declaredKg + 480 + intBetween(rng, 10, 40));
@@ -1943,7 +1966,154 @@ export const EXPORT_CONSIGNMENTS: ExportConsignment[] = EXPORT_SEED.map((seed, i
     ? "E06-screened"
     : pfmMismatch
       ? "E09-built-up"
-      : "E10-messages-sent";
+      : offloaded
+        ? "E08-warehoused" //  came back off the aircraft — re-enters at E08
+        : fullyClosed
+          ? "E13-closed"
+          : "E10-messages-sent";
+
+  /* ---- E01 booking ---- */
+  const booking: ExportBooking = {
+    bookingRef: `BKG-${seed.carrier}-2026-${String(51200 + i)}`,
+    channel: i === 2 ? "gsa" : i === 4 ? "forwarder" : "airline-direct",
+    gsaName: i === 2 ? "Aviation Services (Pvt) Ltd" : null,
+    bookedAt: daysAgo(acceptedDaysAgo + 2, 11, 5),
+    // The allotment is what the airline sold; E12 measures against what the
+    // aircraft can actually take, which is why 5 is over its allotment.
+    allottedPieces: seed.pcs,
+    allottedWeightKg: offloaded ? seed.kg - 900 : seed.kg,
+    allottedVolumeM3: round2(seed.kg / 167),
+    bookedFlightNo: `${seed.carrier}-${600 + i}`,
+    bookedDeparture: daysAgo(-1, 4, 20),
+    agreedRatePerKg: 26,
+    shipperName: acceptance.SHIPPERNAME,
+    commodity: seed.goods,
+  };
+
+  /* ---- E05 customs / ANF check, with the correction loop ---- */
+  const clearanceRounds: ClearanceRound[] = [
+    {
+      round: 1,
+      startedAt: daysAgo(acceptedDaysAgo, 11, 40),
+      arms: ["inspection", "document-check"],
+      inspectingOfficer: "Appraiser — Export Shed",
+      documentsSignedBy: brokenSeal ? null : "Customs / ANF — export desk",
+      anfRequired: specialCargo || i === 0,
+      anfClearedAt: specialCargo || i === 0 ? daysAgo(acceptedDaysAgo, 12, 5) : null,
+      // Consignment 2 fails the first round — the GD had not been signed.
+      outcome: brokenSeal ? "held-for-correction" : "cleared",
+      defect: brokenSeal ? "GD not signed by the export desk; packing list totals disagree with the AWB" : null,
+      closedAt: daysAgo(acceptedDaysAgo, 12, 30),
+    },
+  ];
+  if (brokenSeal) {
+    clearanceRounds.push({
+      round: 2,
+      startedAt: daysAgo(acceptedDaysAgo - 1, 9, 15),
+      arms: ["document-check"],
+      inspectingOfficer: null,
+      documentsSignedBy: "Customs / ANF — export desk",
+      anfRequired: false,
+      anfClearedAt: null,
+      outcome: "cleared",
+      defect: null,
+      closedAt: daysAgo(acceptedDaysAgo - 1, 9, 50),
+    });
+  }
+  const clearance: ExportClearance = {
+    rounds: clearanceRounds,
+    settledAs: "cleared",
+    settledAt: clearanceRounds[clearanceRounds.length - 1].closedAt,
+  };
+
+  /* ---- E07 classification, 08a / 08b ---- */
+  const classification: ExportClassification | null =
+    stage === "E06-screened"
+      ? null // not yet classified — it is still stuck at screening
+      : {
+          scc: specialCargo ? "PER" : null,
+          isSpecial: specialCargo,
+          codes: specialCargo ? ["PER", "COL"] : [],
+          checks: specialCargo
+            ? [
+                {
+                  code: "PER",
+                  label: SPECIAL_HANDLING_LABEL.PER,
+                  requiredDocument: "Perishable cargo declaration + pre-cooling certificate",
+                  documentRef: `PER-2026-${String(3100 + i)}`,
+                  verifiedBy: "s.malik",
+                  verifiedAt: daysAgo(acceptedDaysAgo - 1, 10, 30),
+                  pass: true,
+                  note: "Pre-cooled to 2 °C at the shipper's facility",
+                },
+                {
+                  code: "COL",
+                  label: SPECIAL_HANDLING_LABEL.COL,
+                  requiredDocument: "Cool-chain handover log",
+                  documentRef: `COL-2026-${String(3100 + i)}`,
+                  verifiedBy: "s.malik",
+                  verifiedAt: daysAgo(acceptedDaysAgo - 1, 10, 40),
+                  pass: true,
+                  note: "Temperature-controlled ULD labelled per FC-11",
+                },
+              ]
+            : [],
+          classifiedBy: "e.acceptance",
+          classifiedAt: daysAgo(acceptedDaysAgo - 1, 10, 15),
+          route: specialCargo ? "08a-special-handling" : "08b-normal-storage",
+        };
+
+  /* ---- E08 warehousing ---- */
+  const warehousing: ExportWarehousing | null =
+    classification === null
+      ? null
+      : {
+          locationCode: specialCargo ? `EXP-COOL-${String(12 + i)}` : `EXP-GEN-${String(40 + i)}`,
+          zone: specialCargo ? "cool-chain" : "general",
+          putawayAt: daysAgo(acceptedDaysAgo - 1, 11, 0),
+          putawayBy: "lifter.operator",
+          temperatureControlled: specialCargo,
+          temperatureC: specialCargo ? 2 : null,
+          returnedFromOffload: offloaded,
+        };
+
+  /* ---- E12 uplift — the payload decision ---- */
+  const availablePayloadKg = offloaded ? seed.kg - 640 : seed.kg + 850;
+  const uplift: UpliftRecord | null =
+    offloaded || fullyClosed
+      ? {
+          availablePayloadKg,
+          offeredWeightKg: seed.kg,
+          assessedAt: daysAgo(Math.max(0, acceptedDaysAgo - 2), 5, 10),
+          assessedBy: "ramp.coordinator",
+          compatible: !offloaded,
+          outcome: offloaded ? "offloaded" : "onboarded",
+          onboardedAt: offloaded ? null : daysAgo(Math.max(0, acceptedDaysAgo - 2), 5, 40),
+          offloadReason: offloaded
+            ? "Load control reduced the payload after a fuel uplift revision"
+            : null,
+          rebookedFlightNo: offloaded ? `${seed.carrier}-${700 + i}` : null,
+          rebookedDeparture: offloaded ? daysAgo(-2, 4, 20) : null,
+        }
+      : null;
+
+  /* ---- E13 closure — invoice half parked under BLK-02 ---- */
+  const closure: ExportClosure | null = fullyClosed
+    ? {
+        invoiceRef: `EXP-INV-${site}-2026-${String(2200 + i)}`,
+        invoiceRaisedAt: daysAgo(Math.max(0, acceptedDaysAgo - 3), 14, 0),
+        chargesSettled: true,
+        fileClosedAt: daysAgo(Math.max(0, acceptedDaysAgo - 3), 16, 30),
+        archivedAt: daysAgo(Math.max(0, acceptedDaysAgo - 3), 16, 45),
+        archiveRef: `ARCH-EXP-${site}-2026-${String(880 + i)}`,
+        closedBy: "export.supervisor",
+      }
+    : null;
+
+  const messagesSentAt =
+    stage === "E06-screened" || stage === "E09-built-up"
+      ? null
+      : daysAgo(Math.max(0, acceptedDaysAgo - 1), 15, 20);
 
   return {
     ...audit(acceptedDaysAgo, "export.counter"),
@@ -1978,10 +2148,14 @@ export const EXPORT_CONSIGNMENTS: ExportConsignment[] = EXPORT_SEED.map((seed, i
         documentId: `DOC-EXP-${i}-04`,
       },
     ],
+    booking,
     weighment,
+    clearance,
     screening,
     custodyRegime: i === 0 ? "known-consignor" : "ACC3",
     custodyChain,
+    classification,
+    warehousing,
     flightNo: `${seed.carrier}-${600 + i}`,
     scheduledDeparture: daysAgo(-1, 4, 20),
     pfm,
@@ -1996,9 +2170,12 @@ export const EXPORT_CONSIGNMENTS: ExportConsignment[] = EXPORT_SEED.map((seed, i
           continuesFromCmts: 40,
         }
       : null,
+    messagesSentAt,
     declaration,
+    uplift,
+    closure,
     exportCharges: round2(declaredKg * 26),
-    closedAt: null,
+    closedAt: closure?.fileClosedAt ?? null,
     site,
   } satisfies ExportConsignment;
 });
