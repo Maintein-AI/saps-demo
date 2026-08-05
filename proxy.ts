@@ -36,8 +36,10 @@ export function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Gate everything EXCEPT: the login page, the auth API routes, and Next.js
-    // build assets / favicon (which the login page itself needs to load).
-    "/((?!login|api/gate|_next/static|_next/image|favicon.ico).*)",
+    // Gate everything EXCEPT: the login page, the auth API routes, Next.js
+    // build assets, and any static file in /public (images, fonts, favicon,
+    // etc.) — the login page itself needs these to load, and OG/social
+    // scrapers must be able to fetch the preview image without auth.
+    "/((?!login|api/gate|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|css|js|woff2?|ttf|otf|map|txt|xml|json|webmanifest)$).*)",
   ],
 };
