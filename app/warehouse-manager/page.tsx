@@ -11,7 +11,7 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import StatusBadge from "@/components/StatusBadge";
-import { useToast } from "@/components/ToastContext";
+// import { useToast } from "@/components/ToastContext"; // used only by the hidden Simulate controls
 import { ArrowRight } from "lucide-react";
 
 const columns = [
@@ -25,11 +25,18 @@ const columns = [
   { key: "arrival", header: "Arrival", sortable: true },
 ];
 
+// Live AWB Queue — re-pointed to the canonical AWB hub (/awb/{id}) instead of
+// the generic AWB Register list (/warehouse-manager/awb-detail), and aligned to
+// the real domain AWB set so every row opens a matching shipment that traces
+// end-to-end. (Previous rows used ad-hoc AWB numbers not present in the domain.)
+const awbLinkClass =
+  "text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors";
+
 const rows = [
   {
-    awb: <Link href="/warehouse-manager/awb-detail" className="text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">214-45678901</Link>,
+    awb: <Link href="/awb/1" className={awbLinkClass}>214-45678901</Link>,
     hawb: "HBL-2091",
-    status: <StatusBadge status="Awaiting Putaway" />,
+    status: <StatusBadge status="Stored" />,
     pieces: "24 pcs",
     weight: "1,240 kg",
     origin: "DXB",
@@ -37,63 +44,63 @@ const rows = [
     arrival: "09:35",
   },
   {
-    awb: <Link href="/warehouse-manager/awb-detail" className="text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">157-90811223</Link>,
+    awb: <Link href="/awb/2" className={awbLinkClass}>176-88213340</Link>,
     hawb: "HAWB-7781",
-    status: <StatusBadge status="Stored" />,
-    pieces: "8 pcs",
-    weight: "420 kg",
+    status: <StatusBadge status="Delivered" />,
+    pieces: "48 pcs",
+    weight: "2,180 kg",
     origin: "DOH",
-    zone: "Cold-COL-01",
+    zone: "GCR-R5-L2",
     arrival: "10:20",
   },
   {
-    awb: <Link href="/warehouse-manager/awb-detail" className="text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">074-88219033</Link>,
+    awb: <Link href="/awb/4" className={awbLinkClass}>157-33448821</Link>,
     hawb: "HAWB-4412",
-    status: <StatusBadge status="Customs Filed" />,
-    pieces: "16 pcs",
-    weight: "680 kg",
-    origin: "IST",
-    zone: "GCR-R5-L2",
+    status: <StatusBadge status="DO Issued" />,
+    pieces: "6 pcs",
+    weight: "380 kg",
+    origin: "AUH",
+    zone: "ICG-PRZ",
     arrival: "11:05",
   },
   {
-    awb: <Link href="/warehouse-manager/awb-detail" className="text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">331-11245678</Link>,
+    awb: <Link href="/awb/6" className={awbLinkClass}>306-77120943</Link>,
     hawb: "HBL-5543",
-    status: <StatusBadge status="Awaiting Putaway" />,
-    pieces: "32 pcs",
-    weight: "2,100 kg",
-    origin: "JED",
-    zone: "AFU-R3-L2",
+    status: <StatusBadge status="Closed" />,
+    pieces: "30 pcs",
+    weight: "1,420 kg",
+    origin: "LHR",
+    zone: "GCR-R3-L1",
     arrival: "11:42",
   },
   {
-    awb: <Link href="/warehouse-manager/awb-detail" className="text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">618-77654321</Link>,
+    awb: <Link href="/awb/7" className={awbLinkClass}>020-55839014</Link>,
     hawb: "HAWB-9902",
     status: <StatusBadge status="Stored" />,
     pieces: "12 pcs",
-    weight: "890 kg",
-    origin: "RUH",
-    zone: "PER-R1-L1",
+    weight: "780 kg",
+    origin: "FRA",
+    zone: "DGR-R1-L1",
     arrival: "12:15",
   },
   {
-    awb: <Link href="/warehouse-manager/awb-detail" className="text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">445-33445566</Link>,
+    awb: <Link href="/awb/8" className={awbLinkClass}>176-44029183</Link>,
     hawb: "HBL-1123",
-    status: <StatusBadge status="Awaiting Putaway" />,
-    pieces: "6 pcs",
-    weight: "340 kg",
-    origin: "KWI",
-    zone: "GCR-R6-L3",
+    status: <StatusBadge status="Gate Pass" />,
+    pieces: "40 pcs",
+    weight: "920 kg",
+    origin: "DOH",
+    zone: "PER-R1-L2",
     arrival: "12:48",
   },
   {
-    awb: <Link href="/warehouse-manager/awb-detail" className="text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors">882-99887766</Link>,
+    awb: <Link href="/awb/10" className={awbLinkClass}>618-22910385</Link>,
     hawb: "HAWB-2234",
-    status: <StatusBadge status="Customs Filed" />,
-    pieces: "45 pcs",
-    weight: "3,200 kg",
-    origin: "AUH",
-    zone: "VAL-R4-L2",
+    status: <StatusBadge status="Notified (NOA)" />,
+    pieces: "8 pcs",
+    weight: "441 kg",
+    origin: "DXB",
+    zone: "AVI-R4-L2",
     arrival: "13:20",
   },
 ];
@@ -116,7 +123,7 @@ export default function WarehouseManagerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showError, setShowError] = useState(false);
   const [showEmpty, setShowEmpty] = useState(false);
-  const { addToast } = useToast();
+  // const { addToast } = useToast(); // used only by the hidden Simulate controls (below)
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1500);
@@ -135,7 +142,7 @@ export default function WarehouseManagerDashboard() {
       <div className="flex flex-col gap-3">
         <Breadcrumb
           items={[
-            { label: "Warehouse Manager", href: "#" },
+            { label: "Warehouse Manager", href: "/warehouse-manager" },
             { label: "Dashboard" },
           ]}
         />
@@ -145,6 +152,10 @@ export default function WarehouseManagerDashboard() {
               Warehouse Manager Dashboard
             </h1>
           </div>
+          {/* HIDDEN (demo scaffolding) — "Simulate Error" / "Simulate Empty"
+              toggles are dev/QA controls, not client-facing. Kept per no-delete
+              policy; un-comment to restore (also re-enable the useToast import
+              and the `addToast` line above).
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
@@ -165,6 +176,7 @@ export default function WarehouseManagerDashboard() {
               {showEmpty ? "Show Data" : "Simulate Empty"}
             </button>
           </div>
+          */}
         </div>
       </div>
 
@@ -242,7 +254,7 @@ export default function WarehouseManagerDashboard() {
                 </h2>
               </div>
               <Link
-                href="#"
+                href="/warehouse-manager/awb-detail"
                 className="flex items-center gap-1 text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors"
               >
                 View All <ArrowRight size={14} />
@@ -269,7 +281,7 @@ export default function WarehouseManagerDashboard() {
                 </h2>
               </div>
               <Link
-                href="#"
+                href="/warehouse-manager/storage-map"
                 className="flex items-center gap-1 text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors"
               >
                 Storage Map <ArrowRight size={14} />
@@ -301,7 +313,7 @@ export default function WarehouseManagerDashboard() {
             </h2>
           </div>
           <Link
-            href="#"
+            href="/exceptions/queue"
             className="flex items-center gap-1 text-[13px] font-semibold text-[#1B4F8B] hover:text-[#0B2545] cursor-pointer transition-colors"
           >
             Queue <ArrowRight size={14} />

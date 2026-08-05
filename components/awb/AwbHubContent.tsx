@@ -99,14 +99,23 @@ export default function AwbHubContent({ bundle }: { bundle: AwbBundle }) {
     },
   ];
 
-  // FC-12: M03 → M04, M05, M06, M09, M10, M15, M16, M17
+  // FC-12: M03 hub → the CANONICAL Operational Flow screens. Re-pointed from
+  // the persona-portal duplicates (/warehouse-manager/*, /excise-compliance/*,
+  // /cmts-absorption/*) to the process-module canon so the AWB hub, the sidebar
+  // and the FC-02 flow walkthrough all resolve the same screen per step.
+  // Previous persona targets, kept for reference:
+  //   Storage map → /warehouse-manager/storage-map
+  //   Customs queue → /excise-compliance/customs-queue
+  //   Charges → /cmts-absorption/charges-calculator
+  //   Gate entry → /gate-entry/live-vehicle-board
+  //   Exceptions → /warehouse-manager/exceptions-queue
   const rail = [
     { icon: ScanLine, label: "Intake", href: `/awb/${awb.AWBId}?tab=intake`, onClick: () => setTab("intake") },
-    { icon: Warehouse, label: "Storage map", href: "/warehouse-manager/storage-map" },
-    { icon: ShieldAlert, label: "Customs queue", href: "/excise-compliance/customs-queue" },
-    { icon: Receipt, label: "Charges", href: "/cmts-absorption/charges-calculator" },
-    { icon: Truck, label: "Gate entry", href: "/gate-entry/live-vehicle-board" },
-    { icon: AlertTriangle, label: "Exceptions", href: "/warehouse-manager/exceptions-queue" },
+    { icon: Warehouse, label: "Storage", href: "/storage/master" },
+    { icon: ShieldAlert, label: "Customs", href: "/customs/gateway" },
+    { icon: Receipt, label: "Charges", href: "/billing/calculator" },
+    { icon: Truck, label: "Dispatch", href: "/dispatch/gate-pass" },
+    { icon: AlertTriangle, label: "Exceptions", href: "/exceptions/queue" },
     { icon: FileText, label: "Reports", href: "/reports" },
   ];
 

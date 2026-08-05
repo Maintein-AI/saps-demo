@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -8,7 +7,6 @@ import {
   Warehouse,
   Truck,
   Package,
-  FileCheck,
   DollarSign,
   Calendar,
   Shield,
@@ -16,7 +14,6 @@ import {
   UserCheck,
   Receipt,
   Forklift,
-  Users,
   Settings,
   BarChart3,
   ChevronLeft,
@@ -37,6 +34,9 @@ import {
   Send,
   Repeat,
   PlaneTakeoff,
+  // NOTE: `FileCheck` was the icon for the now-hidden "Excise / Compliance"
+  // section (see HIDDEN ALTERNATES below). Its import was removed to avoid an
+  // unused-import lint error. Re-add it if that section is un-hidden.
 } from "lucide-react";
 
 interface NavItem {
@@ -46,31 +46,62 @@ interface NavItem {
   subItems?: { label: string; href: string }[];
 }
 
-const navItems: NavItem[] = [
-  { label: "Home", icon: LayoutDashboard, href: "/" },
-  // P0-5 — the FC-12 module view + flow walkthroughs, alongside the
-  // persona navigation below rather than replacing it.
-  { label: "Module Map", icon: Network, href: "/modules" },
-  // Phase 1 — the import spine, M01–M04 (FC-01 §01–14, FC-02).
+interface NavSection {
+  /** Group heading shown above the items (hidden when the rail is collapsed). */
+  heading?: string;
+  items: NavItem[];
+}
+
+/* =============================================================================
+ * MERGED NAVIGATION  ·  one coherent client-facing structure
+ * -----------------------------------------------------------------------------
+ * The demo previously shipped THREE overlapping navigations layered together —
+ * (1) process/flow modules, (2) persona portals, (3) CMTS-absorption — which
+ * duplicated the same screens on different routes and made the app feel
+ * scattered. They are merged here into three clearly-labelled groups:
+ *
+ *   1. Operational Flow  — the FC-01 spine. The CANONICAL screen for each step.
+ *   2. Role Views        — persona cockpits kept as entry points, NOT as
+ *                          duplicate screens. Sub-items that merely re-skinned a
+ *                          flow screen are commented out and point at the canon.
+ *   3. System & Roadmap  — utilities + scope-delta (Phase 2 / out-of-scope)
+ *                          items, clearly labelled so scope stays visible.
+ *
+ * NOTHING IS DELETED. Duplicate sections/screens are COMMENTED OUT under
+ * "HIDDEN ALTERNATES" (top-level dups) or inline (duplicate sub-items), each
+ * labelled with the canonical screen it maps to. To restore any of them, just
+ * un-comment the block — every underlying /route and page still exists.
+ * ===========================================================================*/
+
+/* ── 1. Operational Flow — FC-01 order ──────────────────────────────────────
+ * Walking this group top-to-bottom walks one consignment from airline handover
+ * to file closure (FC-01 §01–27), with Exceptions/Transhipment as the branches
+ * that leave the main line, and Export (FC-11) as the outbound counterpart.
+ *   §01–14  handover → doc verification → AWB summary → reconciliation →
+ *           indexation → tagging → segregation → acceptance & weighing
+ *   §15–16  storage allocation      →  Storage & Allocation
+ *   §17–18  IATA messaging / NOA    →  Messaging & Alerts
+ *   §19     customs clearance       →  Customs Clearance
+ *   §20–22  charges → invoice → DO  →  Billing & Release
+ *   §23–27  gate pass → POD → close →  Dispatch & Closure
+ * -------------------------------------------------------------------------- */
+const operationalFlow: NavItem[] = [
   {
     label: "Import Documentation",
     icon: FileScan,
     href: "/import/flights",
-    // Ordered by FC-02's own sequence, not alphabetically or by module
-    // number — the sidebar is how an operator walks the flow.
     subItems: [
       { label: "Flight & Airline Data — M01", href: "/import/flights" }, //     §01–05
       { label: "Manifest & IGM", href: "/import/manifest" }, //                 §06
       { label: "OCR Intake Workbench", href: "/import/ocr-intake" }, //         §06a–06d
       { label: "AWB Summary Sheet", href: "/import/summary" }, //               §07–08
       { label: "AWB Indexing — M03", href: "/import/indexing" }, //             §09
-      { label: "Cargo Acceptance — M04", href: "/import/acceptance" }, //       §11–13
+      { label: "Cargo Acceptance — M04", href: "/import/acceptance" }, //       §11–13  (CANONICAL cargo acceptance)
       { label: "Consolidation & Split", href: "/import/consolidation" }, //     §11–12
       { label: "Arrival Advice / NOA", href: "/import/arrival-advice" }, //     §30
       { label: "Document Repository — M02", href: "/import/documents" }, //     supporting
     ],
   },
-  // Phase 2 — storage & warehouse allocation, M05 (FC-03).
   {
     label: "Storage & Allocation",
     icon: Boxes,
@@ -83,46 +114,37 @@ const navItems: NavItem[] = [
       { label: "Bonded Area", href: "/storage/bonded" },
     ],
   },
-  // Phase 3 — exceptions & CDR, M06 + M16–M18 (FC-04, FC-10 A/B/C).
   {
-    label: "Exceptions & CDR",
-    icon: TriangleAlert,
-    href: "/exceptions/queue",
+    label: "Messaging & Alerts",
+    icon: Send,
+    href: "/messaging/iata",
     subItems: [
-      { label: "Aging Dashboard", href: "/exceptions/queue" },
-      { label: "CDR Workbench — M06", href: "/exceptions/cdr" },
-      { label: "Damage Register", href: "/exceptions/damage" },
-      { label: "Hold Register", href: "/exceptions/holds" },
-      { label: "Mishandled Cargo — M17", href: "/exceptions/mishandled" },
-      { label: "Re-export — M16", href: "/exceptions/re-export" },
-      { label: "Long-stay / S.82 — M18", href: "/exceptions/long-stay" },
+      { label: "IATA Cargo-IMP — M07", href: "/messaging/iata" }, //            CANONICAL messaging
+      { label: "Notification Engine — M08", href: "/messaging/notifications" },
     ],
   },
-  // Phase 4 — customs clearance & PSW gateway, M09 (FC-06).
   {
     label: "Customs Clearance",
     icon: Landmark,
     href: "/customs/gateway",
     subItems: [
-      { label: "Gateway (PSW / WeBOC)", href: "/customs/gateway" },
+      { label: "Gateway (PSW / WeBOC)", href: "/customs/gateway" }, //          CANONICAL customs
       { label: "SD / GD Filing — M09", href: "/customs/filing" },
       { label: "Channels & OOC", href: "/customs/channels" },
       { label: "Detained Cargo", href: "/customs/detained" },
     ],
   },
-  // Phase 5 — charges, invoice, waiver & delivery order, M10-M12 (FC-07).
   {
     label: "Billing & Release",
     icon: Coins,
     href: "/billing/calculator",
     subItems: [
-      { label: "Charges Calculator — M10", href: "/billing/calculator" },
-      { label: "Godown Rent Voucher — M11", href: "/billing/godown-rent" },
+      { label: "Charges Calculator — M10", href: "/billing/calculator" }, //    CANONICAL charges (full FC-07 arithmetic)
+      { label: "Godown Rent Voucher — M11", href: "/billing/godown-rent" }, //  CANONICAL godown rent
       { label: "Invoice & Waiver", href: "/billing/invoice" },
       { label: "Delivery Order — M12", href: "/billing/delivery-order" },
     ],
   },
-  // Phase 6 — gate pass, dispatch, POD & closure, M13-M14 (FC-08).
   {
     label: "Dispatch & Closure",
     icon: PackageCheck,
@@ -133,17 +155,20 @@ const navItems: NavItem[] = [
       { label: "AWB Closure & Archive", href: "/dispatch/closure" },
     ],
   },
-  // Phase 7 — messaging & notification engine, M07-M08 (FC-05).
   {
-    label: "Messaging & Alerts",
-    icon: Send,
-    href: "/messaging/iata",
+    label: "Exceptions & CDR",
+    icon: TriangleAlert,
+    href: "/exceptions/queue",
     subItems: [
-      { label: "IATA Cargo-IMP — M07", href: "/messaging/iata" },
-      { label: "Notification Engine — M08", href: "/messaging/notifications" },
+      { label: "Aging Dashboard", href: "/exceptions/queue" }, //               CANONICAL exceptions
+      { label: "CDR Workbench — M06", href: "/exceptions/cdr" },
+      { label: "Damage Register", href: "/exceptions/damage" },
+      { label: "Hold Register", href: "/exceptions/holds" }, //                 CANONICAL hold register
+      { label: "Mishandled Cargo — M17", href: "/exceptions/mishandled" },
+      { label: "Re-export — M16", href: "/exceptions/re-export" },
+      { label: "Long-stay / S.82 — M18", href: "/exceptions/long-stay" }, //    CANONICAL Section 82
     ],
   },
-  // Phase 8 — transhipment & bonded transfer, M15 (FC-09). New module.
   {
     label: "Transhipment",
     icon: Repeat,
@@ -153,15 +178,12 @@ const navItems: NavItem[] = [
       { label: "Inter-station Handoff", href: "/transhipment/handoff" },
     ],
   },
-  // Phase 9 — export cargo, FC-11. P9-1 (revenue) and P9-6 (airmail) parked.
-  // Named distinctly from the legacy "Export Cargo" section further down —
-  // duplicate labels collide on the React key and on the FC-01 ordering below.
   {
+    // Outbound counterpart of the import flow (FC-11). CANONICAL export.
+    // Supersedes the persona "Export Cargo" draft (see HIDDEN ALTERNATES).
     label: "Export (FC-11)",
     icon: PlaneTakeoff,
     href: "/export/booking",
-    // FC-11's own connector order, which is not its step numbering — see
-    // the note on the FC-11 flow definition in lib/architecture.ts.
     subItems: [
       { label: "Booking & Allotment", href: "/export/booking" }, //            E01
       { label: "Acceptance & Screening", href: "/export/acceptance" }, //      E02–E04, E06
@@ -171,6 +193,10 @@ const navItems: NavItem[] = [
       { label: "Uplift & Closure", href: "/export/uplift" }, //                E12–E13
     ],
   },
+];
+
+/* ── 2. Role Views — persona cockpits (entry points, not duplicate screens) ── */
+const roleViews: NavItem[] = [
   {
     label: "Warehouse Manager",
     icon: Warehouse,
@@ -180,9 +206,11 @@ const navItems: NavItem[] = [
       { label: "AWB Register", href: "/warehouse-manager/awb-detail" },
       { label: "Putaway", href: "/warehouse-manager/putaway" },
       { label: "Picking", href: "/warehouse-manager/picking" },
-      { label: "Storage Map", href: "/warehouse-manager/storage-map" },
-      { label: "Exceptions Queue", href: "/warehouse-manager/exceptions-queue" },
+      { label: "Storage Map", href: "/warehouse-manager/storage-map" }, //     unique visual — kept
       { label: "Cold Chain Console", href: "/warehouse-manager/cold-chain" },
+      // HIDDEN (duplicate) — "Exceptions Queue" duplicates Operational Flow →
+      // Exceptions & CDR → Aging Dashboard (/exceptions/queue). Kept per no-delete.
+      // { label: "Exceptions Queue", href: "/warehouse-manager/exceptions-queue" },
     ],
   },
   {
@@ -211,31 +239,15 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Excise / Compliance",
-    icon: FileCheck,
-    href: "/excise-compliance",
+    label: "Operations Supervisor",
+    icon: Shield,
+    href: "/operations-supervisor",
     subItems: [
-      { label: "Customs Queue", href: "/excise-compliance/customs-queue" },
-      { label: "Channel Detail", href: "/excise-compliance/channel-detail" },
-      { label: "OOC Capture", href: "/excise-compliance/ooc-capture" },
-      { label: "Hold Register", href: "/excise-compliance/hold-register" },
-      { label: "Section 82 / Long-Stay Register", href: "/excise-compliance/section-82-long-stay" },
-      { label: "Customs Messaging Console", href: "/excise-compliance/customs-messaging" },
-    ],
-  },
-  {
-    label: "Finance Manager",
-    icon: DollarSign,
-    href: "/finance-manager",
-    subItems: [
-      { label: "Dashboard", href: "/finance-manager" },
-      { label: "Invoice Generation", href: "/finance-manager/invoice-generation" },
-      { label: "Waiver Workflow", href: "/finance-manager/waiver-workflow" },
-      { label: "Payment Reconciliation", href: "/finance-manager/payment-reconciliation" },
-      { label: "Tariff Master Editor", href: "/finance-manager/tariff-master-editor" },
-      { label: "CMTS-grade Multi-Tariff Engine", href: "/finance-manager/multi-tariff-engine" },
-      { label: "Payment Gateway Reconciliation", href: "/finance-manager/payment-gateway-reconciliation" },
-      { label: "ERP Bridge Mapping", href: "/finance-manager/erp-bridge-mapping" },
+      { label: "Live Ops View", href: "/operations-supervisor/live-ops-view" },
+      { label: "Performance Console", href: "/operations-supervisor/performance-console" },
+      { label: "Escalation Inbox", href: "/operations-supervisor/escalation-inbox" },
+      { label: "Shift Handover", href: "/operations-supervisor/shift-handover" },
+      { label: "MoM / Floor Notes", href: "/operations-supervisor/mom-floor-notes" },
     ],
   },
   {
@@ -250,15 +262,21 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Operations Supervisor",
-    icon: Shield,
-    href: "/operations-supervisor",
+    // Finance persona cockpit. Overlaps Operational Flow → Billing & Release on
+    // invoice/waiver, but carries unique screens (reconciliation, tariff editor,
+    // ERP bridge), so it is kept as a role view rather than hidden.
+    label: "Finance Manager",
+    icon: DollarSign,
+    href: "/finance-manager",
     subItems: [
-      { label: "Live Ops View", href: "/operations-supervisor/live-ops-view" },
-      { label: "Performance Console", href: "/operations-supervisor/performance-console" },
-      { label: "Escalation Inbox", href: "/operations-supervisor/escalation-inbox" },
-      { label: "Shift Handover", href: "/operations-supervisor/shift-handover" },
-      { label: "MoM / Floor Notes", href: "/operations-supervisor/mom-floor-notes" },
+      { label: "Dashboard", href: "/finance-manager" },
+      { label: "Invoice Generation", href: "/finance-manager/invoice-generation" },
+      { label: "Waiver Workflow", href: "/finance-manager/waiver-workflow" },
+      { label: "Payment Reconciliation", href: "/finance-manager/payment-reconciliation" },
+      { label: "Tariff Master Editor", href: "/finance-manager/tariff-master-editor" },
+      { label: "CMTS-grade Multi-Tariff Engine", href: "/finance-manager/multi-tariff-engine" },
+      { label: "Payment Gateway Reconciliation", href: "/finance-manager/payment-gateway-reconciliation" },
+      { label: "ERP Bridge Mapping", href: "/finance-manager/erp-bridge-mapping" },
     ],
   },
   {
@@ -290,14 +308,51 @@ const navItems: NavItem[] = [
       { label: "Re-export / Long-Stay Console", href: "/cha/re-export-long-stay" },
     ],
   },
-  { label: "Consignee", icon: Receipt, href: "/consignee/dashboard", subItems: [
+  {
+    label: "Consignee",
+    icon: Receipt,
+    href: "/consignee/dashboard",
+    subItems: [
       { label: "Dashboard", href: "/consignee/dashboard" },
       { label: "My Shipments", href: "/consignee/my-shipments" },
       { label: "Notice of Arrival", href: "/consignee/notice-of-arrival" },
       { label: "Pay & Download DO", href: "/consignee/pay-do" },
       { label: "Schedule Pickup", href: "/consignee/schedule-pickup" },
       { label: "POD History", href: "/consignee/pod-history" },
-    ] },
+    ],
+  },
+  {
+    label: "Admin / Super Admin",
+    icon: UserCog,
+    href: "/admin",
+    subItems: [
+      { label: "Dashboard", href: "/admin" },
+      { label: "Users", href: "/admin/users" },
+      { label: "Roles & Permissions", href: "/admin/roles" },
+      { label: "Master Data Editor", href: "/admin/master-data" },
+      { label: "Integration Console", href: "/admin/integrations" },
+      { label: "System Settings", href: "/admin/settings" },
+      { label: "Audit Trail Browser", href: "/admin/audit-trail" },
+      { label: "Session & Event Log", href: "/admin/event-log" },
+    ],
+  },
+  {
+    label: "Auditor",
+    icon: ClipboardList,
+    href: "/auditor",
+    subItems: [
+      { label: "Auditor Home", href: "/auditor" },
+      { label: "Cargo Trace", href: "/auditor/cargo-trace" },
+      { label: "Financial Trace", href: "/auditor/financial-trace" },
+      { label: "RBAC Snapshot", href: "/auditor/rbac-snapshot" },
+      { label: "Export Centre", href: "/auditor/export-centre" },
+    ],
+  },
+];
+
+/* ── 3. System & Roadmap — utilities + scope-delta (Phase 2) items ──────────── */
+const systemAndRoadmap: NavItem[] = [
+  { label: "Module Map", icon: Network, href: "/modules" },
   {
     label: "ULD Management",
     icon: MessageSquare,
@@ -310,11 +365,13 @@ const navItems: NavItem[] = [
       { label: "Search", href: "/uld-message-builder/search" },
       { label: "Import ULDs", href: "/uld-message-builder/import-ulds" },
       { label: "Message Log", href: "/uld-message-builder/message-log" },
-      { label: "Personal Settings", href: "/uld-message-builder" },
     ],
   },
   {
-    label: "CMTS Absorption",
+    // SCOPE-DELTA — kept VISIBLE (not hidden) and labelled Phase 2, so the
+    // "outside awarded Annexure-G scope" question stays on the table for the
+    // client. Duplicate sub-screens are commented out and point at the canon.
+    label: "CMTS Absorption · Phase 2",
     icon: Package,
     href: "/cmts-absorption",
     subItems: [
@@ -322,99 +379,68 @@ const navItems: NavItem[] = [
       { label: "Manifest Reconciliation", href: "/cmts-absorption/manifest-reconciliation" },
       { label: "AWB Consolidation & Split", href: "/cmts-absorption/awb-consolidation" },
       { label: "Godown Rent History", href: "/cmts-absorption/godown-rent-history" },
-      { label: "Charges Calculator", href: "/cmts-absorption/charges-calculator" },
-      { label: "Cargo Acceptance Check-in", href: "/cmts-absorption/cargo-acceptance" },
+      // HIDDEN (duplicate) — Charges Calculator duplicates Operational Flow →
+      // Billing & Release → Charges Calculator (/billing/calculator). Kept.
+      // { label: "Charges Calculator", href: "/cmts-absorption/charges-calculator" },
+      // HIDDEN (duplicate) — Cargo Acceptance Check-in duplicates Operational
+      // Flow → Import Documentation → Cargo Acceptance (/import/acceptance). Kept.
+      // { label: "Cargo Acceptance Check-in", href: "/cmts-absorption/cargo-acceptance" },
     ],
   },
-  {
-    label: "Export Cargo",
-    icon: Ship,
-    href: "/export-cargo",
-    subItems: [
-      { label: "Dashboard", href: "/export-cargo" },
-      { label: "Export Acceptance", href: "/export-cargo/acceptance" },
-      { label: "Export Customs", href: "/export-cargo/customs" },
-      { label: "Manifest & Handover", href: "/export-cargo/manifest-handover" },
-    ],
-  },
-  { label: "Admin / Super Admin", icon: UserCog, href: "/admin", subItems: [
-      { label: "Dashboard", href: "/admin" },
-      { label: "Users", href: "/admin/users" },
-      { label: "Roles & Permissions", href: "/admin/roles" },
-      { label: "Master Data Editor", href: "/admin/master-data" },
-      { label: "Integration Console", href: "/admin/integrations" },
-      { label: "System Settings", href: "/admin/settings" },
-      { label: "Audit Trail Browser", href: "/admin/audit-trail" },
-      { label: "Session & Event Log", href: "/admin/event-log" },
-    ] },
-  { label: "Auditor", icon: ClipboardList, href: "/auditor", subItems: [
-      { label: "Auditor Home", href: "/auditor" },
-      { label: "Cargo Trace", href: "/auditor/cargo-trace" },
-      { label: "Financial Trace", href: "/auditor/financial-trace" },
-      { label: "RBAC Snapshot", href: "/auditor/rbac-snapshot" },
-      { label: "Export Centre", href: "/auditor/export-centre" },
-    ] },
   { label: "Reports", icon: BarChart3, href: "/reports" },
   { label: "Notifications & Messaging", icon: Bell, href: "/notifications-messaging" },
   { label: "RFID Integration", icon: Radio, href: "/rfid-integration" },
   { label: "Integration Status", icon: Settings, href: "/integration-status" },
-  { label: "QA Checklist", icon: ClipboardList, href: "/qa-checklist" },
+  // HIDDEN (internal/dev) — "QA Checklist" is a build-QA screen, not client-facing.
+  // Kept per no-delete; un-comment to restore. { label: "QA Checklist", icon: ClipboardList, href: "/qa-checklist" },
 ];
 
-/**
- * FC-01 — Master End-to-End Air Cargo Flow.
+/* ─────────────────────────────────────────────────────────────────────────────
+ * HIDDEN ALTERNATES  ·  top-level sections removed from the visible nav
+ * -----------------------------------------------------------------------------
+ * Kept per the no-delete policy. Every /route and page below still exists and
+ * is reachable by URL; only the sidebar entry is hidden. Un-comment to restore.
  *
- * Top-level navigation follows the flow's own sequence rather than the
- * persona grouping the demo started with, so walking the sidebar top to
- * bottom walks a consignment from airline handover to file closure.
+ * 1) "Excise / Compliance"  →  MERGED into two canonical groups:
+ *      • Customs Queue / Channel Detail / OOC Capture  → Customs Clearance
+ *        (Gateway PSW/WeBOC, SD/GD Filing, Channels & OOC, Detained Cargo)
+ *      • Hold Register / Section 82 / Customs Messaging → Exceptions & CDR
+ *        (Hold Register, Long-stay / S.82) + Messaging & Alerts
+ *    Icon was `FileCheck` (import removed above).
  *
- * The §refs are FC-01's own step numbers (see FLOWS in lib/architecture.ts,
- * extracted from the FigJam board):
+ *   {
+ *     label: "Excise / Compliance", icon: FileCheck, href: "/excise-compliance",
+ *     subItems: [
+ *       { label: "Customs Queue", href: "/excise-compliance/customs-queue" },
+ *       { label: "Channel Detail", href: "/excise-compliance/channel-detail" },
+ *       { label: "OOC Capture", href: "/excise-compliance/ooc-capture" },
+ *       { label: "Hold Register", href: "/excise-compliance/hold-register" },
+ *       { label: "Section 82 / Long-Stay Register", href: "/excise-compliance/section-82-long-stay" },
+ *       { label: "Customs Messaging Console", href: "/excise-compliance/customs-messaging" },
+ *     ],
+ *   },
  *
- *   §01–14  handover → pouch opening → doc verification → AWB summary →
- *           manifest reconciliation → indexation → tagging → split &
- *           segregation → acceptance, weighing & condition check
- *   §15–16  storage allocation & data capture
- *   §17–18  IATA messaging (ARR / RCF / NFD) → Notice of Arrival
- *   §19     customs clearance tracking
- *   §20–22  charges → invoice → godown rent voucher → Delivery Order
- *   §23–27  gate pass → dispatch → POD / DLV → AWB closure & archive
+ * 2) "Export Cargo"  →  DUPLICATE of Operational Flow → Export (FC-11), and it
+ *    is the FC-11 "preview build / draft awaiting SAPS sign-off". The polished
+ *    Export (FC-11) is the canon; this persona copy is hidden.
  *
- * Two entries are branches that leave the main line rather than steps on it,
- * and sit at the end of the flow group: Exceptions (the §08 "discrepancy?"
- * decision, which hands off to FC-04) and Transhipment (FC-09, taken when
- * cargo never enters local import at all).
- *
- * Anything NOT on this list is a persona portal, a utility screen or a
- * separate flow (FC-11 export). Those keep their place below and are
- * prefixed with "." so the distinction is visible at a glance.
- */
-const FC01_FLOW_ORDER = [
-  "Import Documentation", //   §01–14  M01–M04
-  "Storage & Allocation", //   §10, §15–16  M05
-  "Messaging & Alerts", //     §17–18  M07–M08
-  "Customs Clearance", //      §19  M09
-  "Billing & Release", //      §20–22  M10–M12
-  "Dispatch & Closure", //     §23–27  M13–M14, M20
-  "Exceptions & CDR", //       branch — §08 discrepancy → FC-04
-  "Transhipment", //           branch — FC-09
-];
+ *   {
+ *     label: "Export Cargo", icon: Ship, href: "/export-cargo",
+ *     subItems: [
+ *       { label: "Dashboard", href: "/export-cargo" },
+ *       { label: "Export Acceptance", href: "/export-cargo/acceptance" },
+ *       { label: "Export Customs", href: "/export-cargo/customs" },
+ *       { label: "Manifest & Handover", href: "/export-cargo/manifest-handover" },
+ *     ],
+ *   },
+ * ───────────────────────────────────────────────────────────────────────────*/
 
-/**
- * Flow steps first, in FC-01 order; everything else after, marked with a
- * leading dot. Derived rather than hand-maintained, so a nav item added
- * later shows as off-flow until it is deliberately placed in the list above.
- */
-const orderedNavItems: NavItem[] = (() => {
-  const byLabel = new Map(navItems.map((i) => [i.label, i]));
-  const onFlow = FC01_FLOW_ORDER.map((label) => byLabel.get(label)).filter(
-    (i): i is NavItem => i !== undefined,
-  );
-  const offFlow = navItems
-    .filter((i) => !FC01_FLOW_ORDER.includes(i.label))
-    .map((i) => ({ ...i, label: `. ${i.label}` }));
-  return [...onFlow, ...offFlow];
-})();
+const navSections: NavSection[] = [
+  { items: [{ label: "Home", icon: LayoutDashboard, href: "/" }] },
+  { heading: "Operational Flow", items: operationalFlow },
+  { heading: "Role Views", items: roleViews },
+  { heading: "System & Roadmap", items: systemAndRoadmap },
+];
 
 interface SidebarProps {
   collapsed: boolean;
@@ -425,6 +451,74 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
+
+  /**
+   * A section item is "active" when the current route matches the item itself
+   * OR any of its sub-items. Matching only on `item.href` breaks sections whose
+   * href points at their first sub-item (e.g. "/billing/godown-rent" does not
+   * start with "/billing/calculator/").
+   */
+  const matches = (href: string) =>
+    href !== "#" && (pathname === href || pathname.startsWith(href + "/"));
+
+  const renderItem = (item: NavItem) => {
+    const Icon = item.icon;
+    const isActive =
+      matches(item.href) || (item.subItems?.some((s) => matches(s.href)) ?? false);
+
+    return (
+      <div key={item.label}>
+        <Link
+          href={item.href}
+          onClick={() => onMobileClose?.()}
+          className="relative flex items-center gap-3 h-10 rounded-lg transition-all duration-200 cursor-pointer no-underline"
+          style={{
+            paddingLeft: collapsed ? 16 : 12,
+            paddingRight: collapsed ? 16 : 12,
+            backgroundColor: isActive ? "#EBF0F7" : "transparent",
+            color: isActive ? "#0B2545" : "#64748B",
+          }}
+        >
+          {isActive && (
+            <div
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
+              style={{ backgroundColor: "#0B2545" }}
+            />
+          )}
+          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+            <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+          </div>
+          {!collapsed && (
+            <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+              {item.label}
+            </span>
+          )}
+        </Link>
+        {item.subItems && !collapsed && isActive && (
+          <div className="flex flex-col gap-0.5 mt-0.5 ml-2 pl-4 border-l-2 border-[#E2E8F0]">
+            {item.subItems.map((sub) => {
+              const isSubActive =
+                pathname === sub.href || pathname.startsWith(sub.href + "/");
+              return (
+                <Link
+                  key={sub.label}
+                  href={sub.href}
+                  onClick={() => onMobileClose?.()}
+                  className="relative flex items-center h-8 rounded-lg transition-all duration-200 cursor-pointer no-underline text-[12px] font-medium px-3"
+                  style={{
+                    backgroundColor: isSubActive ? "#EBF0F7" : "transparent",
+                    color: isSubActive ? "#0B2545" : "#94A3B8",
+                  }}
+                >
+                  {sub.label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <aside
@@ -442,79 +536,16 @@ export default function Sidebar({ collapsed, onToggle, onMobileClose }: SidebarP
 
       <div className="flex-1 overflow-y-auto py-3">
         <nav className="flex flex-col gap-0.5 px-2">
-          {orderedNavItems.map((item) => {
-            const Icon = item.icon;
-
-            /**
-             * A section is "active" when the current route matches the section
-             * itself OR any of its sub-items.
-             *
-             * Matching only on `item.href` breaks every section whose href
-             * points at its first sub-item rather than a shared parent path
-             * (Import, Storage, Exceptions, Customs, Billing, Dispatch,
-             * Messaging, Transhipment, Export) — selecting a second sub-item
-             * collapsed the section, because e.g. "/billing/godown-rent" does
-             * not start with "/billing/calculator/".
-             */
-            const matches = (href: string) =>
-              href !== "#" && (pathname === href || pathname.startsWith(href + "/"));
-
-            const isActive =
-              matches(item.href) || (item.subItems?.some((s) => matches(s.href)) ?? false);
-            const isParentActive = isActive;
-            return (
-              <div key={item.label}>
-                <Link
-                  href={item.href}
-                  onClick={() => onMobileClose?.()}
-                  className="relative flex items-center gap-3 h-10 rounded-lg transition-all duration-200 cursor-pointer no-underline"
-                  style={{
-                    paddingLeft: collapsed ? 16 : 12,
-                    paddingRight: collapsed ? 16 : 12,
-                    backgroundColor: isActive ? "#EBF0F7" : "transparent",
-                    color: isActive ? "#0B2545" : "#64748B",
-                  }}
-                >
-                  {isActive && (
-                    <div
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
-                      style={{ backgroundColor: "#0B2545" }}
-                    />
-                  )}
-                  <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                  </div>
-                  {!collapsed && (
-                    <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                      {item.label}
-                    </span>
-                  )}
-                </Link>
-                {item.subItems && !collapsed && isParentActive && (
-                  <div className="flex flex-col gap-0.5 mt-0.5 ml-2 pl-4 border-l-2 border-[#E2E8F0]">
-                    {item.subItems.map((sub) => {
-                      const isSubActive =
-                        pathname === sub.href || pathname.startsWith(sub.href + "/");
-                      return (
-                        <Link
-                          key={sub.label}
-                          href={sub.href}
-                          onClick={() => onMobileClose?.()}
-                          className="relative flex items-center h-8 rounded-lg transition-all duration-200 cursor-pointer no-underline text-[12px] font-medium px-3"
-                          style={{
-                            backgroundColor: isSubActive ? "#EBF0F7" : "transparent",
-                            color: isSubActive ? "#0B2545" : "#94A3B8",
-                          }}
-                        >
-                          {sub.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {navSections.map((section, idx) => (
+            <div key={section.heading ?? `section-${idx}`} className="flex flex-col gap-0.5">
+              {section.heading && !collapsed && (
+                <div className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#94A3B8] select-none">
+                  {section.heading}
+                </div>
+              )}
+              {section.items.map(renderItem)}
+            </div>
+          ))}
         </nav>
       </div>
 
