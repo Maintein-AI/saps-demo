@@ -13,7 +13,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, Lock, Unlock } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Download, Lock, Search, Unlock } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import AwbLink from "@/components/awb/AwbLink";
 import UldReconciliation from "@/components/import/UldReconciliation";
@@ -29,10 +29,25 @@ import {
   variance,
 } from "@/lib/domain";
 
+// Legacy CMTS manifest-reconciliation granular status vocabulary.
+type ReconStatus = "Match" | "Shortage" | "Overage" | "Wrong weight";
+
+const RECON_STATUS_META: Record<ReconStatus, { bg: string; fg: string }> = {
+  Match: { bg: "#DCFCE7", fg: "#16A34A" },
+  Shortage: { bg: "#FEE2E2", fg: "#DC2626" },
+  Overage: { bg: "#DBEAFE", fg: "#1B4F8B" },
+  "Wrong weight": { bg: "#FEF3C7", fg: "#D97706" },
+};
+
+const RECON_STATUS_FILTERS = ["All", "Match", "Shortage", "Overage", "Wrong weight"] as const;
+
 export default function ManifestReconciliationPage() {
   const { scope } = useSite();
   const manifests = useMemo(() => listManifests(scope), [scope]);
   const [selected, setSelected] = useState<number>(manifests[0]?.ManifiestId ?? 0);
+  const [reconQuery, setReconQuery] = useState("");
+  const [reconStatus, setReconStatus] =
+    useState<(typeof RECON_STATUS_FILTERS)[number]>("All");
 
   const m = manifests.find((x) => x.ManifiestId === selected) ?? manifests[0];
   const awbs = useMemo(
@@ -41,27 +56,60 @@ export default function ManifestReconciliationPage() {
   );
 
   // Three-way reconciliation: manifest declared · FFM/FWB/FHL message · physically received.
-  const rows = awbs.map((a) => {
+  const rows = awbs.map((a, i) => {
     const v = a.intakeVariance;
     const declaredPcs = a.TOTALPCS;
     const messagePcs = declaredPcs; // FFM agrees with the manifest unless flagged
     const physicalPcs = v ? v.pieces.physical : declaredPcs;
+    const pcsVar = variance(declaredPcs, physicalPcs);
+    const declaredKg = a.TOTALWEIGHT;
+    const physicalKg = v ? v.weightKg.physical : a.TOTALWEIGHT;
+    const kgVar = variance(declaredKg, physicalKg);
+    const reconciled = !v || (!v.pieces.overTolerance && !v.weightKg.overTolerance);
+    // Legacy CMTS granular reconciliation status (was binary in the demo).
+    const status: ReconStatus = reconciled
+      ? "Match"
+      : pcsVar.delta < 0
+        ? "Shortage"
+        : pcsVar.delta > 0
+          ? "Overage"
+          : "Wrong weight";
+    // Static mock house AWB + linked CDR reference (blank when matched).
+    const hawb = `HWB-DBS-${String(i + 1).padStart(3, "0")}`;
+    const cdr = reconciled ? "" : `CDR-2026-${String(89 + i).padStart(4, "0")}`;
     return {
       awb: a,
+      hawb,
+      cdr,
+      status,
       declaredPcs,
       messagePcs,
       physicalPcs,
-      pcsVariance: variance(declaredPcs, physicalPcs),
-      declaredKg: a.TOTALWEIGHT,
-      physicalKg: v ? v.weightKg.physical : a.TOTALWEIGHT,
-      kgVariance: variance(a.TOTALWEIGHT, v ? v.weightKg.physical : a.TOTALWEIGHT),
-      reconciled: !v || (!v.pieces.overTolerance && !v.weightKg.overTolerance),
+      pcsVariance: pcsVar,
+      declaredKg,
+      physicalKg,
+      kgVariance: kgVar,
+      reconciled,
     };
   });
 
   const unreconciled = rows.filter((r) => !r.reconciled);
   const totalDeclared = rows.reduce((n, r) => n + r.declaredPcs, 0);
   const totalPhysical = rows.reduce((n, r) => n + r.physicalPcs, 0);
+
+  // Legacy CMTS KPI counts + filter-bar filtering (static mock UI).
+  const matchCount = rows.filter((r) => r.status === "Match").length;
+  const discrepantCount = rows.length - matchCount;
+  const linkedCdrCount = rows.filter((r) => r.cdr !== "").length;
+  const filteredRows = rows.filter((r) => {
+    const okStatus = reconStatus === "All" || r.status === reconStatus;
+    const q = reconQuery.trim().toLowerCase();
+    const okQuery =
+      q === "" ||
+      r.awb.AWBNO.toLowerCase().includes(q) ||
+      r.hawb.toLowerCase().includes(q);
+    return okStatus && okQuery;
+  });
 
   if (!m) {
     return (
@@ -220,11 +268,75 @@ export default function ManifestReconciliationPage() {
           </div>
         </div>
 
+        {/* Legacy CMTS KPI strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-5 pt-5">
+          {(
+            [
+              { label: "AWBs today", value: rows.length, fg: "#0F172A" },
+              { label: "Match", value: matchCount, fg: "#16A34A" },
+              { label: "Discrepant", value: discrepantCount, fg: "#DC2626" },
+              { label: "Linked CDRs", value: linkedCdrCount, fg: "#1B4F8B" },
+            ] as const
+          ).map((k) => (
+            <div
+              key={k.label}
+              className="rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3"
+            >
+              <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                {k.label}
+              </span>
+              <div className="text-[22px] font-bold font-mono mt-1" style={{ color: k.fg }}>
+                {k.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Legacy CMTS filter bar */}
+        <div className="px-5 pt-4 flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+            />
+            <input
+              value={reconQuery}
+              onChange={(e) => setReconQuery(e.target.value)}
+              placeholder="Search AWB or HAWB…"
+              className="w-full h-9 pl-9 pr-3 rounded-lg border border-[#E2E8F0] bg-white text-[13px] outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {RECON_STATUS_FILTERS.map((f) => {
+              const active = reconStatus === f;
+              return (
+                <button
+                  key={f}
+                  onClick={() => setReconStatus(f)}
+                  className="h-8 px-3 rounded-full text-[12px] font-semibold border transition-colors"
+                  style={{
+                    backgroundColor: active ? "#0B2545" : "white",
+                    color: active ? "white" : "#64748B",
+                    borderColor: active ? "#0B2545" : "#E2E8F0",
+                  }}
+                >
+                  {f}
+                </button>
+              );
+            })}
+          </div>
+          <button className="h-9 px-3 rounded-lg border border-[#E2E8F0] bg-white text-[13px] font-semibold text-[#0F172A] inline-flex items-center gap-1.5">
+            <Download size={14} />
+            Export
+          </button>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider bg-[#F8FAFC] border-b border-[#E2E8F0]">
                 <th className="text-left px-4 py-2.5">AWB</th>
+                <th className="text-left px-4 py-2.5">HAWB</th>
                 <th className="text-right px-4 py-2.5">Manifest pcs</th>
                 <th className="text-right px-4 py-2.5">Message pcs</th>
                 <th className="text-right px-4 py-2.5">Physical pcs</th>
@@ -232,11 +344,13 @@ export default function ManifestReconciliationPage() {
                 <th className="text-right px-4 py-2.5">Manifest kg</th>
                 <th className="text-right px-4 py-2.5">Physical kg</th>
                 <th className="text-right px-4 py-2.5">Δ kg</th>
+                <th className="text-left px-4 py-2.5">Status</th>
+                <th className="text-left px-4 py-2.5">CDR</th>
                 <th className="text-left px-4 py-2.5">State</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {filteredRows.map((r) => (
                 <tr
                   key={r.awb.AWBId}
                   className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors"
@@ -244,6 +358,9 @@ export default function ManifestReconciliationPage() {
                 >
                   <td className="px-4 py-2.5">
                     <AwbLink awbNo={r.awb.AWBNO} awbId={r.awb.AWBId} />
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span className="font-mono text-[12px] text-[#64748B]">{r.hawb}</span>
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono">{r.declaredPcs}</td>
                   <td className="px-4 py-2.5 text-right font-mono text-[#64748B]">{r.messagePcs}</td>
@@ -265,6 +382,26 @@ export default function ManifestReconciliationPage() {
                   >
                     {r.kgVariance.delta > 0 ? "+" : ""}
                     {r.kgVariance.delta}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span
+                      className="h-[20px] px-2 rounded text-[10px] font-bold inline-flex items-center"
+                      style={{
+                        backgroundColor: RECON_STATUS_META[r.status].bg,
+                        color: RECON_STATUS_META[r.status].fg,
+                      }}
+                    >
+                      {r.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {r.cdr ? (
+                      <span className="font-mono text-[12px] font-semibold text-[#1B4F8B]">
+                        {r.cdr}
+                      </span>
+                    ) : (
+                      <span className="text-[#CBD5E1]">–</span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5">
                     {r.reconciled ? (

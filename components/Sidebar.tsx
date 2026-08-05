@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   Warehouse,
   Truck,
-  Package,
+  // Package,  // unused after the CMTS Absorption section was hidden (folded into canonical); restore if un-hidden
   DollarSign,
   Calendar,
   Shield,
@@ -367,26 +367,40 @@ const systemAndRoadmap: NavItem[] = [
       { label: "Message Log", href: "/uld-message-builder/message-log" },
     ],
   },
-  {
-    // SCOPE-DELTA — kept VISIBLE (not hidden) and labelled Phase 2, so the
-    // "outside awarded Annexure-G scope" question stays on the table for the
-    // client. Duplicate sub-screens are commented out and point at the canon.
-    label: "CMTS Absorption · Phase 2",
-    icon: Package,
-    href: "/cmts-absorption",
-    subItems: [
-      { label: "Overview", href: "/cmts-absorption" },
-      { label: "Manifest Reconciliation", href: "/cmts-absorption/manifest-reconciliation" },
-      { label: "AWB Consolidation & Split", href: "/cmts-absorption/awb-consolidation" },
-      { label: "Godown Rent History", href: "/cmts-absorption/godown-rent-history" },
-      // HIDDEN (duplicate) — Charges Calculator duplicates Operational Flow →
-      // Billing & Release → Charges Calculator (/billing/calculator). Kept.
-      // { label: "Charges Calculator", href: "/cmts-absorption/charges-calculator" },
-      // HIDDEN (duplicate) — Cargo Acceptance Check-in duplicates Operational
-      // Flow → Import Documentation → Cargo Acceptance (/import/acceptance). Kept.
-      // { label: "Cargo Acceptance Check-in", href: "/cmts-absorption/cargo-acceptance" },
-    ],
-  },
+  // HIDDEN (duplication removed) — "CMTS Absorption" is no longer a separate
+  // area. Per the correct intent, it was a COMPLETENESS CHECK, not a set of
+  // duplicate screens: its CMTS-parity fields have now been folded INTO the
+  // canonical Operational Flow screens, so this section is fully redundant.
+  // The /cmts-absorption pages + routes still exist; only the nav entry is hidden.
+  // Fold map (what moved where):
+  //   • Manifest Reconciliation   → Import Documentation → Manifest & IGM
+  //       (/import/manifest): HAWB + CDR columns, granular status (Shortage/
+  //       Overage/Wrong weight), KPI strip, search + status filters, Export
+  //   • AWB Consolidation & Split → Import Documentation → Consolidation & Split
+  //       (/import/consolidation): Carrier/Origin, KPI strip, Merge HAWBs,
+  //       "Split of {parent}" lineage badge
+  //   • Godown Rent History       → Billing & Release → Godown Rent Voucher
+  //       (/billing/godown-rent): time-based rate-tier "Rent periods" table + KPIs
+  //   • Charges Calculator        → Billing & Release → Charges Calculator
+  //       (/billing/calculator): customs-hold waiver deduction + Section 82 flag
+  //   • Cargo Acceptance Check-in → Import Documentation → Cargo Acceptance
+  //       (/import/acceptance): HAWB/flight/origin, package-condition + seal
+  //       verification, receiving-agent sign-off, acceptance checklist,
+  //       Accept & Generate Certificate
+  // Un-comment to restore the standalone section (icon: Package).
+  // {
+  //   label: "CMTS Absorption · Phase 2",
+  //   icon: Package,
+  //   href: "/cmts-absorption",
+  //   subItems: [
+  //     { label: "Overview", href: "/cmts-absorption" },
+  //     { label: "Manifest Reconciliation", href: "/cmts-absorption/manifest-reconciliation" },
+  //     { label: "AWB Consolidation & Split", href: "/cmts-absorption/awb-consolidation" },
+  //     { label: "Godown Rent History", href: "/cmts-absorption/godown-rent-history" },
+  //     { label: "Charges Calculator", href: "/cmts-absorption/charges-calculator" },
+  //     { label: "Cargo Acceptance Check-in", href: "/cmts-absorption/cargo-acceptance" },
+  //   ],
+  // },
   { label: "Reports", icon: BarChart3, href: "/reports" },
   { label: "Notifications & Messaging", icon: Bell, href: "/notifications-messaging" },
   { label: "RFID Integration", icon: Radio, href: "/rfid-integration" },

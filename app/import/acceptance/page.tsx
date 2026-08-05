@@ -13,7 +13,19 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, Camera, Scale } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  BadgeCheck,
+  Camera,
+  CheckCircle2,
+  PackageCheck,
+  Plane,
+  ScanLine,
+  Scale,
+  ShieldCheck,
+  UserCheck,
+} from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import AwbLink from "@/components/awb/AwbLink";
 import { useSite } from "@/components/site/SiteContext";
@@ -50,6 +62,17 @@ export default function AcceptancePage() {
   const vol = volumetricKg({ lengthCm: dims.l, widthCm: dims.w, heightCm: dims.h, unit: "cm" });
   const chargeable = chargeableKg(actual, vol);
 
+  // FC-01 §14 condition-check vocabulary — legacy CMTS acceptance fields (demo mock).
+  const [packageCondition, setPackageCondition] = useState<string>("Intact");
+  const [sealStatus, setSealStatus] = useState<string>("Unbroken");
+  const PACKAGE_CONDITIONS = ["Intact", "Minor damage", "Major damage", "Tampered"] as const;
+  const SEAL_STATUSES = ["Unbroken", "Broken — seal #", "Missing", "Re-sealed"] as const;
+
+  // Legacy CMTS HAWB / routing identity + receiving-agent sign-off (demo mock).
+  const identity = { hawb: "HWB-DBS-001", flight: "EK 612 · 12 May 2026", origin: "DXB" };
+  const receiver = { name: "Ahmed Khan", station: "KHI · AFU", timestamp: "13 May 2026, 14:22" };
+  const sealNumber = "SP-238911";
+
   if (!awb) {
     return (
       <div className="flex flex-col gap-6">
@@ -66,6 +89,24 @@ export default function AcceptancePage() {
   const totalDeclared = details.reduce((n, d) => n + d.PCS, 0);
   const totalReceived = details.reduce((n, d) => n + d.RECEIVEDPCS, 0);
   const v = variance(totalDeclared, totalReceived);
+
+  // FC-01 §13 acceptance checklist — legacy CMTS sign-off items (demo mock).
+  const acceptanceChecklist = [
+    { label: "Documents verified", note: "MAWB · HAWB · NOTOC · NOA", done: true },
+    {
+      label: "Piece count matches manifest",
+      note: `${totalReceived} / ${totalDeclared} pieces`,
+      done: totalReceived === totalDeclared,
+    },
+    { label: "Weight within tolerance", note: "±2% variance band", done: !v.overTolerance },
+    { label: "Package condition", note: packageCondition, done: packageCondition === "Intact" },
+    {
+      label: "Seal verification",
+      note: `Seal# ${sealNumber} · unbroken`,
+      done: sealStatus === "Unbroken",
+    },
+    { label: "Evidence photos captured", note: "3 photos · top / side / seal", done: true },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -87,6 +128,26 @@ export default function AcceptancePage() {
             <p className="text-[13px] text-[#64748B] mt-1">
               Piece-by-piece receipt including short-landed, damaged and part-received cargo.
             </p>
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              {(
+                [
+                  ["HAWB", identity.hawb, null],
+                  ["Flight", identity.flight, Plane],
+                  ["Origin", identity.origin, null],
+                ] as const
+              ).map(([label, value, Icon]) => (
+                <span
+                  key={label}
+                  className="h-7 px-2.5 rounded-lg border border-[#E2E8F0] bg-white inline-flex items-center gap-1.5 text-[12px]"
+                >
+                  {Icon ? <Icon size={12} className="text-[#94A3B8]" /> : null}
+                  <span className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                    {label}
+                  </span>
+                  <span className="font-mono font-semibold text-[#0F172A]">{value}</span>
+                </span>
+              ))}
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
@@ -225,6 +286,95 @@ export default function AcceptancePage() {
             </div>
           </div>
         </div>
+
+        {/* FC-01 §14 condition check — package condition + seal verification */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6 pt-5 border-t border-[#E2E8F0]">
+          {/* Package condition */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1.5">
+              <PackageCheck size={14} className="text-[#64748B]" />
+              <span className="text-[12px] font-semibold text-[#0F172A]">Package condition</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {PACKAGE_CONDITIONS.map((c) => {
+                const active = packageCondition === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setPackageCondition(c)}
+                    className="h-8 px-3 rounded-lg border text-[12px] font-medium inline-flex items-center transition-colors"
+                    style={{
+                      borderColor: active ? "#2E75B6" : "#E2E8F0",
+                      backgroundColor: active ? "#EBF0F7" : "#FFFFFF",
+                      color: active ? "#0B2545" : "#64748B",
+                    }}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Seal verification */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-[#64748B]" />
+              <span className="text-[12px] font-semibold text-[#0F172A]">Seal verification</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SEAL_STATUSES.map((s) => {
+                const active = sealStatus === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSealStatus(s)}
+                    className="h-8 px-3 rounded-lg border text-[12px] font-medium inline-flex items-center transition-colors"
+                    style={{
+                      borderColor: active ? "#2E75B6" : "#E2E8F0",
+                      backgroundColor: active ? "#EBF0F7" : "#FFFFFF",
+                      color: active ? "#0B2545" : "#64748B",
+                    }}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-end gap-3 flex-wrap mt-1">
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+                  Seal number
+                </span>
+                <input
+                  type="text"
+                  defaultValue={sealNumber}
+                  className="h-10 px-3 rounded-lg border border-[#E2E8F0] bg-white text-[13px] font-mono outline-none focus:border-[#2E75B6]"
+                />
+              </div>
+              <button
+                type="button"
+                className="h-10 px-4 rounded-lg border border-[#E2E8F0] bg-white text-[13px] font-semibold text-[#0F172A] inline-flex items-center gap-2"
+              >
+                <ScanLine size={14} className="text-[#64748B]" />
+                Scan seal barcode
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* General acceptance evidence */}
+        <div className="mt-5 pt-5 border-t border-[#E2E8F0]">
+          <button
+            type="button"
+            className="h-10 px-4 rounded-lg border border-[#E2E8F0] bg-white text-[13px] font-semibold text-[#0F172A] inline-flex items-center gap-2"
+          >
+            <Camera size={14} className="text-[#64748B]" />
+            Capture evidence photo
+          </button>
+        </div>
       </div>
 
       {/* IMPORTAWBDETAIL — all 32 columns across the line rows */}
@@ -356,7 +506,65 @@ export default function AcceptancePage() {
         </div>
       </div>
 
+      {/* FC-01 §13 acceptance checklist + receiving-agent sign-off */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 lg:col-span-2">
+          <div className="flex items-center gap-1.5 mb-3">
+            <CheckCircle2 size={16} className="text-[#64748B]" />
+            <h3 className="text-[14px] font-semibold text-[#0F172A]">Acceptance checklist</h3>
+          </div>
+          <div className="flex flex-col divide-y divide-[#F1F5F9]">
+            {acceptanceChecklist.map((item) => (
+              <div key={item.label} className="flex items-center gap-3 py-2.5">
+                <span
+                  className="h-5 w-5 rounded-full inline-flex items-center justify-center flex-shrink-0"
+                  style={{
+                    backgroundColor: item.done ? "#DCFCE7" : "#FEF3C7",
+                    color: item.done ? "#16A34A" : "#D97706",
+                  }}
+                >
+                  {item.done ? <CheckCircle2 size={14} /> : <AlertTriangle size={12} />}
+                </span>
+                <span className="text-[13px] font-medium text-[#0F172A] flex-1">{item.label}</span>
+                <span className="text-[12px] text-[#64748B] font-mono truncate">{item.note}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Receiving agent sign-off */}
+        <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-5">
+          <div className="flex items-center gap-1.5 mb-3">
+            <UserCheck size={16} className="text-[#64748B]" />
+            <h3 className="text-[14px] font-semibold text-[#0F172A]">Receiving agent</h3>
+          </div>
+          <div className="flex flex-col gap-3">
+            {(
+              [
+                ["Receiver", receiver.name],
+                ["Station", receiver.station],
+                ["Timestamp", receiver.timestamp],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label} className="flex flex-col gap-0.5">
+                <span className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                  {label}
+                </span>
+                <span className="text-[13px] font-semibold text-[#0F172A]">{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center gap-3 flex-wrap">
+        <button
+          type="button"
+          className="h-10 px-4 rounded-lg bg-[#16A34A] text-white text-[13px] font-semibold inline-flex items-center gap-2"
+        >
+          <BadgeCheck size={15} />
+          Accept &amp; Generate Certificate
+        </button>
         <AwbLink
           awbNo={awb.AWBNO}
           awbId={awb.AWBId}

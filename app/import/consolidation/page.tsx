@@ -14,7 +14,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Check, Split } from "lucide-react";
+import { AlertTriangle, Check, Merge, Split } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import AwbLink from "@/components/awb/AwbLink";
 import { useSite } from "@/components/site/SiteContext";
@@ -101,6 +101,27 @@ export default function ConsolidationPage() {
         </div>
       </div>
 
+      {/* KPI strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {(
+          [
+            ["Open MAWBs", 12],
+            ["Total HAWBs", 47],
+            ["Split records", 8],
+          ] as const
+        ).map(([label, value]) => (
+          <div
+            key={label}
+            className="rounded-[16px] border border-[#E2E8F0] bg-white p-5 flex flex-col gap-1"
+          >
+            <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+              {label}
+            </span>
+            <span className="text-[24px] font-bold text-[#0F172A] font-mono">{value}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Master vs houses reconciliation */}
       <div
         className="rounded-[16px] border p-5"
@@ -167,6 +188,8 @@ export default function ConsolidationPage() {
           {[
             ["IGM", master.IGMNO],
             ["Flight", master.FLIGHT],
+            ["Carrier", "Emirates SkyCargo"],
+            ["Origin", "DXB"],
             ["Class", cargoClass(master.CARGOCLASSID).ABBREVATION],
             ["Consignee", master.CONSIGNEE1],
             ["Agent", master.AGENT1 ?? "—"],
@@ -194,8 +217,11 @@ export default function ConsolidationPage() {
         </div>
 
         <div className="p-5 flex flex-col gap-4">
-          {houses.map((h) => {
+          {houses.map((h, idx) => {
             const loc = storageLocation(h.LOCATIONID);
+            // Mock split lineage: house AWBs after the first are treated as
+            // split children of the first house (AWBSplit HWBNo → parent HWB).
+            const splitParent = idx > 0 ? houses[0].HWB : null;
             return (
               <div key={h.ConsolId} className="rounded-xl border border-[#E2E8F0] overflow-hidden">
                 <div className="px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between gap-3 flex-wrap">
@@ -204,6 +230,12 @@ export default function ConsolidationPage() {
                     <span className="text-[12px] text-[#64748B]">sub-index {h.SUBINDEX}</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {splitParent && (
+                      <span className="h-[20px] px-2 rounded text-[10px] font-bold inline-flex items-center gap-1 bg-[#EDE9FE] text-[#6D28D9] font-mono">
+                        <Split size={10} strokeWidth={2.5} />
+                        Split of {splitParent}
+                      </span>
+                    )}
                     {h.DELIVERED === 1 && (
                       <span className="h-[20px] px-2 rounded text-[10px] font-bold inline-flex items-center bg-[#DCFCE7] text-[#16A34A]">
                         delivered
@@ -278,9 +310,18 @@ export default function ConsolidationPage() {
 
       {/* Split workbench */}
       <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Split size={16} className="text-[#64748B]" />
-          <h2 className="text-[16px] font-semibold text-[#0F172A]">Split workbench</h2>
+        <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Split size={16} className="text-[#64748B]" />
+            <h2 className="text-[16px] font-semibold text-[#0F172A]">Split workbench</h2>
+          </div>
+          <button
+            type="button"
+            className="h-9 px-3 rounded-lg border border-[#E2E8F0] text-[13px] font-semibold text-[#0F172A] inline-flex items-center gap-1.5"
+          >
+            <Merge size={14} className="text-[#64748B]" />
+            Merge HAWBs
+          </button>
         </div>
         <p className="text-[13px] text-[#64748B]">
           Split an AWB or house AWB into separately-handled parts. Each split gets its own SplitId

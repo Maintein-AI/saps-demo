@@ -19,7 +19,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Copy, FileText, Receipt, Wallet } from "lucide-react";
+import { ArrowUpRight, CalendarClock, Copy, FileText, Receipt, Wallet } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import EmptyState from "@/components/EmptyState";
 import AwbLink from "@/components/awb/AwbLink";
@@ -43,6 +43,97 @@ const BILL_TONE: Record<string, { bg: string; fg: string }> = {
   DUPLICATE: { bg: "#F5F3FF", fg: "#7C3AED" },
   FREEHAND: { bg: "#DBEAFE", fg: "#1B4F8B" },
 };
+
+/**
+ * Legacy CMTS `godown-rent-history` broke a voucher down by TIME-BASED RATE
+ * TIER / PERIOD — the free-period grace, the standard band, the premium
+ * long-stay band, each with its own rate, surcharge and waiver. The canonical
+ * screen only breaks down by zone/class/location, so this slice was invisible.
+ * Static demo data, consistent with the file's other GRV values.
+ */
+type RentPeriod = {
+  label: string;
+  from: string;
+  to: string;
+  days: number;
+  rate: string;
+  surcharge: string;
+  computed: number;
+  waived: number;
+  net: number;
+  voucher: string;
+  user: string;
+  remark: string;
+};
+
+const RENT_PERIODS: RentPeriod[] = [
+  {
+    label: "Day 1–3 free",
+    from: "01 Feb 2026",
+    to: "03 Feb 2026",
+    days: 3,
+    rate: "PKR 0/kg/day",
+    surcharge: "0%",
+    computed: 0,
+    waived: 0,
+    net: 0,
+    voucher: "GRV-2026-0142",
+    user: "asaleem",
+    remark: "Free period — first 72h storage grace",
+  },
+  {
+    label: "Day 4–7 standard",
+    from: "04 Feb 2026",
+    to: "07 Feb 2026",
+    days: 4,
+    rate: "PKR 35/kg/day",
+    surcharge: "0%",
+    computed: 168000,
+    waived: 0,
+    net: 168000,
+    voucher: "GRV-2026-0142",
+    user: "asaleem",
+    remark: "Standard godown rate",
+  },
+  {
+    label: "Day 8–14 standard",
+    from: "08 Feb 2026",
+    to: "14 Feb 2026",
+    days: 7,
+    rate: "PKR 35/kg/day",
+    surcharge: "15% DGR",
+    computed: 338100,
+    waived: 67620,
+    net: 270480,
+    voucher: "GRV-2026-0142",
+    user: "asaleem",
+    remark: "Customs hold waiver (20%)",
+  },
+  {
+    label: "Day 15+ premium",
+    from: "15 Feb 2026",
+    to: "18 Feb 2026",
+    days: 4,
+    rate: "PKR 60/kg/day",
+    surcharge: "15% DGR",
+    computed: 331200,
+    waived: 0,
+    net: 331200,
+    voucher: "GRV-2026-0142",
+    user: "asaleem",
+    remark: "Premium long-stay tier",
+  },
+];
+
+const RENT_PERIOD_TOTALS = RENT_PERIODS.reduce(
+  (acc, p) => ({
+    days: acc.days + p.days,
+    computed: acc.computed + p.computed,
+    waived: acc.waived + p.waived,
+    net: acc.net + p.net,
+  }),
+  { days: 0, computed: 0, waived: 0, net: 0 },
+);
 
 export default function GodownRentPage() {
   const { scope, isHq } = useSite();
@@ -97,6 +188,16 @@ export default function GodownRentPage() {
             label: "Waived",
             value: String(rents.filter((r) => r.WAIVEOFF).length),
             tone: "#7C3AED",
+          },
+          {
+            label: "Periods",
+            value: String(RENT_PERIODS.length),
+            tone: "#0F172A",
+          },
+          {
+            label: "Net rent",
+            value: formatPkr(RENT_PERIOD_TOTALS.net),
+            tone: "#0B2545",
           },
         ].map((k) => (
           <div key={k.label} className="rounded-[16px] border border-[#E2E8F0] bg-white p-5">
@@ -426,6 +527,132 @@ export default function GodownRentPage() {
                   </div>
                 </div>
               )}
+
+              {/* Rent periods — legacy CMTS time-based rate-tier breakdown */}
+              <div className="rounded-[16px] border border-[#E2E8F0] bg-white overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-[#E2E8F0] flex items-center gap-2">
+                  <CalendarClock size={15} className="text-[#64748B]" />
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#0F172A]">
+                      Rent periods — time-based rate tiers
+                    </h3>
+                    <p className="text-[11px] text-[#94A3B8] mt-0.5">
+                      How the legacy CMTS godown-rent-history screen split the voucher: by
+                      rate-tier / period, with per-tier surcharge and waiver.
+                    </p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[980px]">
+                    <thead>
+                      <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
+                        {[
+                          "Period",
+                          "From",
+                          "To",
+                          "Days",
+                          "Rate",
+                          "Surcharge",
+                          "Computed",
+                          "Waived",
+                          "Net",
+                          "Voucher",
+                          "User",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="text-left px-3 py-2.5 text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider whitespace-nowrap"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {RENT_PERIODS.map((p) => (
+                        <tr key={p.label} className="border-b border-[#F1F5F9] last:border-0 align-top">
+                          <td className="px-3 py-2.5 whitespace-nowrap">
+                            <p className="text-[12px] font-medium text-[#0F172A]">{p.label}</p>
+                            <p className="text-[10px] text-[#94A3B8] mt-0.5">{p.remark}</p>
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-[12px] text-[#475569] whitespace-nowrap">
+                            {p.from}
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-[12px] text-[#475569] whitespace-nowrap">
+                            {p.to}
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-[12px] text-[#475569]">{p.days}</td>
+                          <td className="px-3 py-2.5 font-mono text-[12px] text-[#475569] whitespace-nowrap">
+                            {p.rate}
+                          </td>
+                          <td className="px-3 py-2.5 text-[12px] whitespace-nowrap">
+                            <span
+                              className="h-[18px] px-1.5 rounded text-[10px] font-bold inline-flex items-center"
+                              style={
+                                p.surcharge === "0%"
+                                  ? { backgroundColor: "#F1F5F9", color: "#64748B" }
+                                  : { backgroundColor: "#FEF3C7", color: "#D97706" }
+                              }
+                            >
+                              {p.surcharge}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-[12px] text-[#475569] whitespace-nowrap">
+                            {formatPkr(p.computed)}
+                          </td>
+                          <td
+                            className="px-3 py-2.5 font-mono text-[12px] whitespace-nowrap"
+                            style={{ color: p.waived ? "#7C3AED" : "#CBD5E1" }}
+                          >
+                            {p.waived ? `− ${formatPkr(p.waived)}` : formatPkr(0)}
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-[13px] font-semibold text-[#0F172A] whitespace-nowrap">
+                            {formatPkr(p.net)}
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-[12px] text-[#475569] whitespace-nowrap">
+                            {p.voucher}
+                          </td>
+                          <td className="px-3 py-2.5 text-[12px] text-[#475569] whitespace-nowrap">
+                            {p.user}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-[#E2E8F0] bg-[#F8FAFC]">
+                        <td className="px-3 py-2.5 text-[11px] font-semibold text-[#0F172A] uppercase tracking-wider whitespace-nowrap">
+                          Totals
+                        </td>
+                        <td className="px-3 py-2.5" />
+                        <td className="px-3 py-2.5" />
+                        <td className="px-3 py-2.5 font-mono text-[12px] font-semibold text-[#0F172A]">
+                          {RENT_PERIOD_TOTALS.days}
+                        </td>
+                        <td className="px-3 py-2.5" />
+                        <td className="px-3 py-2.5" />
+                        <td className="px-3 py-2.5 font-mono text-[12px] font-semibold text-[#0F172A] whitespace-nowrap">
+                          {formatPkr(RENT_PERIOD_TOTALS.computed)}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono text-[12px] font-semibold text-[#7C3AED] whitespace-nowrap">
+                          − {formatPkr(RENT_PERIOD_TOTALS.waived)}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono text-[13px] font-bold text-[#0B2545] whitespace-nowrap">
+                          {formatPkr(RENT_PERIOD_TOTALS.net)}
+                        </td>
+                        <td className="px-3 py-2.5" />
+                        <td className="px-3 py-2.5" />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div className="px-5 py-3 bg-[#F8FAFC] border-t border-[#E2E8F0]">
+                  <p className="text-[11px] text-[#64748B]">
+                    Same voucher, a different axis: the zone/class/location split above answers
+                    &ldquo;where was it charged&rdquo;, this rate-tier split answers &ldquo;when, and
+                    at what rate&rdquo; — the view the legacy godown-rent-history screen exposed.
+                  </p>
+                </div>
+              </div>
 
               <div className="flex items-center gap-3 flex-wrap">
                 <Link

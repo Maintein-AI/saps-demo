@@ -22,7 +22,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Calculator, Info, Layers, Scale, Timer } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Calculator, Info, Layers, Scale, Timer } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
 import EmptyState from "@/components/EmptyState";
 import AwbLink from "@/components/awb/AwbLink";
@@ -94,6 +94,16 @@ export default function ChargesCalculatorPage() {
 
   /** Live what-if on the unit, to make the §05 correction legible. */
   const [unit, setUnit] = useState<"cm" | "in">("cm");
+
+  /**
+   * Legacy-CMTS rule-cascade items the FC-07 form skips but the old charges
+   * calculator still applied. Presentational, static — sourced from the CMTS
+   * settings the way the legacy screen read them.
+   */
+  const customsHoldWaiver = { percent: 20, amount: 5300, source: "manual waiver" };
+  const section82Days = 20;
+  const section82Threshold = 14;
+  const section82Flagged = section82Days > section82Threshold;
 
   return (
     <div className="flex flex-col gap-6">
@@ -203,6 +213,21 @@ export default function ChargesCalculatorPage() {
                       {c.supplementDays} supplement day{c.supplementDays === 1 ? "" : "s"} — cargo
                       stayed past the billed period and a supplementary voucher is due.
                     </p>
+                  </div>
+                )}
+                {section82Flagged && (
+                  <div className="mt-4 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 flex items-start gap-2.5">
+                    <AlertTriangle size={14} className="text-[#DC2626] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[12px] font-semibold text-[#991B1B]">
+                        Section 82 — dwell {section82Days} days &gt; {section82Threshold}-day
+                        threshold → escalation flagged
+                      </p>
+                      <p className="text-[11px] text-[#B91C1C] mt-0.5">
+                        The Section82Days setting trips the customs-escalation trigger; the AWB is
+                        referred for Section 82 action before the charge is closed.
+                      </p>
+                    </div>
                   </div>
                 )}
               </Step>
@@ -385,6 +410,16 @@ export default function ChargesCalculatorPage() {
                   {c.minimumCharges > 0 && (
                     <Row label="Minimum charge floor applied" value={formatPkr(c.minimumCharges)} />
                   )}
+                  <div className="flex items-baseline justify-between gap-3 py-1">
+                    <span className="text-[12px] text-[#DC2626]">
+                      Customs hold waiver · {customsHoldWaiver.source}
+                    </span>
+                    <span className="font-mono text-[13px] font-medium text-[#DC2626]">
+                      −{customsHoldWaiver.percent}% × applicable slab = −{formatPkr(
+                        customsHoldWaiver.amount
+                      )}
+                    </span>
+                  </div>
                   <div className="border-t border-[#E2E8F0] mt-2 pt-2">
                     <Row label="Sub-total" value={formatPkr(c.subTotal)} />
                     <Row label={`Tax (${c.taxPercent}%)`} value={formatPkr(c.taxAmount)} />
