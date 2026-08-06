@@ -1,35 +1,22 @@
 "use client";
 
-/**
- * P1-3 · OCR Intake Workbench — FC-01 steps 05a–05f.
- *
- * The single most important AirVault amendment, verbatim from FC-01:
- *
- *   "Step 05 is now OCR-assisted intake. • Per-item confidence score +
- *    operator acceptance before commit. • Declared (OCR) vs physical
- *    (received) variance feeds 07 Reconciliation → 08 → CDR (FC-04).
- *    CMTS parity to keep: chargeable weight, classification-at-intake,
- *    IGM / manifest linkage."
- *
- * The six sub-steps are the flow's own nodes:
- *   05a scan → 05b auto-extract with confidence → 05c acceptance gate
- *   → 05d correct low-confidence items (loops to 05c) → 05e declared vs
- *   physical → 05f commit
- */
 
-import { useMemo, useState } from "react";
+
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
   Check,
   FileScan,
   PencilLine,
+  Plus,
   ScanLine,
-  ShieldCheck,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import Breadcrumb from "@/components/Breadcrumb";
-import { OcrAcceptanceGate, OcrConfidenceField } from "@/components/primitives";
+import { OcrAcceptanceGate } from "@/components/primitives";
 import { useSite } from "@/components/site/SiteContext";
 import {
   CARGO_CLASSES,
@@ -48,14 +35,34 @@ import {
 
 const STEPS = [
   { id: "05a", label: "Scan", icon: ScanLine, hint: "MAWB / HAWB / Manifest" },
-  { id: "05b", label: "Extract", icon: Sparkles, hint: "Line items + confidence" },
-  { id: "05c", label: "Accept", icon: ShieldCheck, hint: "Gate — all items confirmed" },
-  { id: "05d", label: "Correct", icon: PencilLine, hint: "Low-confidence items only" },
+  { id: "05b", label: "Extract", icon: Sparkles, hint: "Confidence · confirm · correct" },
   { id: "05e", label: "Declared vs physical", icon: FileScan, hint: "Capture what arrived" },
   { id: "05f", label: "Commit", icon: Check, hint: "Verified AWB summary" },
 ] as const;
 
 type StepId = (typeof STEPS)[number]["id"];
+
+/**
+ * Standard air-cargo commodity categories — what a cargo terminal
+ * actually receives. The goods field is a pick from this list, not free
+ * text, so intake classification stays consistent line to line.
+ */
+const GOODS_CATEGORIES = [
+  "General cargo",
+  "Pharmaceuticals",
+  "Perishables — fruit & vegetables",
+  "Perishables — meat & seafood",
+  "Flowers & plants",
+  "Consumer electronics",
+  "Textiles & garments",
+  "Automotive parts",
+  "Machinery & spare parts",
+  "Dangerous goods (DGR)",
+  "Live animals (AVI)",
+  "Valuables (VAL)",
+  "Courier & mail",
+  "Human remains (HUM)",
+] as const;
 
 interface WorkingLine {
   id: number;
@@ -95,6 +102,8 @@ export default function OcrIntakePage() {
     if (!awb) return;
     const n = 3;
     const confidences = [0.98, 0.74, 0.88];
+    // Seeds come from GOODS_CATEGORIES so the select always has a match.
+    const seedGoods = ["Pharmaceuticals", "Textiles & garments", "Consumer electronics"];
     const built: WorkingLine[] = Array.from({ length: n }, (_, i) => {
       const pcs = Math.round(awb.TOTALPCS / n);
       const kg = round2(awb.TOTALWEIGHT / n);
@@ -102,7 +111,7 @@ export default function OcrIntakePage() {
       const c = confidences[i];
       return {
         id: i + 1,
-        goods: { extracted: ["Pharmaceutical preparations", "Cotton fabric rolls", "Consumer electronics"][i], value: ["Pharmaceutical preparations", "Cotton fabric rolls", "Consumer electronics"][i], confidence: c, state: c >= OCR_CONFIDENCE_THRESHOLD ? "auto-accepted" : "needs-review" },
+        goods: { extracted: seedGoods[i], value: seedGoods[i], confidence: c, state: c >= OCR_CONFIDENCE_THRESHOLD ? "auto-accepted" : "needs-review" },
         pcs: { extracted: pcs, value: pcs, confidence: Math.min(0.99, c + 0.05), state: Math.min(0.99, c + 0.05) >= OCR_CONFIDENCE_THRESHOLD ? "auto-accepted" : "needs-review" },
         weightKg: { extracted: kg, value: kg, confidence: c, state: c >= OCR_CONFIDENCE_THRESHOLD ? "auto-accepted" : "needs-review" },
         volumeM3: { extracted: vol, value: vol, confidence: Math.max(0.6, c - 0.1), state: Math.max(0.6, c - 0.1) >= OCR_CONFIDENCE_THRESHOLD ? "auto-accepted" : "needs-review" },
@@ -121,7 +130,8 @@ export default function OcrIntakePage() {
   const allAccepted = lines.length > 0 && outstanding === 0;
 
   /**
-   * 05c — the operator accepts the line as it stands.
+   * FC-01 05c (runs inside the 05b screen) — the operator accepts the line
+   * as it stands.
    *
    * Confirming is *not* correcting. This previously stamped
    * `operator-corrected` on goods / weight / volume regardless, which put
@@ -134,7 +144,8 @@ export default function OcrIntakePage() {
   }
 
   /**
-   * 05d — the actual correction. Recomputes the review state from the
+   * FC-01 05d (runs inside the 05b screen) — the actual correction.
+   * Recomputes the review state from the
    * domain helper so a value edited back to what OCR read stops claiming
    * to be corrected, and a genuine edit is attributed.
    */
@@ -163,6 +174,37 @@ export default function OcrIntakePage() {
 
   function setReceived(id: number, field: "receivedPcs" | "receivedWeightKg" | "receivedVolumeM3", v: number) {
     setLines((ls) => ls.map((l) => (l.id === id ? { ...l, [field]: v } : l)));
+  }
+
+  /**
+   * A row the OCR skipped entirely, keyed by hand. Confidence 0 marks it
+   * as manual (no % chip), and it starts unconfirmed so the 05c gate
+   * still forces the operator to fill it in and confirm before commit.
+   */
+  function addLine() {
+    setLines((ls) => {
+      const id = ls.length ? Math.max(...ls.map((l) => l.id)) + 1 : 1;
+      const manual = { confidence: 0, state: "needs-review" as const };
+      return [
+        ...ls,
+        {
+          id,
+          goods: { extracted: "", value: "", ...manual },
+          pcs: { extracted: 0, value: 0, ...manual },
+          weightKg: { extracted: 0, value: 0, ...manual },
+          volumeM3: { extracted: 0, value: 0, ...manual },
+          receivedPcs: 0,
+          receivedWeightKg: 0,
+          receivedVolumeM3: 0,
+          confirmed: false,
+        },
+      ];
+    });
+  }
+
+  /** Drop a row — a hallucinated extraction or a manual row keyed in error. */
+  function removeLine(id: number) {
+    setLines((ls) => ls.filter((l) => l.id !== id));
   }
 
   // 05e — totals and variance
@@ -348,8 +390,8 @@ export default function OcrIntakePage() {
         </div>
       )}
 
-      {/* ---- 05b Extract + 05c gate ---- */}
-      {(step === "05b" || step === "05c") && (
+      {/* ---- 05b Extract — acceptance gate + inline correction ---- */}
+      {step === "05b" && (
         <div className="flex flex-col gap-5">
           <OcrAcceptanceGate total={lines.length} outstanding={outstanding} />
 
@@ -361,7 +403,9 @@ export default function OcrIntakePage() {
                 </h2>
                 <p className="text-[13px] text-[#64748B] mt-1">
                   Item, category, quantity, volume and weight — each with a confidence score against
-                  a {Math.round(OCR_CONFIDENCE_THRESHOLD * 100)}% threshold.
+                  a {Math.round(OCR_CONFIDENCE_THRESHOLD * 100)}% threshold. Every field is editable
+                  after extraction: fix anything OCR misread, add a line if it skipped one, then
+                  confirm each flagged line.
                 </p>
               </div>
             </div>
@@ -378,38 +422,66 @@ export default function OcrIntakePage() {
                 >
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <span className="text-[12px] font-bold text-[#64748B]">Line {l.id}</span>
-                    {l.confirmed ? (
-                      <span className="h-[20px] px-2 rounded text-[10px] font-bold inline-flex items-center bg-[#DCFCE7] text-[#16A34A]">
-                        Confirmed
-                      </span>
-                    ) : (
+                    <div className="flex items-center gap-2">
+                      {l.confirmed ? (
+                        <span className="h-[20px] px-2 rounded text-[10px] font-bold inline-flex items-center bg-[#DCFCE7] text-[#16A34A]">
+                          Confirmed
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => confirmLine(l.id)}
+                          className="h-8 px-3 rounded-lg bg-[#D97706] text-white text-[12px] font-semibold cursor-pointer hover:bg-[#B45309] transition-colors"
+                        >
+                          Review &amp; confirm
+                        </button>
+                      )}
                       <button
-                        onClick={() => confirmLine(l.id)}
-                        className="h-8 px-3 rounded-lg bg-[#D97706] text-white text-[12px] font-semibold cursor-pointer hover:bg-[#B45309] transition-colors"
+                        onClick={() => removeLine(l.id)}
+                        title="Delete line"
+                        aria-label={`Delete line ${l.id}`}
+                        className="w-8 h-8 rounded-lg border border-[#E2E8F0] bg-white text-[#94A3B8] hover:text-[#DC2626] hover:border-[#FECACA] hover:bg-[#FEF2F2] transition-colors flex items-center justify-center cursor-pointer"
                       >
-                        Review &amp; confirm
+                        <Trash2 size={14} />
                       </button>
-                    )}
+                    </div>
                   </div>
+                  {/* Every field stays editable after extraction — pieces
+                      included, since it drives the 05e declared-vs-physical
+                      variance and so the CDR. */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <OcrConfidenceField label="Goods" value={l.goods} />
-                    <OcrConfidenceField label="Pieces" value={l.pcs} />
-                    <OcrConfidenceField label="Gross weight" value={l.weightKg} suffix="kg" />
-                    <OcrConfidenceField label="Volume" value={l.volumeM3} suffix="m³" />
+                    <GoodsField ocr={l.goods} onChange={(v) => correctField(l.id, "goods", v)} />
+                    <NumberField
+                      label="Pieces"
+                      ocr={l.pcs}
+                      step={1}
+                      onChange={(v) => correctField(l.id, "pcs", v)}
+                    />
+                    <NumberField
+                      label="Gross weight (kg)"
+                      ocr={l.weightKg}
+                      step={0.01}
+                      onChange={(v) => correctField(l.id, "weightKg", v)}
+                    />
+                    <NumberField
+                      label="Volume (m³)"
+                      ocr={l.volumeM3}
+                      step={0.01}
+                      onChange={(v) => correctField(l.id, "volumeM3", v)}
+                    />
                   </div>
                 </div>
               ))}
+
+              <button
+                onClick={addLine}
+                className="h-11 rounded-xl border border-dashed border-[#CBD5E1] text-[13px] font-semibold text-[#64748B] cursor-pointer hover:bg-[#F8FAFC] hover:border-[#94A3B8] transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus size={15} />
+                Add line — key a row the OCR skipped
+              </button>
             </div>
 
             <div className="flex items-center gap-3 mt-5 pt-5 border-t border-[#E2E8F0]">
-              {!allAccepted && (
-                <button
-                  onClick={() => setStep("05d")}
-                  className="h-10 px-4 rounded-lg border border-[#E2E8F0] text-[13px] font-semibold text-[#0F172A] cursor-pointer hover:bg-[#F8FAFC] transition-colors"
-                >
-                  Open correction mode (05d)
-                </button>
-              )}
               <button
                 disabled={!allAccepted}
                 onClick={() => setStep("05e")}
@@ -425,93 +497,13 @@ export default function OcrIntakePage() {
               </button>
               {!allAccepted && (
                 <span className="text-[12px] text-[#D97706]">
-                  Blocked — {outstanding} item{outstanding === 1 ? "" : "s"} below threshold and
-                  unconfirmed (FC-01 05c)
+                  {lines.length === 0
+                    ? "Blocked — no line items; add at least one row"
+                    : `Blocked — ${outstanding} item${outstanding === 1 ? "" : "s"} below threshold and unconfirmed`}
                 </span>
               )}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ---- 05d Correction ---- */}
-      {step === "05d" && (
-        <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-6">
-          <h2 className="text-[16px] font-semibold text-[#0F172A]">
-            05d · Correct low-confidence items
-          </h2>
-          <p className="text-[13px] text-[#64748B] mt-1">
-            Only items below threshold appear here. Confirming returns to the 05c gate — the flow&rsquo;s
-            own loop.
-          </p>
-
-          {outstanding === 0 ? (
-            <div className="mt-5 rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] p-5 text-center">
-              <p className="text-[13px] font-semibold text-[#16A34A]">
-                Nothing left to correct — all items confirmed
-              </p>
-              <button
-                onClick={() => setStep("05c")}
-                className="mt-3 h-9 px-4 rounded-lg bg-[#0B2545] text-white text-[13px] font-semibold cursor-pointer"
-              >
-                Back to 05c gate
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4 mt-5">
-              {lines
-                .filter((l) => !l.confirmed)
-                .map((l) => (
-                  <div key={l.id} className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-4">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <span className="text-[12px] font-bold text-[#D97706]">
-                        Line {l.id} — needs review
-                      </span>
-                      {/* `outstanding` is derived from the pre-update render,
-                          so the loop back to 05c is decided on the count as
-                          it will be *after* this confirmation lands. */}
-                      <button
-                        onClick={() => {
-                          confirmLine(l.id);
-                          if (outstanding - 1 === 0) setStep("05c");
-                        }}
-                        className="h-8 px-3 rounded-lg bg-[#0B2545] text-white text-[12px] font-semibold cursor-pointer"
-                      >
-                        Confirm line
-                      </button>
-                    </div>
-                    {/* Every field is correctable here, pieces included —
-                        it drives the 05e declared-vs-physical variance and
-                        so the CDR, and was previously the one field with no
-                        way to fix it. */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <OcrConfidenceField
-                        label="Goods"
-                        value={l.goods}
-                        onChange={(v) => correctField(l.id, "goods", v)}
-                      />
-                      <OcrConfidenceField
-                        label="Pieces"
-                        value={l.pcs}
-                        onChange={(v) => correctField(l.id, "pcs", v)}
-                      />
-                      <OcrConfidenceField
-                        label="Gross weight"
-                        value={l.weightKg}
-                        suffix="kg"
-                        onChange={(v) => correctField(l.id, "weightKg", v)}
-                      />
-                      <OcrConfidenceField
-                        label="Volume"
-                        value={l.volumeM3}
-                        suffix="m³"
-                        onChange={(v) => correctField(l.id, "volumeM3", v)}
-                      />
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -737,5 +729,120 @@ export default function OcrIntakePage() {
         </div>
       )}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Extract-screen field controls — always editable after extraction.
+ * The confidence chrome mirrors `OcrConfidenceField`, but the control
+ * is a plain select / number input so the operator corrects any field
+ * directly instead of through an explicit edit mode.
+ * ------------------------------------------------------------------ */
+
+const OCR_STATE_STYLE = {
+  "auto-accepted": { bg: "#DCFCE7", fg: "#16A34A", border: "#BBF7D0", Icon: Check },
+  "needs-review": { bg: "#FEF3C7", fg: "#D97706", border: "#FDE68A", Icon: AlertTriangle },
+  "operator-corrected": { bg: "#EDE9FE", fg: "#7C3AED", border: "#DDD6FE", Icon: PencilLine },
+} as const;
+
+function fieldBorder(ocr: OcrValue<string> | OcrValue<number>) {
+  // Confidence 0 = manually keyed row — neutral border, no OCR signal.
+  return ocr.confidence === 0 ? "#E2E8F0" : OCR_STATE_STYLE[ocr.state].border;
+}
+
+function FieldChrome({
+  label,
+  ocr,
+  children,
+}: {
+  label: string;
+  ocr: OcrValue<string> | OcrValue<number>;
+  children: ReactNode;
+}) {
+  const manual = ocr.confidence === 0;
+  const s = OCR_STATE_STYLE[ocr.state];
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+          {label}
+        </span>
+        {manual ? (
+          <span className="h-[18px] px-1.5 rounded text-[10px] font-bold inline-flex items-center bg-[#F1F5F9] text-[#64748B]">
+            Manual
+          </span>
+        ) : (
+          <span
+            className="h-[18px] px-1.5 rounded text-[10px] font-bold inline-flex items-center gap-1"
+            style={{ backgroundColor: s.bg, color: s.fg }}
+          >
+            <s.Icon size={10} strokeWidth={2.5} />
+            {ocr.state === "operator-corrected"
+              ? "Corrected"
+              : `${Math.round(ocr.confidence * 100)}%`}
+          </span>
+        )}
+      </div>
+      {children}
+      {!manual && ocr.state === "operator-corrected" && (
+        <span className="text-[10px] text-[#7C3AED]">
+          OCR read {String(ocr.extracted)} · corrected by {ocr.correctedBy}
+        </span>
+      )}
+      {!manual && ocr.state === "needs-review" && (
+        <span className="text-[10px] text-[#D97706]">
+          Below {Math.round(OCR_CONFIDENCE_THRESHOLD * 100)}% threshold — operator confirmation
+          required
+        </span>
+      )}
+    </div>
+  );
+}
+
+function GoodsField({ ocr, onChange }: { ocr: OcrValue<string>; onChange: (v: string) => void }) {
+  return (
+    <FieldChrome label="Goods category" ocr={ocr}>
+      <select
+        value={ocr.value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 px-2.5 rounded-lg border bg-white text-[13px] outline-none cursor-pointer w-full"
+        style={{ borderColor: fieldBorder(ocr) }}
+      >
+        <option value="" disabled>
+          Select category…
+        </option>
+        {GOODS_CATEGORIES.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
+    </FieldChrome>
+  );
+}
+
+function NumberField({
+  label,
+  ocr,
+  step,
+  onChange,
+}: {
+  label: string;
+  ocr: OcrValue<number>;
+  step: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <FieldChrome label={label} ocr={ocr}>
+      <input
+        type="number"
+        min={0}
+        step={step}
+        value={ocr.value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-9 px-2.5 rounded-lg border bg-white text-[13px] font-mono outline-none w-full"
+        style={{ borderColor: fieldBorder(ocr) }}
+      />
+    </FieldChrome>
   );
 }

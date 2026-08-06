@@ -187,8 +187,8 @@ export function OcrAcceptanceGate({
             : `${outstanding} of ${total} items need operator confirmation`}
         </p>
         <p className="text-[12px] text-[#64748B] mt-0.5">
-          FC-01 step 05c — commit is blocked until every item is auto-accepted or
-          operator-confirmed.
+          FC-01 05c acceptance gate — commit is blocked until every item is
+          auto-accepted or operator-confirmed.
         </p>
       </div>
     </div>
